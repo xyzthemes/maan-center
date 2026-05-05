@@ -1,7 +1,14 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-const siteUrl = process.env.NUXT_SITE_URL || 'http://127.0.0.1:3000'
+const railwaySiteUrl = process.env.RAILWAY_PUBLIC_DOMAIN
+  ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+  : undefined
+const siteUrl = process.env.NUXT_SITE_URL || railwaySiteUrl || 'http://127.0.0.1:3000'
 const siteName = 'Maan Special Education Center'
 const siteDescription = 'Individualized education, therapy, and family support for children with diverse learning needs.'
+const directusUrl = process.env.NUXT_PUBLIC_DIRECTUS_URL
+  || process.env.DIRECTUS_URL
+  || ''
+const ogImageSecret = process.env.NUXT_OG_IMAGE_SECRET
 const indexable = process.env.NUXT_SITE_INDEXABLE
   ? process.env.NUXT_SITE_INDEXABLE === 'true'
   : process.env.NODE_ENV === 'production' || process.env.NUXT_SITE_ENV === 'production'
@@ -28,7 +35,7 @@ export default defineNuxtConfig({
     public: {
       siteUrl,
       directus: {
-        url: 'https://directus-cms-production-76ca.up.railway.app'
+        url: directusUrl
       }
     }
   },
@@ -42,6 +49,16 @@ export default defineNuxtConfig({
         braceStyle: '1tbs'
       }
     }
+  },
+
+  ogImage: {
+    zeroRuntime: !ogImageSecret,
+    security: ogImageSecret
+      ? {
+          secret: ogImageSecret,
+          strict: true
+        }
+      : undefined
   },
 
   robots: {

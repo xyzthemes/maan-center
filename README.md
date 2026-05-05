@@ -1,64 +1,92 @@
-# Nuxt Starter Template
+# Maan Special Education Center
 
-[![Nuxt UI](https://img.shields.io/badge/Made%20with-Nuxt%20UI-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
+A bilingual Nuxt website and blog for a special education center. The site uses Nuxt UI, Nuxt SEO, and Directus content, and is prepared for one-click deployment on Railway.
 
-Use this template to get started with [Nuxt UI](https://ui.nuxt.com) quickly.
+## Stack
 
-- [Live demo](https://starter-template.nuxt.dev/)
-- [Documentation](https://ui.nuxt.com/docs/getting-started/installation/nuxt)
+- Nuxt 4
+- Nuxt UI
+- Nuxt SEO
+- Directus via `nuxt-directus`
+- Railway Railpack deployment
 
-<a href="https://starter-template.nuxt.dev/" target="_blank">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://ui.nuxt.com/assets/templates/nuxt/starter-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="https://ui.nuxt.com/assets/templates/nuxt/starter-light.png">
-    <img alt="Nuxt Starter Template" src="https://ui.nuxt.com/assets/templates/nuxt/starter-light.png" width="830" height="466">
-  </picture>
-</a>
+## Deploy on Railway
 
-> The starter template for Vue is on https://github.com/nuxt-ui-templates/starter-vue.
+This repo is ready to use as the source for a Railway template.
 
-## Quick Start
+1. Push this repository to a public GitHub repo.
+2. In Railway, create a new template from your workspace Templates page.
+3. Add a service with this GitHub repo as the source.
+4. Enable Public Networking with HTTP.
+5. Confirm these service settings:
+   - Pre-deploy command: leave blank
+   - Start command: `pnpm start`
+   - Healthcheck path: `/`
+6. Add the variables below in the template composer.
+7. Create the template, test deploy it, then publish it from the Railway Templates page.
 
-```bash [Terminal]
-npm create nuxt@latest -- -t ui
+Railway will read `railway.json`, which defines the Railpack builder, build command, start command, healthcheck, and restart policy. Do not put `pnpm build` in the pre-deploy command; pre-deploy runs after the image has already been built.
+
+## Template Variables
+
+Optional:
+
+```bash
+NUXT_PUBLIC_DIRECTUS_URL=https://your-directus.example
+NUXT_SITE_URL=https://your-domain.example
+NUXT_SITE_INDEXABLE=true
+NUXT_OG_IMAGE_SECRET=generated-secret
 ```
 
-## Deploy your own
+Leave `NUXT_PUBLIC_DIRECTUS_URL` blank for a public template unless the template also provisions a Directus service. Blank deployments use the bundled fallback posts and do not call Maan's production Directus backend.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-name=starter&repository-url=https%3A%2F%2Fgithub.com%2Fnuxt-ui-templates%2Fstarter&demo-image=https%3A%2F%2Fui.nuxt.com%2Fassets%2Ftemplates%2Fnuxt%2Fstarter-dark.png&demo-url=https%3A%2F%2Fstarter-template.nuxt.dev%2F&demo-title=Nuxt%20Starter%20Template&demo-description=A%20minimal%20template%20to%20get%20started%20with%20Nuxt%20UI.)
+If `NUXT_SITE_URL` is not set, the app will use Railway's `RAILWAY_PUBLIC_DOMAIN` when available. For local development, it falls back to `http://127.0.0.1:3000`.
 
-## Setup
+Set `NUXT_SITE_INDEXABLE=false` for staging or private test deployments.
 
-Make sure to install the dependencies:
+`NUXT_OG_IMAGE_SECRET` is only needed if you want dynamic OG image generation at runtime. Without it, Nuxt OG Image runs in zero-runtime mode so arbitrary image generation requests are disabled. Generate a secret with:
+
+```bash
+npx nuxt-og-image generate-secret
+```
+
+## Local Development
+
+Install dependencies:
 
 ```bash
 pnpm install
 ```
 
-## Development Server
-
-Start the development server on `http://localhost:3000`:
+Start the development server:
 
 ```bash
 pnpm dev
 ```
 
-## Production
-
-Build the application for production:
+Build for production:
 
 ```bash
 pnpm build
 ```
 
-Locally preview production build:
+Run the production server locally:
 
 ```bash
-pnpm preview
+pnpm start
 ```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+## Railway Template Publishing Notes
 
-## Renovate integration
+After creating the template, Railway gives you a template URL and template code. Add the public button to this README once you have that code:
 
-Install [Renovate GitHub app](https://github.com/apps/renovate/installations/select_target) on your repository and you are good to go.
+```md
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/YOUR_TEMPLATE_CODE?utm_medium=integration&utm_source=template&utm_campaign=maan-special-education-center)
+```
+
+For a good public template listing, include:
+
+- A live demo Railway project.
+- A clear note that Directus is optional unless the template provisions its own CMS service.
+- Screenshots of the English and Arabic pages.
+- A note that deployers can eject the template repo into their own GitHub account after deployment.

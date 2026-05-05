@@ -78,6 +78,10 @@ body {
   background: color-mix(in srgb, var(--ui-bg) 86%, #fff9ea);
 }
 
+.dark .maan-design-credit img {
+  filter: invert(1);
+}
+
 .maan-logo-mark {
   border-radius: 50% 46% 48% 44%;
   box-shadow: 0 12px 24px color-mix(in srgb, var(--ui-primary) 22%, transparent);

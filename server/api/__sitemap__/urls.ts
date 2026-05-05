@@ -17,9 +17,27 @@ const staticUrls: SitemapUrlInput[] = [
 
 export default defineEventHandler(async () => {
   const config = useRuntimeConfig()
+  const directusUrl = String(config.public.directus.url || '').replace(/\/$/, '')
+
+  if (!directusUrl) {
+    const fallbackPostUrls = [
+      '/blog/building-confident-routines-at-home',
+      '/blog/how-early-assessment-guides-support',
+      '/blog/supporting-communication-through-play',
+      '/ar/blog/ar-building-confident-routines-at-home',
+      '/ar/blog/ar-how-early-assessment-guides-support',
+      '/ar/blog/ar-supporting-communication-through-play'
+    ].map(loc => ({
+      loc,
+      changefreq: 'monthly',
+      priority: 0.7
+    } satisfies SitemapUrlInput))
+
+    return [...staticUrls, ...fallbackPostUrls]
+  }
 
   try {
-    const response = await $fetch<{ data?: DirectusPost[] }>(`${config.public.directus.url}/items/posts`, {
+    const response = await $fetch<{ data?: DirectusPost[] }>(`${directusUrl}/items/posts`, {
       query: {
         filter: { status: { _eq: 'published' } },
         fields: ['slug', 'status', 'published_at', 'date_updated'],

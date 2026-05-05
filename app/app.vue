@@ -156,9 +156,25 @@ useSchemaOrg([
       </template>
 
       <template #right>
-        <p class="max-w-md text-right text-xs leading-5 text-dimmed">
-          Hero image: Dan Hadani collection / National Library of Israel / The Pritzker Family National Photography Collection, CC BY 4.0.
-        </p>
+        <div class="flex max-w-md flex-col items-center gap-3 text-center sm:items-end sm:text-right">
+          <a
+            href="https://xyz.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="maan-design-credit inline-flex items-center gap-2 text-xs font-medium text-muted transition hover:text-highlighted"
+            aria-label="Website design by XYZ"
+          >
+            <span>Website design by</span>
+            <img
+              src="https://cdn.xyz.dev/assets/xyz/brand/logo/long/black.svg"
+              alt="XYZ"
+              class="h-4 w-auto"
+            >
+          </a>
+          <p class="text-xs leading-5 text-dimmed">
+            Hero image: Dan Hadani collection / National Library of Israel / The Pritzker Family National Photography Collection, CC BY 4.0.
+          </p>
+        </div>
       </template>
     </UFooter>
   </UApp>

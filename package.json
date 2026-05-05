@@ -1,14 +1,18 @@
 {
-  "name": "nuxt-app",
+  "name": "maan-center",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
     "preview": "nuxt preview",
+    "start": "node .output/server/index.mjs",
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
     "typecheck": "nuxt typecheck"
+  },
+  "engines": {
+    "node": ">=22"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.105",

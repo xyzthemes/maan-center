@@ -1,0 +1,281 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@theme static {
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+
+  --color-green-50: #F4F8EE;
+  --color-green-100: #E4EEDC;
+  --color-green-200: #CFDFC3;
+  --color-green-300: #AFC7A3;
+  --color-green-400: #8DAE89;
+  --color-green-500: #6C8F78;
+  --color-green-600: #557765;
+  --color-green-700: #405B4D;
+  --color-green-800: #30453D;
+  --color-green-900: #24362F;
+  --color-green-950: #15231F;
+
+  --color-amber-50: #FFF9EA;
+  --color-amber-100: #FFF0CF;
+  --color-amber-200: #FFE1A8;
+  --color-amber-300: #F8CA7F;
+  --color-amber-400: #E9AD59;
+  --color-amber-500: #C98F42;
+  --color-amber-600: #A97032;
+  --color-amber-700: #865425;
+  --color-amber-800: #663F21;
+  --color-amber-900: #4E321E;
+  --color-amber-950: #2F1B0E;
+
+  --color-stone-50: #FBF8EF;
+  --color-stone-100: #F4EEDC;
+  --color-stone-200: #E8DEC8;
+  --color-stone-300: #D7C7A9;
+  --color-stone-400: #B9A383;
+  --color-stone-500: #95806A;
+  --color-stone-600: #746452;
+  --color-stone-700: #594D42;
+  --color-stone-800: #3E3730;
+  --color-stone-900: #2D2924;
+  --color-stone-950: #191612;
+}
+
+body {
+  background:
+    radial-gradient(circle at 12% 6%, rgba(255, 225, 168, .38), transparent 28rem),
+    radial-gradient(circle at 88% 18%, rgba(207, 223, 195, .52), transparent 25rem),
+    linear-gradient(120deg, #fff9ea 0%, #f4f8ee 52%, #fbf8ef 100%);
+}
+
+.dark body {
+  background:
+    radial-gradient(circle at 12% 6%, rgba(169, 112, 50, .18), transparent 28rem),
+    radial-gradient(circle at 88% 18%, rgba(108, 143, 120, .2), transparent 25rem),
+    linear-gradient(120deg, #191612 0%, #15231f 55%, #2d2924 100%);
+}
+
+.maan-main {
+  background:
+    linear-gradient(120deg, rgba(255, 249, 234, .92), rgba(244, 248, 238, .95)),
+    var(--ui-bg);
+}
+
+.dark .maan-main {
+  background:
+    linear-gradient(120deg, rgba(25, 22, 18, .94), rgba(21, 35, 31, .95)),
+    var(--ui-bg);
+}
+
+.maan-header {
+  border-bottom-color: color-mix(in srgb, var(--ui-primary) 18%, transparent);
+  background: color-mix(in srgb, var(--ui-bg) 82%, #fff9ea);
+  backdrop-filter: blur(18px);
+}
+
+.maan-footer {
+  border-top: 1px solid color-mix(in srgb, var(--ui-primary) 14%, transparent);
+  background: color-mix(in srgb, var(--ui-bg) 86%, #fff9ea);
+}
+
+.maan-logo-mark {
+  border-radius: 50% 46% 48% 44%;
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--ui-primary) 22%, transparent);
+  transform: rotate(-4deg);
+}
+
+.maan-hero {
+  background:
+    radial-gradient(circle at 18% 10%, rgba(255, 225, 168, .65), transparent 20rem),
+    radial-gradient(circle at 78% 18%, rgba(207, 223, 195, .82), transparent 24rem),
+    radial-gradient(circle at 48% 82%, rgba(218, 198, 230, .34), transparent 22rem),
+    linear-gradient(120deg, #fff9ea 0%, #f4f8ee 52%, #fbf8ef 100%);
+  border-color: color-mix(in srgb, var(--ui-primary) 16%, transparent);
+}
+
+.dark .maan-hero {
+  background:
+    radial-gradient(circle at 18% 10%, rgba(169, 112, 50, .22), transparent 20rem),
+    radial-gradient(circle at 78% 18%, rgba(108, 143, 120, .26), transparent 24rem),
+    radial-gradient(circle at 48% 82%, rgba(142, 113, 161, .14), transparent 22rem),
+    linear-gradient(120deg, #191612 0%, #15231f 52%, #2d2924 100%);
+}
+
+.maan-hero-title {
+  color: color-mix(in srgb, var(--ui-text-highlighted) 92%, var(--ui-primary));
+  letter-spacing: 0;
+  text-wrap: pretty;
+}
+
+.maan-hero-copy {
+  color: color-mix(in srgb, var(--ui-text-muted) 88%, var(--ui-primary));
+}
+
+.maan-garden-visual {
+  position: relative;
+  min-height: 29rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--ui-primary) 18%, transparent);
+  border-radius: 2.75rem 2.75rem 1rem 2.75rem;
+  background:
+    radial-gradient(circle at 22% 17%, rgba(255, 225, 168, .9) 0 9%, transparent 10%),
+    radial-gradient(circle at 82% 18%, rgba(207, 223, 195, .95) 0 12%, transparent 13%),
+    radial-gradient(circle at 34% 78%, rgba(218, 198, 230, .62) 0 14%, transparent 15%),
+    color-mix(in srgb, var(--ui-bg) 88%, #fff9ea);
+  box-shadow: 0 30px 70px color-mix(in srgb, var(--ui-primary) 18%, transparent);
+}
+
+.maan-photo-card {
+  position: absolute;
+  inset: 2rem 2rem auto;
+  overflow: hidden;
+  border: 8px solid color-mix(in srgb, var(--ui-bg) 92%, #fff9ea);
+  border-radius: 2.25rem 2.25rem .85rem 2.25rem;
+  box-shadow: 0 20px 46px color-mix(in srgb, var(--ui-primary) 20%, transparent);
+}
+
+.maan-photo-card img {
+  width: 100%;
+  height: 18rem;
+  object-fit: cover;
+}
+
+.maan-path-card {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 7.25rem;
+  height: 7.25rem;
+  border-radius: 2rem;
+  background: color-mix(in srgb, var(--ui-bg) 84%, #fff9ea);
+  color: var(--ui-primary);
+  font-weight: 800;
+  box-shadow: 0 16px 30px color-mix(in srgb, var(--ui-primary) 15%, transparent);
+}
+
+.maan-path-card:nth-of-type(2) {
+  right: 2rem;
+  bottom: 7.5rem;
+}
+
+.maan-path-card:nth-of-type(3) {
+  left: 3rem;
+  bottom: 3rem;
+  background: color-mix(in srgb, var(--ui-secondary) 18%, var(--ui-bg));
+}
+
+.maan-note-card {
+  position: absolute;
+  right: 2rem;
+  bottom: 2rem;
+  max-width: 19rem;
+  border: 1px solid color-mix(in srgb, var(--ui-primary) 14%, transparent);
+  border-radius: 1.75rem;
+  background: color-mix(in srgb, var(--ui-bg) 86%, #fff9ea);
+  padding: 1.125rem;
+  box-shadow: 0 18px 38px color-mix(in srgb, var(--ui-primary) 13%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.maan-garden-card {
+  border: 1px solid color-mix(in srgb, var(--ui-primary) 14%, transparent);
+  border-radius: 1.875rem 1.875rem .875rem 1.875rem;
+  background: color-mix(in srgb, var(--ui-bg) 86%, #fff9ea);
+  box-shadow: 0 16px 34px color-mix(in srgb, var(--ui-primary) 10%, transparent);
+}
+
+.maan-garden-card:hover {
+  box-shadow: 0 22px 42px color-mix(in srgb, var(--ui-primary) 14%, transparent);
+}
+
+.maan-step-number {
+  border-radius: 1.25rem;
+  background: color-mix(in srgb, var(--ui-secondary) 20%, var(--ui-bg));
+  color: var(--ui-primary);
+}
+
+.maan-section-band {
+  border-color: color-mix(in srgb, var(--ui-primary) 14%, transparent);
+  background:
+    radial-gradient(circle at 12% 20%, rgba(255, 225, 168, .32), transparent 18rem),
+    linear-gradient(120deg, color-mix(in srgb, var(--ui-bg) 88%, #fff9ea), color-mix(in srgb, var(--ui-bg) 82%, #f4f8ee));
+}
+
+.maan-blog-hero {
+  border-color: color-mix(in srgb, var(--ui-primary) 14%, transparent);
+  background:
+    radial-gradient(circle at 12% 12%, rgba(255, 225, 168, .5), transparent 18rem),
+    radial-gradient(circle at 88% 8%, rgba(207, 223, 195, .74), transparent 20rem),
+    linear-gradient(120deg, #fff9ea, #f4f8ee);
+}
+
+.dark .maan-blog-hero,
+.dark .maan-section-band {
+  background:
+    radial-gradient(circle at 12% 12%, rgba(169, 112, 50, .16), transparent 18rem),
+    radial-gradient(circle at 88% 8%, rgba(108, 143, 120, .2), transparent 20rem),
+    linear-gradient(120deg, #191612, #15231f);
+}
+
+.maan-programs [data-slot="item"],
+.maan-programs [data-slot="feature"],
+.maan-cta-section [data-slot="root"],
+.maan-cta-section [data-slot="container"] > [data-slot="root"] {
+  border-radius: 1.875rem 1.875rem .875rem 1.875rem;
+}
+
+.maan-prose-card {
+  border: 1px solid color-mix(in srgb, var(--ui-primary) 12%, transparent);
+  border-radius: 2rem 2rem 1rem 2rem;
+  background: color-mix(in srgb, var(--ui-bg) 91%, #fff9ea);
+  padding: clamp(1.35rem, 4vw, 3rem);
+  box-shadow: 0 20px 44px color-mix(in srgb, var(--ui-primary) 10%, transparent);
+}
+
+.maan-prose {
+  color: var(--ui-text);
+  font-size: 1.0625rem;
+  line-height: 1.85;
+}
+
+.maan-prose > * + * {
+  margin-top: 1.25rem;
+}
+
+.maan-prose h2 {
+  color: color-mix(in srgb, var(--ui-text-highlighted) 88%, var(--ui-primary));
+  font-size: 1.5rem;
+  font-weight: 650;
+  line-height: 1.3;
+  margin-top: 2rem;
+}
+
+.maan-prose p {
+  color: var(--ui-text-muted);
+}
+
+@media (max-width: 640px) {
+  .maan-garden-visual {
+    min-height: 26rem;
+  }
+
+  .maan-photo-card {
+    inset: 1rem 1rem auto;
+    border-width: 5px;
+  }
+
+  .maan-photo-card img {
+    height: 15rem;
+  }
+
+  .maan-path-card {
+    width: 6.25rem;
+    height: 6.25rem;
+  }
+
+  .maan-note-card {
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+  }
+}

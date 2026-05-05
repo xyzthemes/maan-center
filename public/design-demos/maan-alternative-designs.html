@@ -1,0 +1,890 @@
+<!doctype html>
+<!--
+  Huashu-Design junior pass
+  Assumptions:
+  - This is a visual exploration for Maan's existing website, not production Nuxt code.
+  - The goal is to compare three homepage art directions using the current site content.
+  - Real CMS data, forms, and final copy remain placeholders for the production app.
+  Reasoning:
+  - Direction 01 answers the explicit request: calming, pastel, neumorphic.
+  - Direction 02 gives a more trustworthy clinical/editorial alternative.
+  - Direction 03 gives a warmer sensory-learning direction with more visual personality.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Maan Design Directions</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #27312f;
+      --muted: #66736f;
+      --line: rgba(44, 61, 56, .14);
+      --paper: #fbfaf6;
+      --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --serif: Georgia, "Times New Roman", serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #f5f1ea;
+      color: var(--ink);
+      font-family: var(--sans);
+    }
+
+    button,
+    a {
+      font: inherit;
+    }
+
+    .demo-shell {
+      min-height: 100vh;
+      padding: 28px;
+    }
+
+    .demo-header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 20px;
+      align-items: end;
+      max-width: 1420px;
+      margin: 0 auto 22px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: #6f7a76;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .demo-title {
+      margin: 0;
+      max-width: 780px;
+      font-family: var(--serif);
+      font-size: clamp(34px, 5vw, 62px);
+      font-weight: 500;
+      line-height: .98;
+      letter-spacing: -.02em;
+    }
+
+    .demo-intent {
+      margin: 14px 0 0;
+      max-width: 720px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .variant-tabs {
+      display: flex;
+      gap: 8px;
+      padding: 7px;
+      border: 1px solid rgba(52, 63, 59, .12);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .65);
+      box-shadow: 0 12px 30px rgba(68, 57, 43, .08);
+      backdrop-filter: blur(16px);
+    }
+
+    .variant-tabs button {
+      cursor: pointer;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: #596662;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      transition: background .2s ease, color .2s ease, box-shadow .2s ease;
+    }
+
+    .variant-tabs button[aria-selected="true"] {
+      background: #27312f;
+      color: #fffaf1;
+      box-shadow: 0 8px 20px rgba(39, 49, 47, .18);
+    }
+
+    .canvas {
+      max-width: 1420px;
+      margin: 0 auto;
+    }
+
+    .direction {
+      display: none;
+      min-height: 780px;
+      overflow: hidden;
+      border-radius: 28px;
+      border: 1px solid rgba(52, 63, 59, .14);
+      box-shadow: 0 28px 80px rgba(55, 43, 31, .16);
+    }
+
+    .direction.active {
+      display: block;
+    }
+
+    .site-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 24px clamp(22px, 4vw, 60px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 44px;
+      height: 44px;
+      place-items: center;
+      border-radius: 15px;
+      font-weight: 800;
+    }
+
+    .brand-copy strong {
+      display: block;
+      font-size: 17px;
+      line-height: 1.1;
+    }
+
+    .brand-subtitle {
+      display: block;
+      margin-top: 3px;
+      color: currentColor;
+      font-size: 12px;
+      opacity: .62;
+    }
+
+    .links {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .links a {
+      color: inherit;
+      opacity: .72;
+      text-decoration: none;
+    }
+
+    .links a:hover {
+      opacity: 1;
+    }
+
+    .pill-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      border: 0;
+      border-radius: 999px;
+      padding: 0 20px;
+      font-weight: 800;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(360px, .95fr);
+      gap: clamp(28px, 5vw, 70px);
+      align-items: center;
+      padding: 28px clamp(22px, 4vw, 60px) 64px;
+    }
+
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 22px;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .hero-title {
+      margin: 0;
+      font-size: clamp(48px, 7.2vw, 104px);
+      font-weight: 700;
+      line-height: .94;
+      letter-spacing: -.055em;
+      text-wrap: pretty;
+    }
+
+    .hero-copy {
+      max-width: 650px;
+      margin: 26px 0 0;
+      font-size: 18px;
+      line-height: 1.75;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 34px;
+    }
+
+    .support-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      padding: 0 clamp(22px, 4vw, 60px) 48px;
+    }
+
+    .support-card h3,
+    .article-card h3 {
+      margin: 0;
+      font-size: 17px;
+      line-height: 1.3;
+    }
+
+    .support-card p,
+    .article-card p {
+      margin: 10px 0 0;
+      color: inherit;
+      font-size: 13px;
+      line-height: 1.65;
+      opacity: .68;
+    }
+
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: end;
+      padding: 58px clamp(22px, 4vw, 60px) 22px;
+    }
+
+    .section-heading h2 {
+      margin: 0;
+      max-width: 660px;
+      font-size: clamp(30px, 4vw, 54px);
+      line-height: 1.02;
+      letter-spacing: -.035em;
+    }
+
+    .section-heading p {
+      max-width: 410px;
+      margin: 0;
+      color: inherit;
+      font-size: 14px;
+      line-height: 1.7;
+      opacity: .65;
+    }
+
+    .article-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      padding: 0 clamp(22px, 4vw, 60px) 62px;
+    }
+
+    .article-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+      color: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      opacity: .58;
+    }
+
+    .visual-panel {
+      position: relative;
+      min-height: 520px;
+    }
+
+    .tiny-note {
+      position: absolute;
+      right: 24px;
+      bottom: 24px;
+      max-width: 310px;
+      border-radius: 22px;
+      padding: 18px;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .tiny-note strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+
+    /* Direction 01: calming pastel neumorphism */
+    .neumo {
+      background:
+        radial-gradient(circle at 18% 12%, rgba(255, 226, 216, .72), transparent 34%),
+        radial-gradient(circle at 82% 10%, rgba(208, 238, 231, .78), transparent 32%),
+        linear-gradient(135deg, #f7ebe4 0%, #eaf4ef 51%, #efeafa 100%);
+      color: #394943;
+    }
+
+    .neumo .brand-mark {
+      background: #eef3ee;
+      color: #648d83;
+      box-shadow: 10px 10px 22px rgba(136, 148, 142, .22), -10px -10px 22px rgba(255, 255, 255, .78);
+    }
+
+    .neumo .links {
+      color: #3f514b;
+    }
+
+    .neumo .pill-button.primary {
+      color: #fff;
+      background: linear-gradient(135deg, #82aaa0, #b99bcf);
+      box-shadow: 12px 12px 26px rgba(126, 142, 138, .22), -10px -10px 22px rgba(255, 255, 255, .72);
+    }
+
+    .neumo .pill-button.secondary {
+      color: #50615c;
+      background: #edf2ee;
+      box-shadow: inset 7px 7px 14px rgba(133, 151, 143, .16), inset -8px -8px 16px rgba(255, 255, 255, .74);
+    }
+
+    .neumo .kicker {
+      color: #698a82;
+      background: rgba(255, 255, 255, .5);
+      box-shadow: inset 4px 4px 10px rgba(143, 159, 151, .16), inset -5px -5px 12px rgba(255, 255, 255, .7);
+    }
+
+    .neumo .hero-copy {
+      color: #61706b;
+    }
+
+    .neumo .visual-panel {
+      border-radius: 38px;
+      background: rgba(238, 244, 239, .72);
+      box-shadow: 24px 24px 46px rgba(127, 143, 136, .22), -24px -24px 46px rgba(255, 255, 255, .68);
+    }
+
+    .neumo .soft-orbit {
+      position: absolute;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      color: #6d887f;
+      font-weight: 900;
+      box-shadow: 14px 14px 28px rgba(128, 144, 137, .18), -12px -12px 26px rgba(255, 255, 255, .76);
+    }
+
+    .neumo .soft-orbit.one {
+      top: 56px;
+      left: 54px;
+      width: 136px;
+      height: 136px;
+      background: #f7e6de;
+    }
+
+    .neumo .soft-orbit.two {
+      top: 168px;
+      right: 56px;
+      width: 182px;
+      height: 182px;
+      background: #e2f4ef;
+    }
+
+    .neumo .soft-orbit.three {
+      left: 132px;
+      bottom: 88px;
+      width: 230px;
+      height: 230px;
+      background: #eee7fb;
+      font-size: 18px;
+    }
+
+    .neumo .tiny-note,
+    .neumo .support-card,
+    .neumo .article-card {
+      border: 0;
+      background: rgba(244, 246, 242, .78);
+      box-shadow: 12px 12px 26px rgba(127, 143, 136, .18), -12px -12px 26px rgba(255, 255, 255, .7);
+    }
+
+    .neumo .support-card,
+    .neumo .article-card {
+      border-radius: 26px;
+      padding: 22px;
+    }
+
+    .neumo .article-card {
+      min-height: 190px;
+    }
+
+    /* Direction 02: editorial clinical clarity */
+    .editorial {
+      background: #fbfaf6;
+      color: #222b29;
+    }
+
+    .editorial .site-nav {
+      border-bottom: 1px solid rgba(37, 49, 45, .12);
+    }
+
+    .editorial .brand-mark {
+      border-radius: 8px;
+      background: #223831;
+      color: #f9f4e8;
+    }
+
+    .editorial .pill-button.primary {
+      color: #fffaf0;
+      background: #223831;
+    }
+
+    .editorial .pill-button.secondary {
+      color: #223831;
+      border: 1px solid rgba(34, 56, 49, .22);
+      background: transparent;
+    }
+
+    .editorial .kicker {
+      color: #496f64;
+      border: 1px solid rgba(73, 111, 100, .2);
+      background: #eef4ef;
+    }
+
+    .editorial .hero-grid {
+      grid-template-columns: .86fr 1.14fr;
+      padding-top: 46px;
+    }
+
+    .editorial .hero-title {
+      font-family: var(--serif);
+      font-weight: 500;
+      letter-spacing: -.045em;
+    }
+
+    .editorial .hero-copy {
+      color: #66726e;
+    }
+
+    .editorial .visual-panel {
+      overflow: hidden;
+      min-height: 570px;
+      border: 1px solid rgba(34, 43, 41, .12);
+      border-radius: 10px;
+      background:
+        linear-gradient(rgba(251, 250, 246, .12), rgba(251, 250, 246, .78)),
+        url("https://commons.wikimedia.org/wiki/Special:Redirect/file/Autistic_children_receiving_individual_education_in_special_classes_%28FL63605208%29.jpg") center / cover;
+    }
+
+    .editorial .tiny-note {
+      right: auto;
+      left: 24px;
+      bottom: 24px;
+      border: 1px solid rgba(34, 43, 41, .12);
+      border-radius: 10px;
+      background: rgba(251, 250, 246, .92);
+      backdrop-filter: blur(10px);
+    }
+
+    .editorial .support-row {
+      border-top: 1px solid rgba(34, 43, 41, .12);
+      padding-top: 34px;
+    }
+
+    .editorial .support-card {
+      min-height: 166px;
+      border-top: 3px solid #8fa99b;
+      padding: 18px 0 0;
+    }
+
+    .editorial .article-card {
+      min-height: 210px;
+      border: 1px solid rgba(34, 43, 41, .14);
+      border-radius: 10px;
+      padding: 24px;
+      background: #fffdf8;
+    }
+
+    .editorial .article-card h3 {
+      font-family: var(--serif);
+      font-size: 22px;
+      font-weight: 500;
+    }
+
+    /* Direction 03: sensory garden */
+    .garden {
+      background:
+        linear-gradient(120deg, rgba(255, 245, 223, .92), rgba(232, 245, 233, .96)),
+        #f6f1df;
+      color: #30423b;
+    }
+
+    .garden .brand-mark {
+      background: #7f9b7f;
+      color: #fff7e6;
+      border-radius: 50% 46% 48% 44%;
+      transform: rotate(-4deg);
+    }
+
+    .garden .site-nav {
+      padding-top: 30px;
+    }
+
+    .garden .pill-button.primary {
+      color: #fff7e6;
+      background: #6c8f78;
+      box-shadow: 0 16px 32px rgba(73, 102, 83, .2);
+    }
+
+    .garden .pill-button.secondary {
+      color: #40584d;
+      background: rgba(255, 255, 255, .52);
+      border: 1px solid rgba(85, 117, 96, .18);
+    }
+
+    .garden .kicker {
+      color: #7f6853;
+      background: #ffe7c7;
+    }
+
+    .garden .hero-title {
+      max-width: 820px;
+      color: #30453d;
+    }
+
+    .garden .hero-copy {
+      color: #64786e;
+    }
+
+    .garden .visual-panel {
+      overflow: hidden;
+      border: 1px solid rgba(78, 104, 89, .14);
+      border-radius: 44px 44px 16px 44px;
+      background:
+        radial-gradient(circle at 24% 18%, #ffdca9 0 9%, transparent 10%),
+        radial-gradient(circle at 76% 24%, #bbd9c3 0 12%, transparent 13%),
+        radial-gradient(circle at 38% 78%, #d9c2e6 0 14%, transparent 15%),
+        #fdf7e9;
+      box-shadow: 0 30px 70px rgba(83, 95, 74, .18);
+    }
+
+    .garden .learning-path {
+      position: absolute;
+      inset: 46px;
+      border: 2px dashed rgba(91, 117, 96, .25);
+      border-radius: 32px 32px 10px 32px;
+    }
+
+    .garden .path-step {
+      position: absolute;
+      display: grid;
+      width: 118px;
+      height: 118px;
+      place-items: center;
+      border-radius: 34px;
+      background: rgba(255, 255, 255, .78);
+      color: #42604f;
+      font-weight: 900;
+      box-shadow: 0 14px 28px rgba(79, 107, 87, .14);
+    }
+
+    .garden .path-step.one {
+      top: 28px;
+      left: 36px;
+    }
+
+    .garden .path-step.two {
+      top: 154px;
+      right: 70px;
+      background: rgba(255, 231, 199, .86);
+    }
+
+    .garden .path-step.three {
+      left: 118px;
+      bottom: 68px;
+      background: rgba(218, 234, 224, .88);
+    }
+
+    .garden .tiny-note {
+      border-radius: 28px;
+      background: #fff8ea;
+      box-shadow: 0 18px 36px rgba(73, 102, 83, .14);
+    }
+
+    .garden .support-card,
+    .garden .article-card {
+      border: 1px solid rgba(78, 104, 89, .12);
+      border-radius: 30px 30px 12px 30px;
+      padding: 22px;
+      background: rgba(255, 255, 255, .58);
+      box-shadow: 0 16px 34px rgba(83, 95, 74, .11);
+    }
+
+    .garden .article-card {
+      min-height: 194px;
+    }
+
+    @media (max-width: 980px) {
+      .demo-shell {
+        padding: 14px;
+      }
+
+      .demo-header,
+      .hero-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .variant-tabs {
+        overflow-x: auto;
+        justify-self: start;
+        width: 100%;
+        border-radius: 18px;
+      }
+
+      .variant-tabs button {
+        flex: 1 0 auto;
+      }
+
+      .links {
+        display: none;
+      }
+
+      .hero-title {
+        font-size: clamp(44px, 14vw, 76px);
+      }
+
+      .support-row,
+      .article-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .section-heading {
+        display: block;
+      }
+
+      .section-heading p {
+        margin-top: 12px;
+      }
+
+      .visual-panel {
+        min-height: 420px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="demo-shell">
+    <header class="demo-header">
+      <div>
+        <p class="eyebrow">Maan Special Education Center · design exploration</p>
+        <h1 class="demo-title">Three calmer directions for the website.</h1>
+        <p class="demo-intent">
+          Each option uses the same core content: individualized education, therapy support, family guidance, and a practical blog.
+        </p>
+      </div>
+
+      <nav class="variant-tabs" aria-label="Design variants">
+        <button type="button" aria-selected="true" data-target="neumo">01 Pastel Neumorphic</button>
+        <button type="button" aria-selected="false" data-target="editorial">02 Editorial Clinical</button>
+        <button type="button" aria-selected="false" data-target="garden">03 Sensory Garden</button>
+      </nav>
+    </header>
+
+    <section class="canvas">
+      <article class="direction neumo active" id="neumo">
+        <nav class="site-nav" aria-label="Pastel navigation">
+          <a class="brand" href="#">
+            <span class="brand-mark">M</span>
+            <span class="brand-copy">
+              <strong>Maan</strong>
+              <span class="brand-subtitle">Special Education Center</span>
+            </span>
+          </a>
+          <div class="links">
+            <a href="#">Programs</a>
+            <a href="#">Family Support</a>
+            <a href="#">Blog</a>
+            <a href="#">عربي</a>
+          </div>
+        </nav>
+
+        <div class="hero-grid">
+          <div>
+            <span class="kicker">Calm individualized care</span>
+            <h2 class="hero-title">A softer start for every child’s progress.</h2>
+            <p class="hero-copy">
+              Maan supports communication, independence, social confidence, and school readiness through coordinated education and therapy plans.
+            </p>
+            <div class="hero-actions">
+              <a class="pill-button primary" href="#">Explore programs</a>
+              <a class="pill-button secondary" href="#">Read family resources</a>
+            </div>
+          </div>
+
+          <div class="visual-panel" aria-label="Neumorphic care model">
+            <div class="soft-orbit one">Assess</div>
+            <div class="soft-orbit two">Support</div>
+            <div class="soft-orbit three">Grow together</div>
+            <p class="tiny-note"><strong>Design role</strong> Soft depth, low contrast, and pastel surfaces make the site feel calm before asking families to act.</p>
+          </div>
+        </div>
+
+        <div class="support-row">
+          <div class="support-card"><h3>Individual plans</h3><p>Assessment-led goals with steady progress reviews.</p></div>
+          <div class="support-card"><h3>Communication</h3><p>Spoken, social, and assisted communication support.</p></div>
+          <div class="support-card"><h3>Occupational therapy</h3><p>Sensory regulation and daily living skills.</p></div>
+          <div class="support-card"><h3>Family guidance</h3><p>Home routines that keep care consistent.</p></div>
+        </div>
+
+        <div class="section-heading">
+          <h2>Guidance that feels practical, not clinical.</h2>
+          <p>Best when Maan wants the public site to feel welcoming, low-pressure, and family-first.</p>
+        </div>
+        <div class="article-grid">
+          <div class="article-card"><div class="article-meta"><span>Family Support</span><span>4 min</span></div><h3>Building Confident Routines at Home</h3><p>Simple ways families can create predictable routines.</p></div>
+          <div class="article-card"><div class="article-meta"><span>Assessment</span><span>5 min</span></div><h3>How Early Assessment Guides Support</h3><p>Observation and family input shape an individualized plan.</p></div>
+          <div class="article-card"><div class="article-meta"><span>Therapy</span><span>3 min</span></div><h3>Supporting Communication Through Play</h3><p>Structured play creates natural chances to communicate.</p></div>
+        </div>
+      </article>
+
+      <article class="direction editorial" id="editorial">
+        <nav class="site-nav" aria-label="Editorial navigation">
+          <a class="brand" href="#">
+            <span class="brand-mark">M</span>
+            <span class="brand-copy">
+              <strong>Maan</strong>
+              <span class="brand-subtitle">Special Education Center</span>
+            </span>
+          </a>
+          <div class="links">
+            <a href="#">Assessment</a>
+            <a href="#">Programs</a>
+            <a href="#">Resources</a>
+            <a href="#">عربي</a>
+          </div>
+        </nav>
+
+        <div class="hero-grid">
+          <div>
+            <span class="kicker">Evidence-led support</span>
+            <h2 class="hero-title">Clear plans for children, families, and care teams.</h2>
+            <p class="hero-copy">
+              A measured, editorial interface that foregrounds trust, process, and professional clarity without becoming cold.
+            </p>
+            <div class="hero-actions">
+              <a class="pill-button primary" href="#">Book an intake call</a>
+              <a class="pill-button secondary" href="#">View support pathway</a>
+            </div>
+          </div>
+
+          <div class="visual-panel" aria-label="Classroom support image">
+            <p class="tiny-note"><strong>Design role</strong> Serif typography, grid discipline, and a documentary image make the center feel credible and established.</p>
+          </div>
+        </div>
+
+        <div class="support-row">
+          <div class="support-card"><h3>1. Intake</h3><p>Understand strengths, routines, and current support needs.</p></div>
+          <div class="support-card"><h3>2. Assessment</h3><p>Observe learning, communication, sensory, and participation patterns.</p></div>
+          <div class="support-card"><h3>3. Plan</h3><p>Set measurable goals that caregivers can understand.</p></div>
+          <div class="support-card"><h3>4. Review</h3><p>Adjust the plan through short progress cycles.</p></div>
+        </div>
+
+        <div class="section-heading">
+          <h2>A public site with the confidence of a care report.</h2>
+          <p>Best when Maan wants a more institutional presence for partners, referrals, and specialist credibility.</p>
+        </div>
+        <div class="article-grid">
+          <div class="article-card"><div class="article-meta"><span>Family Support</span><span>April 18</span></div><h3>Building Confident Routines at Home</h3><p>Practical routines, visual cues, and shared prompts.</p></div>
+          <div class="article-card"><div class="article-meta"><span>Assessment</span><span>March 26</span></div><h3>How Early Assessment Guides Support</h3><p>How observation becomes a usable support plan.</p></div>
+          <div class="article-card"><div class="article-meta"><span>Therapy</span><span>Feb 14</span></div><h3>Supporting Communication Through Play</h3><p>Play as a setting for language and social confidence.</p></div>
+        </div>
+      </article>
+
+      <article class="direction garden" id="garden">
+        <nav class="site-nav" aria-label="Sensory garden navigation">
+          <a class="brand" href="#">
+            <span class="brand-mark">M</span>
+            <span class="brand-copy">
+              <strong>Maan</strong>
+              <span class="brand-subtitle">Special Education Center</span>
+            </span>
+          </a>
+          <div class="links">
+            <a href="#">Programs</a>
+            <a href="#">How it works</a>
+            <a href="#">Blog</a>
+            <a href="#">عربي</a>
+          </div>
+        </nav>
+
+        <div class="hero-grid">
+          <div>
+            <span class="kicker">Sensory-aware learning</span>
+            <h2 class="hero-title">A learning path children can enter at their own pace.</h2>
+            <p class="hero-copy">
+              Warm garden colors and organic shapes create a friendly site that still keeps the structure families need.
+            </p>
+            <div class="hero-actions">
+              <a class="pill-button primary" href="#">Explore the pathway</a>
+              <a class="pill-button secondary" href="#">Meet the care areas</a>
+            </div>
+          </div>
+
+          <div class="visual-panel" aria-label="Sensory learning path">
+            <div class="learning-path"></div>
+            <div class="path-step one">Notice</div>
+            <div class="path-step two">Practice</div>
+            <div class="path-step three">Repeat</div>
+            <p class="tiny-note"><strong>Design role</strong> Organic geometry gives the center warmth while the path motif keeps the experience organized.</p>
+          </div>
+        </div>
+
+        <div class="support-row">
+          <div class="support-card"><h3>Classroom readiness</h3><p>Skills for participation, transitions, and focused learning.</p></div>
+          <div class="support-card"><h3>Communication play</h3><p>Play-based prompts for choice, turn-taking, and expression.</p></div>
+          <div class="support-card"><h3>Sensory regulation</h3><p>Strategies for calm bodies and flexible routines.</p></div>
+          <div class="support-card"><h3>Caregiver coaching</h3><p>Simple techniques families can repeat at home.</p></div>
+        </div>
+
+        <div class="section-heading">
+          <h2>Warm, memorable, and still easy to navigate.</h2>
+          <p>Best when Maan wants to feel distinctive and child-centered without becoming playful in a way that reduces trust.</p>
+        </div>
+        <div class="article-grid">
+          <div class="article-card"><div class="article-meta"><span>Routine</span><span>4 min</span></div><h3>Building Confident Routines at Home</h3><p>Small repeatable steps that help children know what comes next.</p></div>
+          <div class="article-card"><div class="article-meta"><span>Assessment</span><span>5 min</span></div><h3>How Early Assessment Guides Support</h3><p>Translating observation into practical next steps.</p></div>
+          <div class="article-card"><div class="article-meta"><span>Play</span><span>3 min</span></div><h3>Supporting Communication Through Play</h3><p>Using favorite games to build communication confidence.</p></div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const buttons = Array.from(document.querySelectorAll('.variant-tabs button'))
+    const directions = Array.from(document.querySelectorAll('.direction'))
+
+    buttons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const target = button.dataset.target
+
+        buttons.forEach(item => item.setAttribute('aria-selected', String(item === button)))
+        directions.forEach(direction => direction.classList.toggle('active', direction.id === target))
+      })
+    })
+  </script>
+</body>
+</html>

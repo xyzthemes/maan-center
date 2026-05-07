@@ -1,5 +1,6 @@
 <script setup lang="ts">
-const { getPosts } = useMaanContent()
+const { getPageSeo, getPosts } = useMaanContent()
+const { getFormBlockById } = useMaanForms()
 
 const { data: posts } = await useAsyncData<MaanPost[]>('maan-home-posts', async () => {
   const items = await getPosts()
@@ -8,6 +9,11 @@ const { data: posts } = await useAsyncData<MaanPost[]>('maan-home-posts', async 
 }, {
   default: () => []
 })
+const { data: pageSeo } = await useAsyncData<MaanSeo>('maan-page-seo-home', () => getPageSeo('/', {
+  title: 'Maan Special Education Center',
+  description: 'Maan Special Education Center provides individualized learning, therapy, and family support for children with diverse needs.'
+}))
+const { data: resourcesForm } = await useAsyncData<MaanFormBlock | undefined>('maan-home-resources-form', () => getFormBlockById('1419faec-e263-431c-bd5f-a57f394c39f6'))
 
 const services = [
   {
@@ -39,17 +45,24 @@ const pathways = [
   'Progress review with families'
 ]
 
-useSeoMeta({
-  title: 'Maan Special Education Center',
-  description: 'Maan Special Education Center provides individualized learning, therapy, and family support for children with diverse needs.',
-  ogTitle: 'Maan Special Education Center',
-  ogDescription: 'Individualized education, therapy, and family support for children with diverse learning needs.'
+const resolvedSeo = useMaanSeo({
+  seo: pageSeo.value || undefined,
+  fallback: {
+    title: 'Maan Special Education Center',
+    description: 'Maan Special Education Center provides individualized learning, therapy, and family support for children with diverse needs.'
+  },
+  ogFallback: {
+    title: 'Learning support shaped around every child.',
+    description: 'Individualized education, therapy, and family support for children with diverse learning needs.',
+    eyebrow: 'Special Education Center',
+    locale: 'en'
+  }
 })
 
 useSchemaOrg([
   defineWebPage({
-    name: 'Maan Special Education Center',
-    description: 'Maan Special Education Center provides individualized learning, therapy, and family support for children with diverse needs.',
+    name: resolvedSeo.title,
+    description: resolvedSeo.description,
     inLanguage: 'en'
   }),
   defineItemList({
@@ -232,6 +245,11 @@ useSchemaOrg([
       </div>
     </UContainer>
 
+    <MaanDirectusForm
+      :block="resourcesForm"
+      locale="en"
+    />
+
     <UPageSection class="maan-cta-section">
       <UPageCTA
         title="Start with a conversation about your child’s needs."
@@ -239,7 +257,7 @@ useSchemaOrg([
         variant="subtle"
         :links="[{
           label: 'Contact the center',
-          to: 'mailto:info@maan-center.example',
+          to: '/contact',
           icon: 'i-lucide-mail',
           color: 'primary'
         }, {

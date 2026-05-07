@@ -33,12 +33,15 @@ Optional:
 
 ```bash
 NUXT_PUBLIC_DIRECTUS_URL=https://your-directus.example
+DIRECTUS_SERVER_TOKEN=directus-token-with-form-submission-create-access
 NUXT_SITE_URL=https://your-domain.example
 NUXT_SITE_INDEXABLE=true
 NUXT_OG_IMAGE_SECRET=generated-secret
 ```
 
 Leave `NUXT_PUBLIC_DIRECTUS_URL` blank for a public template unless the template also provisions a Directus service. Blank deployments use the bundled fallback posts and do not call Maan's production Directus backend.
+
+`DIRECTUS_SERVER_TOKEN` is server-only and should not be prefixed with `NUXT_PUBLIC_`. It is required for live form submissions when Directus keeps anonymous users from creating `form_submissions`, which is the safer default.
 
 If `NUXT_SITE_URL` is not set, the app will use Railway's `RAILWAY_PUBLIC_DOMAIN` when available. For local development, it falls back to `http://127.0.0.1:3000`.
 

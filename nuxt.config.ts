@@ -8,6 +8,9 @@ const siteDescription = 'Individualized education, therapy, and family support f
 const directusUrl = process.env.NUXT_PUBLIC_DIRECTUS_URL
   || process.env.DIRECTUS_URL
   || ''
+const directusToken = process.env.DIRECTUS_SERVER_TOKEN
+  || process.env.DIRECTUS_TOKEN
+  || ''
 const ogImageSecret = process.env.NUXT_OG_IMAGE_SECRET
 const indexable = process.env.NUXT_SITE_INDEXABLE
   ? process.env.NUXT_SITE_INDEXABLE === 'true'
@@ -32,6 +35,7 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    directusToken,
     public: {
       siteUrl,
       directus: {
@@ -52,6 +56,11 @@ export default defineNuxtConfig({
   },
 
   ogImage: {
+    defaults: {
+      width: 1200,
+      height: 630,
+      cacheMaxAgeSeconds: 60 * 60 * 24 * 7
+    },
     zeroRuntime: !ogImageSecret,
     security: ogImageSecret
       ? {
@@ -64,7 +73,7 @@ export default defineNuxtConfig({
   robots: {
     blockNonSeoBots: true,
     groups: [
-      { userAgent: '*', disallow: ['/design-demos/'] }
+      { userAgent: '*', disallow: ['/design-demos/', '/dashboard/'] }
     ]
   },
 

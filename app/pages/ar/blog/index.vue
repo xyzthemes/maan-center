@@ -1,19 +1,32 @@
 <script setup lang="ts">
-const { getPosts } = useMaanContent()
+const { getPageSeo, getPosts } = useMaanContent()
 
 const { data: posts } = await useAsyncData<MaanPost[]>('maan-blog-posts-ar', () => getPosts('ar'), {
   default: () => []
 })
-
-useSeoMeta({
+const { data: pageSeo } = await useAsyncData<MaanSeo>('maan-page-seo-blog-ar', () => getPageSeo('/ar/blog', {
   title: 'المدونة',
   description: 'إرشادات أسرية وتحديثات وموارد عملية من مركز معا للتعليم الخاص.'
+}))
+
+const resolvedSeo = useMaanSeo({
+  seo: pageSeo.value || undefined,
+  fallback: {
+    title: 'المدونة',
+    description: 'إرشادات أسرية وتحديثات وموارد عملية من مركز معا للتعليم الخاص.'
+  },
+  ogFallback: {
+    title: 'إرشادات عملية للأسر والمعلمين.',
+    description: 'مقالات حول خطط التعلم والدعم العلاجي والروتين المنزلي والتعليم الدامج.',
+    eyebrow: 'مدونة معا',
+    locale: 'ar'
+  }
 })
 
 useSchemaOrg([
   defineWebPage({
-    name: 'مدونة معا',
-    description: 'إرشادات أسرية وتحديثات وموارد عملية من مركز معا للتعليم الخاص.',
+    name: resolvedSeo.title,
+    description: resolvedSeo.description,
     inLanguage: 'ar'
   }),
   defineBreadcrumb({

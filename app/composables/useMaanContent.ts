@@ -8,6 +8,17 @@ export type MaanPost = {
   readTime: string
   image?: string
   content: string
+  seo?: MaanSeo
+}
+
+export type MaanSeo = {
+  title?: string
+  description?: string
+  ogImage?: string
+  noIndex?: boolean
+  noFollow?: boolean
+  canonicalUrl?: string
+  focusKeyphrase?: string
 }
 
 type DirectusPost = {
@@ -20,6 +31,25 @@ type DirectusPost = {
   published_at?: string
   date_created?: string
   status?: string
+  seo?: DirectusSeo
+}
+
+type DirectusPage = {
+  id: string
+  title?: string
+  permalink?: string
+  status?: string
+  seo?: DirectusSeo
+}
+
+type DirectusSeo = {
+  title?: string
+  meta_description?: string
+  og_image?: string | { id?: string }
+  no_index?: boolean
+  no_follow?: boolean
+  canonical_url?: string
+  focus_keyphrase?: string
 }
 
 const fallbackPostsEn: MaanPost[] = [
@@ -137,13 +167,24 @@ const fallbackPostsAr: MaanPost[] = [
 ]
 
 export const useMaanContent = () => {
-  const directusUrl = useDirectusUrl()
+  const config = useRuntimeConfig()
+  const directusUrl = computed(() => String(config.public.directus.url || '').replace(/\/$/, ''))
 
   const getAssetUrl = (asset?: string | { id?: string }) => {
     const id = typeof asset === 'string' ? asset : asset?.id
 
-    return id ? `${directusUrl}/assets/${id}` : undefined
+    return id && directusUrl.value ? `${directusUrl.value}/assets/${id}` : undefined
   }
+
+  const normalizeSeo = (seo?: DirectusSeo, fallback: Partial<MaanSeo> = {}): MaanSeo => ({
+    title: seo?.title || fallback.title,
+    description: seo?.meta_description || fallback.description,
+    ogImage: getAssetUrl(seo?.og_image) || fallback.ogImage,
+    noIndex: seo?.no_index ?? fallback.noIndex ?? false,
+    noFollow: seo?.no_follow ?? fallback.noFollow ?? false,
+    canonicalUrl: seo?.canonical_url || fallback.canonicalUrl,
+    focusKeyphrase: seo?.focus_keyphrase || fallback.focusKeyphrase
+  })
 
   const normalizePosts = (posts: DirectusPost[] = [], locale: 'en' | 'ar' = 'en') => {
     const relevantTerms = [
@@ -194,7 +235,12 @@ export const useMaanContent = () => {
           publishedAt: post.published_at || post.date_created || new Date().toISOString(),
           readTime: postLocale === 'ar' ? '٤ دقائق' : '4 min read',
           image: getAssetUrl(post.image),
-          content: post.content || '<p>More details will be available soon.</p>'
+          content: post.content || '<p>More details will be available soon.</p>',
+          seo: normalizeSeo(post.seo, {
+            title: post.title,
+            description: post.description || 'Insights and updates from Maan Special Education Center.',
+            ogImage: getAssetUrl(post.image)
+          })
         }
 
         return normalizedPost
@@ -205,6 +251,10 @@ export const useMaanContent = () => {
   }
 
   const getPosts = async (locale: 'en' | 'ar' = 'en') => {
+    if (!directusUrl.value) {
+      return locale === 'ar' ? fallbackPostsAr : fallbackPostsEn
+    }
+
     try {
       const { getItems } = useDirectusItems()
       const posts = await getItems<DirectusPost>({
@@ -212,7 +262,7 @@ export const useMaanContent = () => {
         params: {
           filter: { status: { _eq: 'published' } },
           sort: ['-published_at'],
-          fields: ['id', 'slug', 'title', 'description', 'content', 'image', 'published_at', 'date_created', 'status'],
+          fields: ['id', 'slug', 'title', 'description', 'content', 'image', 'published_at', 'date_created', 'status', 'seo'],
           limit: 6
         }
       })
@@ -229,11 +279,42 @@ export const useMaanContent = () => {
     return posts.find(post => post.slug === slug)
   }
 
+  const getPageSeo = async (permalink: string, fallback: Partial<MaanSeo> = {}) => {
+    if (!directusUrl.value) {
+      return normalizeSeo(undefined, fallback)
+    }
+
+    try {
+      const { getItems } = useDirectusItems()
+      const pages = await getItems<DirectusPage>({
+        collection: 'pages',
+        params: {
+          filter: {
+            status: { _eq: 'published' },
+            permalink: { _eq: permalink }
+          },
+          fields: ['id', 'title', 'permalink', 'status', 'seo'],
+          limit: 1
+        }
+      })
+      const page = pages[0]
+
+      return normalizeSeo(page?.seo, {
+        ...fallback,
+        title: page?.title || fallback.title
+      })
+    } catch {
+      return normalizeSeo(undefined, fallback)
+    }
+  }
+
   return {
     fallbackPosts: fallbackPostsEn,
     fallbackPostsAr,
     getAssetUrl,
+    normalizeSeo,
     getPosts,
-    getPostBySlug
+    getPostBySlug,
+    getPageSeo
   }
 }

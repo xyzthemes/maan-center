@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { getPosts } = useMaanContent()
+const { getPageSeo, getPosts } = useMaanContent()
 
 const { data: posts } = await useAsyncData<MaanPost[]>('maan-home-posts-ar', async () => {
   const items = await getPosts('ar')
@@ -8,6 +8,10 @@ const { data: posts } = await useAsyncData<MaanPost[]>('maan-home-posts-ar', asy
 }, {
   default: () => []
 })
+const { data: pageSeo } = await useAsyncData<MaanSeo>('maan-page-seo-home-ar', () => getPageSeo('/ar', {
+  title: 'مركز معا للتعليم الخاص',
+  description: 'مركز معا للتعليم الخاص يقدم خططا تعليمية وعلاجية ودعما للأسرة للأطفال ذوي الاحتياجات التعليمية المتنوعة.'
+}))
 
 const services = [
   {
@@ -39,15 +43,24 @@ const pathways = [
   'مراجعة التقدم مع الأسرة'
 ]
 
-useSeoMeta({
-  title: 'مركز معا للتعليم الخاص',
-  description: 'مركز معا للتعليم الخاص يقدم خططا تعليمية وعلاجية ودعما للأسرة للأطفال ذوي الاحتياجات التعليمية المتنوعة.'
+const resolvedSeo = useMaanSeo({
+  seo: pageSeo.value || undefined,
+  fallback: {
+    title: 'مركز معا للتعليم الخاص',
+    description: 'مركز معا للتعليم الخاص يقدم خططا تعليمية وعلاجية ودعما للأسرة للأطفال ذوي الاحتياجات التعليمية المتنوعة.'
+  },
+  ogFallback: {
+    title: 'دعم تعليمي مصمم حول احتياجات كل طفل.',
+    description: 'خطط تعليمية وعلاجية ودعم للأسرة للأطفال ذوي الاحتياجات التعليمية المتنوعة.',
+    eyebrow: 'مركز للتعليم الخاص',
+    locale: 'ar'
+  }
 })
 
 useSchemaOrg([
   defineWebPage({
-    name: 'مركز معا للتعليم الخاص',
-    description: 'مركز معا للتعليم الخاص يقدم خططا تعليمية وعلاجية ودعما للأسرة للأطفال ذوي الاحتياجات التعليمية المتنوعة.',
+    name: resolvedSeo.title,
+    description: resolvedSeo.description,
     inLanguage: 'ar'
   }),
   defineItemList({

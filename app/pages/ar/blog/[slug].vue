@@ -12,19 +12,28 @@ if (!post.value) {
   })
 }
 
-useSeoMeta({
-  title: () => post.value?.title ?? 'المدونة',
-  description: () => post.value?.description ?? 'إرشادات من مركز معا للتعليم الخاص.',
+const resolvedSeo = useMaanSeo({
+  seo: post.value.seo,
+  fallback: {
+    title: post.value.title,
+    description: post.value.description
+  },
+  ogFallback: {
+    title: post.value.title,
+    description: post.value.description,
+    eyebrow: post.value.category,
+    locale: 'ar'
+  },
   ogType: 'article',
-  articlePublishedTime: () => post.value?.publishedAt
+  articlePublishedTime: post.value.publishedAt
 })
 
 useSchemaOrg([
   defineArticle({
-    headline: post.value.title,
-    description: post.value.description,
+    headline: resolvedSeo.title,
+    description: resolvedSeo.description,
     datePublished: post.value.publishedAt,
-    image: post.value.image,
+    image: resolvedSeo.ogImage || post.value.image,
     author: {
       name: 'مركز معا للتعليم الخاص'
     }

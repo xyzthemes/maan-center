@@ -5,8 +5,14 @@ const isArabic = computed(() => route.path.startsWith('/ar'))
 const siteUrl = computed(() => String(config.public.siteUrl || 'http://127.0.0.1:3000').replace(/\/$/, ''))
 const canonicalPath = computed(() => route.path.replace(/\/$/, '') || '/')
 const pageUrl = computed(() => `${siteUrl.value}${canonicalPath.value}`)
+
+updateSiteConfig({
+  currentLocale: () => isArabic.value ? 'ar' : 'en'
+})
+
 const alternatePaths = computed(() => {
   const path = canonicalPath.value
+  const withoutArPrefix = path.replace(/^\/ar(?=\/|$)/, '') || '/'
 
   if (path === '/') {
     return { en: '/', ar: '/ar' }
@@ -24,6 +30,30 @@ const alternatePaths = computed(() => {
     return { en: '/blog', ar: '/ar/blog' }
   }
 
+  if (path === '/contact') {
+    return { en: '/contact', ar: '/ar/contact' }
+  }
+
+  if (path === '/ar/contact') {
+    return { en: '/contact', ar: '/ar/contact' }
+  }
+
+  if (path === '/dashboard') {
+    return { en: '/dashboard', ar: '/ar/dashboard' }
+  }
+
+  if (path === '/ar/dashboard') {
+    return { en: '/dashboard', ar: '/ar/dashboard' }
+  }
+
+  if (path === '/dashboard/login') {
+    return { en: '/dashboard/login', ar: '/ar/dashboard/login' }
+  }
+
+  if (path === '/ar/dashboard/login') {
+    return { en: '/dashboard/login', ar: '/ar/dashboard/login' }
+  }
+
   if (path.startsWith('/blog/')) {
     const slug = path.split('/').pop()
 
@@ -36,8 +66,16 @@ const alternatePaths = computed(() => {
     return { en: `/blog/${slug}`, ar: path }
   }
 
-  return { en: '/', ar: '/ar' }
+  return {
+    en: withoutArPrefix,
+    ar: path.startsWith('/ar') ? path : `/ar${path}`
+  }
 })
+const switchLocale = (path: string) => {
+  if (import.meta.client) {
+    window.location.assign(path)
+  }
+}
 const navigation = computed(() => isArabic.value
   ? [{
       label: 'الرئيسية',
@@ -48,6 +86,9 @@ const navigation = computed(() => isArabic.value
     }, {
       label: 'المدونة',
       to: '/ar/blog'
+    }, {
+      label: 'تواصل معنا',
+      to: '/ar/contact'
     }]
   : [{
       label: 'Home',
@@ -58,23 +99,28 @@ const navigation = computed(() => isArabic.value
     }, {
       label: 'Blog',
       to: '/blog'
+    }, {
+      label: 'Contact',
+      to: '/contact'
     }])
 
-useHead({
+useHead(() => ({
   meta: [
     { name: 'viewport', content: 'width=device-width, initial-scale=1' }
   ],
   link: [
     { rel: 'icon', href: '/favicon.ico' },
-    { rel: 'canonical', href: () => pageUrl.value },
-    { rel: 'alternate', hreflang: 'en', href: () => `${siteUrl.value}${alternatePaths.value.en}` },
-    { rel: 'alternate', hreflang: 'ar', href: () => `${siteUrl.value}${alternatePaths.value.ar}` },
-    { rel: 'alternate', hreflang: 'x-default', href: () => `${siteUrl.value}${alternatePaths.value.en}` }
+    { key: 'canonical', rel: 'canonical', href: pageUrl.value },
+    { rel: 'alternate', hreflang: 'en', href: `${siteUrl.value}${alternatePaths.value.en}` },
+    { rel: 'alternate', hreflang: 'ar', href: `${siteUrl.value}${alternatePaths.value.ar}` },
+    { rel: 'alternate', hreflang: 'x-default', href: `${siteUrl.value}${alternatePaths.value.en}` }
   ],
   htmlAttrs: {
-    lang: () => isArabic.value ? 'ar' : 'en',
-    dir: () => isArabic.value ? 'rtl' : 'ltr'
+    lang: isArabic.value ? 'ar' : 'en',
+    dir: isArabic.value ? 'rtl' : 'ltr'
   }
+}), {
+  tagPriority: 'critical'
 })
 
 useSeoMeta({
@@ -106,7 +152,7 @@ useSchemaOrg([
 </script>
 
 <template>
-  <UApp>
+  <UApp :dir="isArabic ? 'rtl' : 'ltr'">
     <UHeader class="maan-header">
       <template #left>
         <NuxtLink
@@ -126,18 +172,10 @@ useSchemaOrg([
       <template #right>
         <UColorModeButton />
         <UButton
-          to="mailto:info@maan-center.example"
-          icon="i-lucide-mail"
-          color="neutral"
-          variant="subtle"
-          class="hidden sm:inline-flex"
-        >
-          {{ isArabic ? 'تواصل معنا' : 'Contact' }}
-        </UButton>
-        <UButton
-          :to="isArabic ? '/' : '/ar'"
+          :href="isArabic ? alternatePaths.en : alternatePaths.ar"
           color="neutral"
           variant="ghost"
+          @click.prevent="switchLocale(isArabic ? alternatePaths.en : alternatePaths.ar)"
         >
           {{ isArabic ? 'EN' : 'عربي' }}
         </UButton>

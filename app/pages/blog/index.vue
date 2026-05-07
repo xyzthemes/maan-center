@@ -1,19 +1,34 @@
 <script setup lang="ts">
-const { getPosts } = useMaanContent()
+const { getPageSeo, getPosts } = useMaanContent()
+const { getFormBlockById } = useMaanForms()
 
 const { data: posts } = await useAsyncData<MaanPost[]>('maan-blog-posts', () => getPosts('en'), {
   default: () => []
 })
-
-useSeoMeta({
+const { data: pageSeo } = await useAsyncData<MaanSeo>('maan-page-seo-blog', () => getPageSeo('/blog', {
   title: 'Blog',
   description: 'Family guidance, center updates, and practical learning resources from Maan Special Education Center.'
+}))
+const { data: resourcesForm } = await useAsyncData<MaanFormBlock | undefined>('maan-blog-resources-form', () => getFormBlockById('3e262b2d-48fc-4816-b5e8-c991817d56fc'))
+
+const resolvedSeo = useMaanSeo({
+  seo: pageSeo.value || undefined,
+  fallback: {
+    title: 'Blog',
+    description: 'Family guidance, center updates, and practical learning resources from Maan Special Education Center.'
+  },
+  ogFallback: {
+    title: 'Practical guidance for families and educators.',
+    description: 'Learning plans, therapy support, home routines, and inclusive education from Maan Special Education Center.',
+    eyebrow: 'Maan Blog',
+    locale: 'en'
+  }
 })
 
 useSchemaOrg([
   defineWebPage({
-    name: 'Blog',
-    description: 'Family guidance, center updates, and practical learning resources from Maan Special Education Center.',
+    name: resolvedSeo.title,
+    description: resolvedSeo.description,
     inLanguage: 'en'
   }),
   defineBreadcrumb({
@@ -89,5 +104,10 @@ useSchemaOrg([
         </article>
       </div>
     </UContainer>
+
+    <MaanDirectusForm
+      :block="resourcesForm"
+      locale="en"
+    />
   </div>
 </template>

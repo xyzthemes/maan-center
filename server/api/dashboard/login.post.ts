@@ -31,7 +31,7 @@ export default defineEventHandler(async (event): Promise<{ user?: DashboardDirec
     if (!response.data?.access_token) {
       throw createError({
         statusCode: 401,
-        statusMessage: 'Directus did not return a session.'
+        statusMessage: 'Sign-in did not return a session.'
       })
     }
 
@@ -53,10 +53,10 @@ export default defineEventHandler(async (event): Promise<{ user?: DashboardDirec
       || fetchError.statusCode
       || fetchError.status
       || 401
-    const directusMessage = fetchError.data?.errors?.[0]?.message || fetchError.data?.message
+    const upstreamMessage = fetchError.data?.errors?.[0]?.message || fetchError.data?.message
     const statusMessage = statusCode === 401
-      ? 'Invalid Directus credentials.'
-      : fetchError.statusMessage || directusMessage || fetchError.message || 'Could not sign in with Directus.'
+      ? 'Invalid credentials.'
+      : fetchError.statusMessage || upstreamMessage || fetchError.message || 'Could not sign in.'
 
     throw createError({
       statusCode,

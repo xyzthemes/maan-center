@@ -32,7 +32,7 @@ export const getDashboardDirectusUrl = (event: H3Event) => {
   if (!directusUrl) {
     throw createError({
       statusCode: 503,
-      statusMessage: 'Directus is not configured.'
+      statusMessage: 'CMS is not configured.'
     })
   }
 
@@ -104,7 +104,7 @@ export const getDashboardAccessToken = async (event: H3Event) => {
   if (!token) {
     throw createError({
       statusCode: 401,
-      statusMessage: 'Sign in with Directus to continue.'
+      statusMessage: 'Sign in to continue.'
     })
   }
 
@@ -120,12 +120,12 @@ const toDashboardError = (error: unknown) => {
     message?: string
   }
   const statusCode = fetchError.response?.status || fetchError.statusCode || fetchError.status || 500
-  const message = fetchError.data?.errors?.[0]?.message || fetchError.message || 'Directus request failed.'
+  const message = fetchError.data?.errors?.[0]?.message || fetchError.message || 'CMS request failed.'
 
   return createError({
     statusCode,
     statusMessage: statusCode === 403
-      ? 'Your Directus role does not have permission for this action.'
+      ? 'Your role does not have permission for this action.'
       : message,
     data: fetchError.data
   })

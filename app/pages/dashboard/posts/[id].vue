@@ -1,0 +1,113 @@
+<script setup lang="ts">
+definePageMeta({
+  alias: ['/ar/dashboard/posts/:id'],
+  layout: 'dashboard'
+})
+
+const route = useRoute()
+const { t, isArabic } = useDashboardI18n()
+const { posts, loadPosts } = usePosts()
+const {
+  postForm,
+  saveError,
+  saveSuccess,
+  isSaving,
+  statusLabel,
+  editPost,
+  newPost,
+  savePost
+} = usePostForm(loadPosts)
+
+const id = computed(() => String(route.params.id))
+const isNew = computed(() => id.value === 'new')
+const notFound = ref(false)
+const backHref = computed(() => isArabic.value ? '/ar/dashboard/posts' : '/dashboard/posts')
+
+const primeForm = async () => {
+  notFound.value = false
+
+  if (isNew.value) {
+    newPost()
+
+    return
+  }
+
+  if (posts.value.length === 0) {
+    await loadPosts()
+  }
+
+  const post = posts.value.find(p => p.id === id.value)
+
+  if (!post) {
+    notFound.value = true
+
+    return
+  }
+
+  editPost(post)
+}
+
+const onSave = async () => {
+  const savedId = await savePost()
+
+  if (isNew.value && savedId) {
+    await navigateTo(isArabic.value ? `/ar/dashboard/posts/${savedId}` : `/dashboard/posts/${savedId}`, { replace: true })
+  }
+}
+
+watch(() => route.params.id, () => {
+  if (route.path.includes('/dashboard/posts/')) {
+    primeForm()
+  }
+}, { immediate: true })
+</script>
+
+<template>
+  <UDashboardPanel id="post-edit">
+    <template #header>
+      <UDashboardNavbar :title="isNew ? t.createPost : (postForm.title || t.editPost)">
+        <template #leading>
+          <UButton
+            :to="backHref"
+            icon="i-lucide-arrow-left"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            square
+            :aria-label="t.posts"
+            class="ltr:[&_.iconify]:rtl:rotate-180"
+          />
+        </template>
+        <template #right>
+          <UBadge
+            color="secondary"
+            variant="subtle"
+          >
+            {{ statusLabel(postForm.status) }}
+          </UBadge>
+        </template>
+      </UDashboardNavbar>
+    </template>
+
+    <template #body>
+      <UAlert
+        v-if="notFound"
+        color="error"
+        variant="soft"
+        :title="t.untitledPost"
+        :description="`#${id}`"
+        class="mb-4"
+      />
+
+      <PostEditorForm
+        v-else
+        v-model="postForm"
+        :is-saving="isSaving"
+        :save-error="saveError"
+        :save-success="saveSuccess"
+        @save="onSave"
+        @clear="primeForm"
+      />
+    </template>
+  </UDashboardPanel>
+</template>

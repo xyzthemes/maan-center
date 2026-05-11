@@ -145,8 +145,8 @@ const submit = async () => {
         </h2>
         <p class="mt-5 text-base leading-7 text-muted">
           {{ isArabic
-            ? 'تصل رسالتك مباشرة إلى فريق المركز وتُحفظ في نظام النماذج داخل Directus للمتابعة.'
-            : 'Your message is stored in Directus form submissions so the center team can review and follow up.' }}
+            ? 'تصل رسالتك مباشرة إلى فريق المركز ليقوم بمراجعتها والرد عليها.'
+            : 'Your message is delivered to the center team so they can review and follow up.' }}
         </p>
       </div>
 

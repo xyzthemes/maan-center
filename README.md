@@ -1,13 +1,13 @@
 # Maan Special Education Center
 
-A bilingual Nuxt website and blog for a special education center. The site uses Nuxt UI, Nuxt SEO, and Directus content, and is prepared for one-click deployment on Railway.
+A bilingual Nuxt website and blog for a special education center. The site uses Nuxt UI and Nuxt SEO, is backed by a headless CMS for posts, pages, and form submissions, and is prepared for one-click deployment on Railway.
 
 ## Stack
 
 - Nuxt 4
 - Nuxt UI
 - Nuxt SEO
-- Directus via `nuxt-directus`
+- Headless CMS for posts, pages, and form submissions
 - Railway Railpack deployment
 
 ## Deploy on Railway
@@ -32,16 +32,16 @@ Railway will read `railway.json`, which defines the Railpack builder, build comm
 Optional:
 
 ```bash
-NUXT_PUBLIC_DIRECTUS_URL=https://your-directus.example
-DIRECTUS_SERVER_TOKEN=directus-token-with-form-submission-create-access
+NUXT_PUBLIC_DIRECTUS_URL=https://your-cms.example
+DIRECTUS_SERVER_TOKEN=server-token-with-form-submission-create-access
 NUXT_SITE_URL=https://your-domain.example
 NUXT_SITE_INDEXABLE=true
 NUXT_OG_IMAGE_SECRET=generated-secret
 ```
 
-Leave `NUXT_PUBLIC_DIRECTUS_URL` blank for a public template unless the template also provisions a Directus service. Blank deployments use the bundled fallback posts and do not call Maan's production Directus backend.
+Leave `NUXT_PUBLIC_DIRECTUS_URL` blank for a public template unless the template also provisions its own CMS service. Blank deployments use the bundled fallback posts and do not call Maan's production CMS.
 
-`DIRECTUS_SERVER_TOKEN` is server-only and should not be prefixed with `NUXT_PUBLIC_`. It is required for live form submissions when Directus keeps anonymous users from creating `form_submissions`, which is the safer default.
+`DIRECTUS_SERVER_TOKEN` is server-only and should not be prefixed with `NUXT_PUBLIC_`. It is required for live form submissions when the CMS keeps anonymous users from creating `form_submissions`, which is the safer default.
 
 If `NUXT_SITE_URL` is not set, the app will use Railway's `RAILWAY_PUBLIC_DOMAIN` when available. For local development, it falls back to `http://127.0.0.1:3000`.
 
@@ -90,6 +90,6 @@ After creating the template, Railway gives you a template URL and template code.
 For a good public template listing, include:
 
 - A live demo Railway project.
-- A clear note that Directus is optional unless the template provisions its own CMS service.
+- A clear note that the CMS is optional unless the template provisions its own CMS service.
 - Screenshots of the English and Arabic pages.
 - A note that deployers can eject the template repo into their own GitHub account after deployment.

@@ -25,3 +25,6 @@ logs
 
 # Project-local MCP config can contain access tokens
 .vscode/mcp.json
+
+# Local scratchpad (one-off scripts, import artifacts, etc.)
+.tmp/

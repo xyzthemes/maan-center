@@ -42,17 +42,16 @@
 }
 
 body {
-  background:
+  background-color: var(--ui-bg);
+  background-image:
     radial-gradient(circle at 12% 6%, rgba(255, 225, 168, .38), transparent 28rem),
-    radial-gradient(circle at 88% 18%, rgba(207, 223, 195, .52), transparent 25rem),
-    linear-gradient(120deg, #fff9ea 0%, #f4f8ee 52%, #fbf8ef 100%);
+    radial-gradient(circle at 88% 18%, rgba(207, 223, 195, .52), transparent 25rem);
 }
 
 .dark body {
-  background:
-    radial-gradient(circle at 12% 6%, rgba(169, 112, 50, .18), transparent 28rem),
-    radial-gradient(circle at 88% 18%, rgba(108, 143, 120, .2), transparent 25rem),
-    linear-gradient(120deg, #191612 0%, #15231f 55%, #2d2924 100%);
+  background-image:
+    radial-gradient(circle at 12% 6%, rgba(169, 112, 50, .14), transparent 28rem),
+    radial-gradient(circle at 88% 18%, rgba(108, 143, 120, .16), transparent 25rem);
 }
 
 .maan-main {
@@ -69,13 +68,13 @@ body {
 
 .maan-header {
   border-bottom-color: color-mix(in srgb, var(--ui-primary) 18%, transparent);
-  background: color-mix(in srgb, var(--ui-bg) 82%, #fff9ea);
+  background: color-mix(in srgb, var(--ui-bg) 82%, var(--color-amber-50));
   backdrop-filter: blur(18px);
 }
 
 .maan-footer {
   border-top: 1px solid color-mix(in srgb, var(--ui-primary) 14%, transparent);
-  background: color-mix(in srgb, var(--ui-bg) 86%, #fff9ea);
+  background: color-mix(in srgb, var(--ui-bg) 86%, var(--color-amber-50));
 }
 
 .dark .maan-design-credit img {
@@ -93,7 +92,7 @@ body {
     radial-gradient(circle at 18% 10%, rgba(255, 225, 168, .65), transparent 20rem),
     radial-gradient(circle at 78% 18%, rgba(207, 223, 195, .82), transparent 24rem),
     radial-gradient(circle at 48% 82%, rgba(218, 198, 230, .34), transparent 22rem),
-    linear-gradient(120deg, #fff9ea 0%, #f4f8ee 52%, #fbf8ef 100%);
+    linear-gradient(120deg, var(--color-amber-50) 0%, var(--color-green-50) 52%, var(--color-stone-50) 100%);
   border-color: color-mix(in srgb, var(--ui-primary) 16%, transparent);
 }
 
@@ -102,7 +101,7 @@ body {
     radial-gradient(circle at 18% 10%, rgba(169, 112, 50, .22), transparent 20rem),
     radial-gradient(circle at 78% 18%, rgba(108, 143, 120, .26), transparent 24rem),
     radial-gradient(circle at 48% 82%, rgba(142, 113, 161, .14), transparent 22rem),
-    linear-gradient(120deg, #191612 0%, #15231f 52%, #2d2924 100%);
+    linear-gradient(120deg, var(--color-stone-950) 0%, var(--color-green-950) 52%, var(--color-stone-900) 100%);
 }
 
 .maan-hero-title {
@@ -125,7 +124,7 @@ body {
     radial-gradient(circle at 22% 17%, rgba(255, 225, 168, .9) 0 9%, transparent 10%),
     radial-gradient(circle at 82% 18%, rgba(207, 223, 195, .95) 0 12%, transparent 13%),
     radial-gradient(circle at 34% 78%, rgba(218, 198, 230, .62) 0 14%, transparent 15%),
-    color-mix(in srgb, var(--ui-bg) 88%, #fff9ea);
+    color-mix(in srgb, var(--ui-bg) 88%, var(--color-amber-50));
   box-shadow: 0 30px 70px color-mix(in srgb, var(--ui-primary) 18%, transparent);
 }
 
@@ -133,7 +132,7 @@ body {
   position: absolute;
   inset: 2rem 2rem auto;
   overflow: hidden;
-  border: 8px solid color-mix(in srgb, var(--ui-bg) 92%, #fff9ea);
+  border: 8px solid color-mix(in srgb, var(--ui-bg) 92%, var(--color-amber-50));
   border-radius: 2.25rem 2.25rem .85rem 2.25rem;
   box-shadow: 0 20px 46px color-mix(in srgb, var(--ui-primary) 20%, transparent);
 }
@@ -151,7 +150,7 @@ body {
   width: 7.25rem;
   height: 7.25rem;
   border-radius: 2rem;
-  background: color-mix(in srgb, var(--ui-bg) 84%, #fff9ea);
+  background: color-mix(in srgb, var(--ui-bg) 84%, var(--color-amber-50));
   color: var(--ui-primary);
   font-weight: 800;
   box-shadow: 0 16px 30px color-mix(in srgb, var(--ui-primary) 15%, transparent);
@@ -175,7 +174,7 @@ body {
   max-width: 19rem;
   border: 1px solid color-mix(in srgb, var(--ui-primary) 14%, transparent);
   border-radius: 1.75rem;
-  background: color-mix(in srgb, var(--ui-bg) 86%, #fff9ea);
+  background: color-mix(in srgb, var(--ui-bg) 86%, var(--color-amber-50));
   padding: 1.125rem;
   box-shadow: 0 18px 38px color-mix(in srgb, var(--ui-primary) 13%, transparent);
   backdrop-filter: blur(10px);
@@ -184,7 +183,7 @@ body {
 .maan-garden-card {
   border: 1px solid color-mix(in srgb, var(--ui-primary) 14%, transparent);
   border-radius: 1.875rem 1.875rem .875rem 1.875rem;
-  background: color-mix(in srgb, var(--ui-bg) 86%, #fff9ea);
+  background: color-mix(in srgb, var(--ui-bg) 86%, var(--color-amber-50));
   box-shadow: 0 16px 34px color-mix(in srgb, var(--ui-primary) 10%, transparent);
 }
 
@@ -197,26 +196,28 @@ body {
   background:
     radial-gradient(circle at 12% 18%, rgba(255, 225, 168, .38), transparent 20rem),
     radial-gradient(circle at 86% 12%, rgba(207, 223, 195, .72), transparent 22rem),
-    linear-gradient(120deg, color-mix(in srgb, var(--ui-bg) 88%, #fff9ea), color-mix(in srgb, var(--ui-bg) 84%, #f4f8ee));
+    linear-gradient(120deg, color-mix(in srgb, var(--ui-bg) 88%, var(--color-amber-50)), color-mix(in srgb, var(--ui-bg) 84%, var(--color-green-50)));
 }
 
 .dark .maan-form-section {
   background:
     radial-gradient(circle at 12% 18%, rgba(169, 112, 50, .14), transparent 20rem),
     radial-gradient(circle at 86% 12%, rgba(108, 143, 120, .18), transparent 22rem),
-    linear-gradient(120deg, #191612, #15231f);
+    linear-gradient(120deg, var(--color-stone-950), var(--color-green-950));
 }
 
 .maan-form-card {
   border: 1px solid color-mix(in srgb, var(--ui-primary) 14%, transparent);
   border-radius: 2rem 2rem 1rem 2rem;
-  background: color-mix(in srgb, var(--ui-bg) 90%, #fff9ea);
+  background: color-mix(in srgb, var(--ui-bg) 90%, var(--color-amber-50));
   box-shadow:
     16px 16px 34px color-mix(in srgb, var(--ui-primary) 10%, transparent),
     -12px -12px 28px color-mix(in srgb, white 74%, transparent);
 }
 
 .dark .maan-form-card {
+  border-color: color-mix(in srgb, var(--ui-primary) 22%, transparent);
+  background: color-mix(in srgb, var(--ui-bg) 88%, var(--color-amber-950));
   box-shadow:
     16px 16px 34px rgba(0, 0, 0, .24),
     -10px -10px 24px rgba(255, 255, 255, .03);
@@ -226,12 +227,21 @@ body {
   width: 100%;
   border: 1px solid color-mix(in srgb, var(--ui-primary) 14%, transparent);
   border-radius: 1.1rem;
-  background: color-mix(in srgb, var(--ui-bg) 94%, #fff9ea);
+  background: color-mix(in srgb, var(--ui-bg) 94%, var(--color-amber-50));
   color: var(--ui-text-highlighted);
   line-height: 1.5;
   outline: none;
   padding: .85rem 1rem;
   transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.dark .maan-form-input {
+  border-color: color-mix(in srgb, var(--ui-primary) 24%, transparent);
+  background: color-mix(in srgb, var(--ui-bg) 92%, var(--color-amber-950));
+}
+
+.maan-form-input::placeholder {
+  color: var(--ui-text-muted);
 }
 
 .maan-form-input:focus {
@@ -243,9 +253,14 @@ body {
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--ui-primary) 14%, transparent);
   border-radius: 1.1rem;
-  background: color-mix(in srgb, var(--ui-bg) 94%, #fff9ea);
+  background: color-mix(in srgb, var(--ui-bg) 94%, var(--color-amber-50));
   color: var(--ui-text-highlighted);
   transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.dark .maan-dashboard-editor {
+  border-color: color-mix(in srgb, var(--ui-primary) 24%, transparent);
+  background: color-mix(in srgb, var(--ui-bg) 92%, var(--color-amber-950));
 }
 
 .maan-dashboard-editor:focus-within {
@@ -303,7 +318,7 @@ body {
   gap: .7rem;
   border: 1px solid color-mix(in srgb, var(--ui-primary) 12%, transparent);
   border-radius: 1rem;
-  background: color-mix(in srgb, var(--ui-bg) 90%, #fff9ea);
+  background: color-mix(in srgb, var(--ui-bg) 90%, var(--color-amber-50));
   color: var(--ui-text);
   cursor: pointer;
   padding: .75rem .9rem;
@@ -323,7 +338,7 @@ body {
   border-color: color-mix(in srgb, var(--ui-primary) 14%, transparent);
   background:
     radial-gradient(circle at 12% 20%, rgba(255, 225, 168, .32), transparent 18rem),
-    linear-gradient(120deg, color-mix(in srgb, var(--ui-bg) 88%, #fff9ea), color-mix(in srgb, var(--ui-bg) 82%, #f4f8ee));
+    linear-gradient(120deg, color-mix(in srgb, var(--ui-bg) 88%, var(--color-amber-50)), color-mix(in srgb, var(--ui-bg) 82%, var(--color-green-50)));
 }
 
 .maan-blog-hero,
@@ -332,7 +347,7 @@ body {
   background:
     radial-gradient(circle at 12% 12%, rgba(255, 225, 168, .5), transparent 18rem),
     radial-gradient(circle at 88% 8%, rgba(207, 223, 195, .74), transparent 20rem),
-    linear-gradient(120deg, #fff9ea, #f4f8ee);
+    linear-gradient(120deg, var(--color-amber-50), var(--color-green-50));
 }
 
 .dark .maan-blog-hero,
@@ -341,7 +356,7 @@ body {
   background:
     radial-gradient(circle at 12% 12%, rgba(169, 112, 50, .16), transparent 18rem),
     radial-gradient(circle at 88% 8%, rgba(108, 143, 120, .2), transparent 20rem),
-    linear-gradient(120deg, #191612, #15231f);
+    linear-gradient(120deg, var(--color-stone-950), var(--color-green-950));
 }
 
 .maan-programs [data-slot="item"],
@@ -354,7 +369,7 @@ body {
 .maan-prose-card {
   border: 1px solid color-mix(in srgb, var(--ui-primary) 12%, transparent);
   border-radius: 2rem 2rem 1rem 2rem;
-  background: color-mix(in srgb, var(--ui-bg) 91%, #fff9ea);
+  background: color-mix(in srgb, var(--ui-bg) 91%, var(--color-amber-50));
   padding: clamp(1.35rem, 4vw, 3rem);
   box-shadow: 0 20px 44px color-mix(in srgb, var(--ui-primary) 10%, transparent);
 }

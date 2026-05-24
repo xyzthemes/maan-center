@@ -172,7 +172,7 @@ Notes / follow-ups:
 - The auto-attached `maan_app` database is empty and unused. Could be dropped via `fly postgres connect -a maan-db` if hygiene matters.
 - Production app still uses the `postgres` superuser. A dedicated least-privilege user (granted SELECT/INSERT/UPDATE/DELETE on the public schema only) is a security hardening follow-up.
 - IDE flags `node:22-alpine` for "1 high vulnerability" (likely a transitive alpine package CVE). Worth investigating; not blocking the first deploy.
-- Custom domain: not yet wired. Add with `fly certs add <domain> -a maan-app` when DNS is ready, then update the `BETTER_AUTH_URL` secret to match.
+- Custom domain wired: `maan.center` (canonical) + `www.maan.center` (301 → apex). Certs issued by Let's Encrypt via `fly certs add`. `BETTER_AUTH_URL` + `NUXT_SITE_URL` secrets updated to `https://maan.center`. `server/middleware/redirect-www.ts` handles the www redirect at the app layer (Fly's load balancer doesn't do HTTP redirects natively).
 
 ### Phase 4 — Auth swap ✅
 

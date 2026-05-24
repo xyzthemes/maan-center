@@ -48,7 +48,7 @@ pnpm lint            # eslint .
 
 ## Production deploy (Fly.io)
 
-The app deploys to Fly.io as `maan-app`. Production URL: <https://maan-app.fly.dev>.
+The app deploys to Fly.io as `maan-app`. Canonical URL: <https://maan.center>. `www.maan.center` 301-redirects to the apex (see `server/middleware/redirect-www.ts`). The platform URL <https://maan-app.fly.dev> stays reachable too.
 
 ```bash
 fly deploy           # build + push image, run release_command (prisma migrate deploy), flip traffic
@@ -80,10 +80,22 @@ The Fly Postgres `flycast` address does not speak TLS — `?sslmode=disable` on 
 
 ### Custom domain
 
-When ready:
+Current setup: `maan.center` (canonical) + `www.maan.center` (301 → apex).
+
+DNS at the registrar:
+
+| Type | Host | Value |
+|---|---|---|
+| A | `@` | `66.241.124.39` (Fly shared IPv4) |
+| AAAA | `@` | `2a09:8280:1::11a:7075:0` (Fly dedicated IPv6 for `maan-app`) |
+| A | `www` | `66.241.124.39` |
+| AAAA | `www` | `2a09:8280:1::11a:7075:0` |
+
+If `maan-app`'s IPs change, get the fresh values with `fly ips list -a maan-app`. To add another host:
 
 ```bash
-fly certs add <your-domain> -a maan-app
+fly certs add <new-host> -a maan-app
+fly certs check <new-host> -a maan-app   # poll until Status: Issued
 ```
 
-Fly will print DNS records; point them via the domain registrar, then `fly certs check <your-domain>` until status shows `Ready`. Update `BETTER_AUTH_URL` to match.
+Then point DNS at the IPs above and update `BETTER_AUTH_URL` + `NUXT_SITE_URL` secrets if you want the new host to become canonical.

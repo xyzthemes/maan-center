@@ -1,0 +1,51 @@
+# Fly.io deployment for the Maan SaaS — co-located with `maan-db` in Paris.
+#
+# Secrets (set via `fly secrets set ...`):
+#   DATABASE_URL           # set by `fly postgres attach maan-db --app maan-app`
+#   BETTER_AUTH_SECRET     # 32+ chars, `openssl rand -base64 32`
+#   BETTER_AUTH_URL        # production URL — https://<custom-domain> or https://maan-app.fly.dev
+#   AWS_ACCESS_KEY_ID      # Tigris key
+#   AWS_SECRET_ACCESS_KEY  # Tigris secret
+#   BUCKET_NAME            # maan-media
+#
+# Non-secret env lives in [env] below.
+
+app = "maan-app"
+primary_region = "cdg"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NITRO_PRESET = "node-server"
+  PORT = "3000"
+  HOST = "0.0.0.0"
+
+  # Tigris — these aren't secret; the URL pattern + region are public knowledge
+  # and the actual creds come from secrets above.
+  AWS_REGION = "auto"
+  AWS_ENDPOINT_URL_S3 = "https://fly.storage.tigris.dev"
+
+[deploy]
+  # Prisma migrations run in a one-off machine before traffic flips. Safe
+  # because Phase 2's initial migration is idempotent and Phase 5's
+  # add_form_block too — both new-table-only operations.
+  release_command = "node node_modules/prisma/build/index.js migrate deploy"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  # >0 to avoid cold-start on every first hit; bump higher when traffic warrants.
+  min_machines_running = 1
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 250
+    soft_limit = 200
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

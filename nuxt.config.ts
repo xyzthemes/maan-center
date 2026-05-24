@@ -1,8 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-const railwaySiteUrl = process.env.RAILWAY_PUBLIC_DOMAIN
-  ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
-  : undefined
-const siteUrl = process.env.NUXT_SITE_URL || railwaySiteUrl || 'http://127.0.0.1:3000'
+const siteUrl = process.env.NUXT_SITE_URL || 'http://127.0.0.1:3000'
 const siteName = 'Maan Special Education Center'
 const siteDescription = 'Individualized education, therapy, and family support for children with diverse learning needs.'
 const ogImageSecret = process.env.NUXT_OG_IMAGE_SECRET

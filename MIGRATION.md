@@ -69,7 +69,7 @@ Owner-action items:
 
   Auto-injected env vars are in `.env`: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION=auto`, `AWS_ENDPOINT_URL_S3=https://fly.storage.tigris.dev`, `BUCKET_NAME=maan-media`. Public CDN URL pattern: `https://maan-media.fly.storage.tigris.dev/<key>`. (Phase 6 corrected this — the earlier `pub-<bucket>.fly.storage.tigris.dev` prefix is no longer routed by Tigris and resolves to a non-existent bucket.)
 
-- [ ] Sync `DATABASE_URL` + the five Tigris env vars to the Railway production environment (deferred until Phase 5 / deploy time — Phase 1's code-side scaffolding doesn't need production runtime).
+- [x] Production env vars set as Fly secrets on `maan-app` (Phase 3.5; no more Railway). See Phase 3.5 below.
 
 Code-side:
 - Install deps: `prisma@^7`, `@prisma/client@^7`, `@prisma/adapter-pg@^7`, `pg`, `@aws-sdk/client-s3` (Tigris-compatible).
@@ -145,6 +145,34 @@ Verification (`pnpm tsx .tmp/verify-seed.ts`, all passed):
 Notes:
 - `FormSubmissionValue` denormalizes `name`/`label` from the related field at seed time so historical submissions survive later field deletions — Directus stores the FK only, so the seed reads each field once (cached) to populate the snapshot columns.
 - The seed had to be run twice during this phase: the first run discovered that Directus's column is `form_submission` (not `submission`), so the second pass picked up the 7 submission values that the first skipped. The upsert-by-id design made this safe.
+
+### Phase 3.5 — Production host: Fly.io ✅
+
+Decided in favor of (b) — move the Nuxt deploy off Railway onto Fly so the `maan-db.flycast` address works natively. Railway's role in the stack is now zero.
+
+What landed:
+- [x] `fly apps create maan-app -o maan` — fresh app, region `cdg`, co-located with `maan-db`.
+- [x] `fly postgres attach maan-db --app maan-app` — provisioned a separate `maan_app` database + user (left unused). Manually overrode `DATABASE_URL` to point at the **seeded** `postgres` database via flycast with `?sslmode=disable` so the existing data (28 posts, 10 pages, 5 form blocks, 7 form fields, 7 submissions, etc.) lives in production from the first deploy.
+- [x] Fly secrets set on `maan-app`: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL=https://maan-app.fly.dev`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `BUCKET_NAME=maan-media`. `AWS_REGION` + `AWS_ENDPOINT_URL_S3` live in `fly.toml`'s `[env]` (not secret).
+- [x] **Dockerfile** — multi-stage Node 22 alpine build. `pnpm db:generate` runs in the builder stage so `prisma/generated/` ships into the runner. Placeholder `BETTER_AUTH_SECRET` + `BETTER_AUTH_URL` env vars in the builder satisfy `@onmax/nuxt-better-auth`'s build-time check; Fly secrets override at boot. `NODE_OPTIONS=--max-old-space-size=4096` clears the Nitro server build's OOM at 2 GB. The runner image is 249 MB and reinstalls production-only deps because Nitro doesn't bundle pg/adapter-pg/aws-sdk.
+- [x] **`fly.toml`** — Docker build, `primary_region = "cdg"`, `release_command = "node node_modules/prisma/build/index.js migrate deploy"`, http_service on internal port 3000 with `force_https`, `auto_stop_machines = "stop"`, `min_machines_running = 1` (avoid cold-start on every first hit), `shared-cpu-1x` + 512 MB.
+- [x] **`.dockerignore`** — keeps the build context small; explicitly excludes `.env`, `.tmp/`, `.remember/`, `.claude/`, `.vscode/`.
+- [x] **Removed Railway**: `railway.json` deleted; `RAILWAY_PUBLIC_DOMAIN` fallback gone from `nuxt.config.ts`; README rewritten with the Fly deploy story (build, secrets, custom domains).
+
+Production verification (`https://maan-app.fly.dev`, all passed):
+- ✅ `GET /api/auth/ok` → `{"ok":true}`.
+- ✅ `GET /api/public/posts?locale=en&limit=2` → 2 posts (Building Confident Routines, How Early Assessment Guides Support).
+- ✅ `GET /api/pages/navigation` → 3 published nav pages.
+- ✅ `GET /api/__sitemap__/urls` → 10 URLs (4 static + 6 published post URLs).
+- ✅ All seven public surfaces serve `200`: `/`, `/blog`, `/contact`, `/ar`, `/ar/blog`, `/ar/contact`, `/dashboard/login`.
+- ✅ `GET /api/dashboard/posts` unauthed → `401`.
+- ✅ `GET /dashboard/posts` unauthed → `302 → /dashboard/login?redirect=…`.
+
+Notes / follow-ups:
+- The auto-attached `maan_app` database is empty and unused. Could be dropped via `fly postgres connect -a maan-db` if hygiene matters.
+- Production app still uses the `postgres` superuser. A dedicated least-privilege user (granted SELECT/INSERT/UPDATE/DELETE on the public schema only) is a security hardening follow-up.
+- IDE flags `node:22-alpine` for "1 high vulnerability" (likely a transitive alpine package CVE). Worth investigating; not blocking the first deploy.
+- Custom domain: not yet wired. Add with `fly certs add <domain> -a maan-app` when DNS is ready, then update the `BETTER_AUTH_URL` secret to match.
 
 ### Phase 4 — Auth swap ✅
 
@@ -266,7 +294,7 @@ Deliberately out of scope (could land later but don't need to ship before retiri
 - Renaming `DashboardPost`/`DashboardPage` → `Post`/`Page` and flipping the response wire shape from snake_case to camelCase. Bigger touch surface; not required for correctness.
 - Tightening `requireUserSession(event)` to `{ user: { role: ... } }` per route, once we decide writer/admin granularity.
 - Deleting the email-less Frontend Bot User row left over from Phase 3 (inert; was excluded from auth migration on purpose).
-- Production hosting decision (Phase 3.5): expose Fly Postgres via public IP vs. move the Nuxt deploy from Railway to Fly. Unblocks production deployment.
+- ~~Production hosting decision (Phase 3.5)~~: resolved — see Phase 3.5 above. App lives at `https://maan-app.fly.dev`.
 
 ## Risks + mitigations
 
@@ -278,7 +306,7 @@ Deliberately out of scope (could land later but don't need to ship before retiri
 | **Image references in post `content`** | Directus assets URLs point at `/assets/{file-id}`. If any post body contains such URLs, they break when Directus is shut down. Audit `Post.content` in Phase 5 — likely zero hits because posts were imported as HTML from the Blogger site. |
 | **Bilingual content (`/ar/*` pages)** | The current schema mixes EN + AR rows differentiated by `permalink` prefix. Prisma schema preserves this verbatim. No code change needed. |
 | **Form submissions during cutover** | Phase 4 + 5 ship together for forms — Better Auth and Prisma must both be live before `/api/forms/submit.post.ts` switches over. Otherwise, a submission could be lost. |
-| **Fly Postgres only reachable via flycast or proxy** | Local dev uses `fly proxy 5432 -a maan-db`. Production reachability from Railway needs a Phase-3.5 decision: allocate a public IP (`fly ips allocate-v4`) or move the deploy to Fly. Blocks Phase 5 going to production; doesn't block any earlier phase. |
+| **Fly Postgres only reachable via flycast or proxy** | Resolved (Phase 3.5): production app deploys to Fly as `maan-app` co-located with `maan-db` in `cdg` and reaches the DB via flycast natively. Local dev uses `fly proxy 5432 -a maan-db`. |
 
 ## Decisions made (locked in for this migration)
 

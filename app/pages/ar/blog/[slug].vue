@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const route = useRoute('/ar/blog/[slug]')
-const { getPostBySlug } = useMaanContent()
+const { getPostBySlug, getPosts } = useMaanContent()
 const slug = computed(() => String(route.params.slug || ''))
 
 const { data: post } = await useAsyncData<MaanPost | undefined>(`maan-blog-ar-${slug.value}`, () => getPostBySlug(slug.value, 'ar'))
@@ -11,6 +11,11 @@ if (!post.value) {
     statusMessage: 'المقال غير موجود'
   })
 }
+
+const { data: related } = await useAsyncData<MaanPost[]>(`maan-blog-ar-${slug.value}-related`, async () => {
+  const all = await getPosts('ar')
+  return all.filter(p => p.slug !== slug.value).slice(0, 3)
+}, { default: () => [] })
 
 const resolvedSeo = useMaanSeo({
   seo: post.value.seo,
@@ -34,14 +39,12 @@ useSchemaOrg([
     description: resolvedSeo.description,
     datePublished: post.value.publishedAt,
     image: resolvedSeo.ogImage || post.value.image,
-    author: {
-      name: 'مركز معا للتعليم الخاص'
-    }
+    author: { name: 'مركز معاً للتربية الخاصة' }
   }),
   defineBreadcrumb({
     itemListElement: [
       { name: 'الرئيسية', item: '/ar' },
-      { name: 'المدونة', item: '/ar/blog' },
+      { name: 'المرجع العلمي', item: '/ar/blog' },
       { name: post.value.title, item: `/ar/blog/${post.value.slug}` }
     ]
   })
@@ -53,54 +56,130 @@ useSchemaOrg([
     v-if="post"
     class="maan-page"
   >
-    <section class="maan-blog-hero border-b border-default">
+    <section class="maan-blog-hero border-b">
       <UContainer class="py-14 sm:py-20">
-        <div class="max-w-3xl">
-          <UBadge
-            color="primary"
-            variant="subtle"
-            class="mb-5"
-          >
+        <div class="mx-auto max-w-3xl">
+          <span class="maan-eyebrow">
             {{ post.category }}
-          </UBadge>
-          <h1 class="maan-hero-title text-4xl font-semibold text-highlighted sm:text-5xl">
+          </span>
+          <h1 class="maan-hero-title mt-5 text-4xl font-bold sm:text-5xl">
             {{ post.title }}
           </h1>
-          <p class="maan-hero-copy mt-5 text-lg leading-8 text-muted">
+          <p class="maan-hero-copy mt-5 text-lg">
             {{ post.description }}
           </p>
-          <div class="mt-6 flex flex-wrap items-center gap-3 text-sm text-muted">
-            <NuxtTime
-              :datetime="post.publishedAt"
-              month="long"
-              day="numeric"
-              year="numeric"
-              locale="ar"
-            />
+          <div
+            class="mt-6 flex flex-wrap items-center gap-3 text-sm"
+            style="color: var(--maan-ink-muted);"
+          >
+            <span class="inline-flex items-center gap-1.5">
+              <UIcon
+                name="i-lucide-calendar"
+                class="size-4"
+              />
+              <NuxtTime
+                :datetime="post.publishedAt"
+                month="long"
+                day="numeric"
+                year="numeric"
+                locale="ar"
+              />
+            </span>
             <span aria-hidden="true">·</span>
-            <span>{{ post.readTime }}</span>
+            <span class="inline-flex items-center gap-1.5">
+              <UIcon
+                name="i-lucide-clock"
+                class="size-4"
+              />
+              {{ post.readTime }}
+            </span>
           </div>
         </div>
       </UContainer>
     </section>
 
     <UContainer class="py-12 sm:py-16">
-      <div class="maan-prose-card mx-auto max-w-3xl">
-        <div
-          class="maan-prose"
-          v-html="post.content"
-        />
-
-        <div class="mt-12 border-t border-default pt-8">
-          <UButton
-            to="/ar/blog"
-            color="neutral"
-            variant="subtle"
-            icon="i-lucide-arrow-right"
+      <div class="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1fr_18rem]">
+        <div class="maan-prose-card">
+          <img
+            v-if="post.image"
+            :src="post.image"
+            :alt="post.title"
+            class="mb-10 aspect-video w-full rounded-2xl object-cover"
           >
-            العودة إلى المدونة
-          </UButton>
+          <div
+            class="maan-prose"
+            v-html="post.content"
+          />
+
+          <div
+            class="mt-10 border-t pt-6"
+            style="border-color: var(--maan-line);"
+          >
+            <MaanArticleShare
+              :title="post.title"
+              :url="`/ar/blog/${post.slug}`"
+              locale="ar"
+            />
+          </div>
+
+          <div class="mt-10">
+            <MaanArticleAuthor locale="ar" />
+          </div>
+
+          <div class="mt-6">
+            <MaanArticleCta locale="ar" />
+          </div>
         </div>
+
+        <aside class="space-y-6">
+          <div
+            v-if="related.length"
+            class="maan-card"
+          >
+            <p
+              class="text-xs font-semibold uppercase tracking-wider"
+              style="color: var(--maan-ink-muted);"
+            >
+              مقالات ذات صلة
+            </p>
+            <ul class="mt-4 space-y-4">
+              <li
+                v-for="item in related"
+                :key="item.slug"
+              >
+                <NuxtLink
+                  :to="`/ar/blog/${item.slug}`"
+                  class="group block"
+                >
+                  <p
+                    class="font-semibold leading-snug"
+                    style="color: var(--maan-ink);"
+                  >
+                    {{ item.title }}
+                  </p>
+                  <p
+                    class="mt-1 text-xs"
+                    style="color: var(--maan-ink-muted);"
+                  >
+                    {{ item.readTime }}
+                  </p>
+                </NuxtLink>
+              </li>
+            </ul>
+          </div>
+
+          <NuxtLink
+            to="/ar/blog"
+            class="maan-ghost-btn w-full justify-center"
+          >
+            <UIcon
+              name="i-lucide-arrow-right"
+              class="size-4"
+            />
+            <span>العودة إلى المرجع العلمي</span>
+          </NuxtLink>
+        </aside>
       </div>
     </UContainer>
   </article>

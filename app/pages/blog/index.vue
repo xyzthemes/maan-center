@@ -42,21 +42,18 @@ useSchemaOrg([
 
 <template>
   <div class="maan-page">
-    <section class="maan-blog-hero border-b border-default">
+    <section class="maan-blog-hero border-b">
       <UContainer class="py-16 sm:py-20">
-        <div class="max-w-3xl">
-          <UBadge
-            color="primary"
-            variant="subtle"
-            class="mb-5"
-          >
-            Maan Blog
-          </UBadge>
-          <h1 class="maan-hero-title text-4xl font-semibold text-highlighted sm:text-5xl">
-            Practical guidance for families and educators.
+        <div class="mx-auto max-w-3xl text-center">
+          <span class="maan-eyebrow">
+            Comprehensive Scientific Reference
+          </span>
+          <h1 class="maan-hero-title mt-5 text-4xl font-bold sm:text-5xl">
+            Maan’s Empowerment Guide.
           </h1>
-          <p class="maan-hero-copy mt-5 text-lg leading-8 text-muted">
-            Articles from the center team on learning plans, therapy support, home routines, and inclusive education.
+          <p class="maan-hero-copy mx-auto mt-5 max-w-2xl text-lg">
+            Articles, guides, and resources from the Maan team on autism spectrum support,
+            Down syndrome programs, learning difficulties, and family-led learning at home.
           </p>
         </div>
       </UContainer>

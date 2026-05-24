@@ -18,7 +18,14 @@ const toggleTheme = () => {
   colorMode.preference = isDark.value ? 'light' : 'dark'
 }
 
+const overviewPath = computed(() => isArabic.value ? '/ar/dashboard/overview' : '/dashboard/overview')
+
 const navItems = computed(() => [[
+  {
+    label: isArabic.value ? 'نظرة عامة' : 'Overview',
+    icon: 'i-lucide-layout-dashboard',
+    to: overviewPath.value
+  },
   {
     label: t.value.blogPosts,
     icon: 'i-lucide-file-pen-line',
@@ -41,6 +48,11 @@ const searchGroups = computed(() => [
     id: 'navigation',
     label: t.value.navigation,
     items: [
+      {
+        label: isArabic.value ? 'نظرة عامة' : 'Overview',
+        icon: 'i-lucide-layout-dashboard',
+        to: overviewPath.value
+      },
       {
         label: t.value.blogPosts,
         icon: 'i-lucide-file-pen-line',
@@ -141,14 +153,20 @@ onMounted(() => {
       <template #header="{ collapsed }">
         <NuxtLink
           :to="sitePath"
-          class="flex items-center gap-2 min-w-0"
+          class="flex items-center gap-2.5 min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 rounded-lg"
+          style="--tw-ring-color: var(--maan-autism);"
+          :aria-label="isArabic ? 'الذهاب إلى الموقع' : 'Go to the website'"
         >
-          <div class="maan-logo-mark grid size-8 shrink-0 place-items-center bg-primary text-inverted shadow-sm">
-            <span class="text-sm font-semibold leading-none">M</span>
-          </div>
+          <img
+            src="/logo-transparent.png"
+            alt=""
+            class="size-9 shrink-0 object-contain"
+            aria-hidden="true"
+          >
           <span
             v-if="!collapsed"
-            class="truncate text-sm font-semibold text-highlighted"
+            class="truncate text-sm font-semibold"
+            style="color: var(--maan-ink);"
           >
             {{ t.managerDashboard }}
           </span>

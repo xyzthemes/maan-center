@@ -1,314 +1,568 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+/* ---------------------------------------------------------------------------
+ * Maan Special Education Center — design tokens
+ *
+ * Calm, accessible, Arabic-first palette inspired by the center's logo:
+ *   • Soft off-white background reduces visual glare for sensory comfort.
+ *   • Calm light blue → dark navy for section accents (autism awareness blue).
+ *   • Dark navy text on light backgrounds for readability.
+ *   • Warm red/peach reserved for CTA buttons only (logo-derived).
+ *   • Soft mint green for Down syndrome surfaces (logo-derived).
+ *   • Soft violet for learning-difficulties surfaces.
+ *
+ * Nuxt UI v4 colors come from `app.config.ts`. The custom utility palettes
+ * below keep program-specific accents out of the global semantic slots so
+ * they never leak into buttons or links by accident.
+ * --------------------------------------------------------------------------*/
+
 @theme static {
-  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Tajawal", "Cairo", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Tajawal", "Cairo", "Inter", ui-sans-serif, system-ui, sans-serif;
 
-  --color-green-50: #F4F8EE;
-  --color-green-100: #E4EEDC;
-  --color-green-200: #CFDFC3;
-  --color-green-300: #AFC7A3;
-  --color-green-400: #8DAE89;
-  --color-green-500: #6C8F78;
-  --color-green-600: #557765;
-  --color-green-700: #405B4D;
-  --color-green-800: #30453D;
-  --color-green-900: #24362F;
-  --color-green-950: #15231F;
+  /* Calm light-blue → navy (autism awareness). Used as Nuxt UI primary. */
+  --color-sky-50:  #F1F8FD;
+  --color-sky-100: #E0EFFA;
+  --color-sky-200: #BDDDF3;
+  --color-sky-300: #8EC4E8;
+  --color-sky-400: #5FA8DA;
+  --color-sky-500: #3D8AC5;
+  --color-sky-600: #2E6FA6;
+  --color-sky-700: #265985;
+  --color-sky-800: #1E4365;
+  --color-sky-900: #16304A;
+  --color-sky-950: #0C1D2E;
 
-  --color-amber-50: #FFF9EA;
-  --color-amber-100: #FFF0CF;
-  --color-amber-200: #FFE1A8;
-  --color-amber-300: #F8CA7F;
-  --color-amber-400: #E9AD59;
-  --color-amber-500: #C98F42;
-  --color-amber-600: #A97032;
-  --color-amber-700: #865425;
-  --color-amber-800: #663F21;
-  --color-amber-900: #4E321E;
-  --color-amber-950: #2F1B0E;
+  /* Soft mint green (Down syndrome). Logo-derived. */
+  --color-emerald-50:  #ECFAF2;
+  --color-emerald-100: #D6F3E2;
+  --color-emerald-200: #A8E4C2;
+  --color-emerald-300: #74D19E;
+  --color-emerald-400: #45BC7E;
+  --color-emerald-500: #2BA365;
+  --color-emerald-600: #228451;
+  --color-emerald-700: #1E6843;
+  --color-emerald-800: #195236;
+  --color-emerald-900: #133E29;
+  --color-emerald-950: #082218;
 
-  --color-stone-50: #FBF8EF;
-  --color-stone-100: #F4EEDC;
-  --color-stone-200: #E8DEC8;
-  --color-stone-300: #D7C7A9;
-  --color-stone-400: #B9A383;
-  --color-stone-500: #95806A;
-  --color-stone-600: #746452;
-  --color-stone-700: #594D42;
-  --color-stone-800: #3E3730;
-  --color-stone-900: #2D2924;
-  --color-stone-950: #191612;
+  /* Soft violet (learning difficulties). */
+  --color-violet-50:  #F4F1FE;
+  --color-violet-100: #E8E2FC;
+  --color-violet-200: #CFC2F8;
+  --color-violet-300: #B3A0F2;
+  --color-violet-400: #957EE9;
+  --color-violet-500: #7C61DC;
+  --color-violet-600: #5F47BD;
+  --color-violet-700: #4A3795;
+  --color-violet-800: #3A2C75;
+  --color-violet-900: #2A2058;
+  --color-violet-950: #181133;
+
+  /* Warm peach-red CTA accent. Inspired by the logo's bright red. */
+  --color-red-50:  #FFF1EE;
+  --color-red-100: #FFDCD2;
+  --color-red-200: #FFB7A5;
+  --color-red-300: #FF8B73;
+  --color-red-400: #F86A4E;
+  --color-red-500: #E94B35;
+  --color-red-600: #C8351F;
+  --color-red-700: #A12818;
+  --color-red-800: #7C1F13;
+  --color-red-900: #5C1810;
+  --color-red-950: #2F0B08;
+
+  /* Soft warm stone — main page surface (off-white, low glare). */
+  --color-stone-50:  #FAF8F4;
+  --color-stone-100: #F3EFE7;
+  --color-stone-200: #E6DFD1;
+  --color-stone-300: #D2C7B2;
+  --color-stone-400: #B2A485;
+  --color-stone-500: #8C7E60;
+  --color-stone-600: #6E6249;
+  --color-stone-700: #564C39;
+  --color-stone-800: #3E372A;
+  --color-stone-900: #2A2520;
+  --color-stone-950: #181410;
+
+  /* Semantic surfaces used by .maan-* utilities. */
+  --maan-surface:      #FAF8F4; /* off-white page */
+  --maan-surface-alt:  #FFFFFF; /* card */
+  --maan-ink:          #0F2741; /* dark navy text */
+  --maan-ink-muted:    #466079;
+  --maan-line:         rgba(34, 80, 124, 0.14);
+
+  --maan-cta:          #E94B35;
+  --maan-cta-hover:    #C8351F;
+
+  --maan-autism:       #3D8AC5;
+  --maan-autism-soft:  #E0EFFA;
+  --maan-down:         #2BA365;
+  --maan-down-soft:    #D6F3E2;
+  --maan-ld:           #7C61DC;
+  --maan-ld-soft:      #E8E2FC;
 }
 
+/* Dark-mode overrides for semantic tokens — every inline `var(--maan-…)`
+ * automatically adapts when `<html class="dark">` is set. */
+.dark {
+  --maan-surface:      #0B1623;
+  --maan-surface-alt:  #11243A;
+  --maan-ink:          #E5EEF8;
+  --maan-ink-muted:    #B8CADC;
+  --maan-line:         rgba(94, 134, 175, 0.18);
+
+  --maan-cta:          #FF8B73;
+  --maan-cta-hover:    #FFB7A5;
+
+  --maan-autism:       #8EC4E8;
+  --maan-autism-soft:  rgba(61, 138, 197, 0.20);
+  --maan-down:         #74D19E;
+  --maan-down-soft:    rgba(43, 163, 101, 0.20);
+  --maan-ld:           #B3A0F2;
+  --maan-ld-soft:      rgba(124, 97, 220, 0.22);
+}
+
+/* Arabic webfont — loaded via app.vue useHead() link tags. */
+
+html { scroll-behavior: smooth; }
+
 body {
-  background-color: var(--ui-bg);
+  font-family: var(--font-sans);
+  background-color: var(--maan-surface);
   background-image:
-    radial-gradient(circle at 12% 6%, rgba(255, 225, 168, .38), transparent 28rem),
-    radial-gradient(circle at 88% 18%, rgba(207, 223, 195, .52), transparent 25rem);
+    radial-gradient(circle at 12% 6%, rgba(61, 138, 197, .08), transparent 32rem),
+    radial-gradient(circle at 88% 22%, rgba(43, 163, 101, .07), transparent 28rem);
+  color: var(--maan-ink);
 }
 
 .dark body {
+  background-color: #0B1623;
   background-image:
-    radial-gradient(circle at 12% 6%, rgba(169, 112, 50, .14), transparent 28rem),
-    radial-gradient(circle at 88% 18%, rgba(108, 143, 120, .16), transparent 25rem);
+    radial-gradient(circle at 12% 6%, rgba(61, 138, 197, .12), transparent 32rem),
+    radial-gradient(circle at 88% 22%, rgba(43, 163, 101, .08), transparent 28rem);
+  color: #E5EEF8;
 }
 
-.maan-main {
-  background:
-    linear-gradient(120deg, rgba(255, 249, 234, .92), rgba(244, 248, 238, .95)),
-    var(--ui-bg);
+/* Arabic typography refinements. */
+[dir="rtl"] body {
+  font-feature-settings: "kern", "ss01";
+  letter-spacing: 0;
+}
+[dir="rtl"] .maan-hero-title,
+[dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3 {
+  line-height: 1.35;
+  text-wrap: balance;
 }
 
-.dark .maan-main {
-  background:
-    linear-gradient(120deg, rgba(25, 22, 18, .94), rgba(21, 35, 31, .95)),
-    var(--ui-bg);
-}
+/* ─── Header / Footer ─── */
 
 .maan-header {
-  border-bottom-color: color-mix(in srgb, var(--ui-primary) 18%, transparent);
-  background: color-mix(in srgb, var(--ui-bg) 82%, var(--color-amber-50));
-  backdrop-filter: blur(18px);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  border-bottom: 1px solid var(--maan-line);
+  background: color-mix(in srgb, var(--maan-surface) 88%, white);
+  backdrop-filter: blur(14px);
+}
+.dark .maan-header {
+  background: color-mix(in srgb, #0B1623 88%, black);
+  border-bottom-color: rgba(94, 134, 175, 0.2);
 }
 
 .maan-footer {
-  border-top: 1px solid color-mix(in srgb, var(--ui-primary) 14%, transparent);
-  background: color-mix(in srgb, var(--ui-bg) 86%, var(--color-amber-50));
+  border-top: 1px solid var(--maan-line);
+  background: color-mix(in srgb, var(--maan-surface) 94%, white);
+}
+.dark .maan-footer {
+  background: #0B1623;
+  border-top-color: rgba(94, 134, 175, 0.18);
 }
 
-.dark .maan-design-credit img {
-  filter: invert(1);
-}
+.dark .maan-design-credit img { filter: invert(1); }
 
-.maan-logo-mark {
-  border-radius: 50% 46% 48% 44%;
-  box-shadow: 0 12px 24px color-mix(in srgb, var(--ui-primary) 22%, transparent);
-  transform: rotate(-4deg);
-}
+.maan-main { min-height: 60vh; }
+
+/* ─── Hero ─── */
 
 .maan-hero {
+  position: relative;
+  overflow: hidden;
+  border-color: var(--maan-line);
   background:
-    radial-gradient(circle at 18% 10%, rgba(255, 225, 168, .65), transparent 20rem),
-    radial-gradient(circle at 78% 18%, rgba(207, 223, 195, .82), transparent 24rem),
-    radial-gradient(circle at 48% 82%, rgba(218, 198, 230, .34), transparent 22rem),
-    linear-gradient(120deg, var(--color-amber-50) 0%, var(--color-green-50) 52%, var(--color-stone-50) 100%);
-  border-color: color-mix(in srgb, var(--ui-primary) 16%, transparent);
+    radial-gradient(ellipse at 12% 8%, rgba(189, 221, 243, .55), transparent 28rem),
+    radial-gradient(ellipse at 92% 12%, rgba(168, 228, 194, .42), transparent 26rem),
+    radial-gradient(ellipse at 55% 90%, rgba(207, 194, 248, .28), transparent 26rem),
+    linear-gradient(180deg, #FFFFFF 0%, var(--maan-surface) 100%);
 }
-
 .dark .maan-hero {
   background:
-    radial-gradient(circle at 18% 10%, rgba(169, 112, 50, .22), transparent 20rem),
-    radial-gradient(circle at 78% 18%, rgba(108, 143, 120, .26), transparent 24rem),
-    radial-gradient(circle at 48% 82%, rgba(142, 113, 161, .14), transparent 22rem),
-    linear-gradient(120deg, var(--color-stone-950) 0%, var(--color-green-950) 52%, var(--color-stone-900) 100%);
+    radial-gradient(ellipse at 12% 8%, rgba(61, 138, 197, .22), transparent 28rem),
+    radial-gradient(ellipse at 92% 12%, rgba(43, 163, 101, .18), transparent 26rem),
+    radial-gradient(ellipse at 55% 90%, rgba(124, 97, 220, .12), transparent 26rem),
+    linear-gradient(180deg, #0F1E30 0%, #0B1623 100%);
 }
 
 .maan-hero-title {
-  color: color-mix(in srgb, var(--ui-text-highlighted) 92%, var(--ui-primary));
-  letter-spacing: 0;
-  text-wrap: pretty;
+  color: var(--maan-ink);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
 }
+.dark .maan-hero-title { color: #F1F8FD; }
 
-.maan-hero-copy {
-  color: color-mix(in srgb, var(--ui-text-muted) 88%, var(--ui-primary));
-}
+.maan-hero-copy { color: var(--maan-ink-muted); line-height: 1.85; }
+.dark .maan-hero-copy { color: #B8CADC; }
 
-.maan-garden-visual {
+/* Hero illustration card — clean, non-clinical, calm. */
+.maan-hero-visual {
   position: relative;
-  min-height: 29rem;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--ui-primary) 18%, transparent);
-  border-radius: 2.75rem 2.75rem 1rem 2.75rem;
+  isolation: isolate;
+  min-height: 26rem;
+  border-radius: 2rem;
+  border: 1px solid var(--maan-line);
   background:
-    radial-gradient(circle at 22% 17%, rgba(255, 225, 168, .9) 0 9%, transparent 10%),
-    radial-gradient(circle at 82% 18%, rgba(207, 223, 195, .95) 0 12%, transparent 13%),
-    radial-gradient(circle at 34% 78%, rgba(218, 198, 230, .62) 0 14%, transparent 15%),
-    color-mix(in srgb, var(--ui-bg) 88%, var(--color-amber-50));
-  box-shadow: 0 30px 70px color-mix(in srgb, var(--ui-primary) 18%, transparent);
-}
-
-.maan-photo-card {
-  position: absolute;
-  inset: 2rem 2rem auto;
+    radial-gradient(circle at 28% 18%, rgba(189, 221, 243, .8), transparent 50%),
+    radial-gradient(circle at 78% 26%, rgba(168, 228, 194, .65), transparent 50%),
+    radial-gradient(circle at 50% 80%, rgba(207, 194, 248, .5), transparent 50%),
+    linear-gradient(160deg, #FFFFFF, var(--maan-surface));
+  box-shadow: 0 30px 60px -28px rgba(15, 39, 65, .18);
   overflow: hidden;
-  border: 8px solid color-mix(in srgb, var(--ui-bg) 92%, var(--color-amber-50));
-  border-radius: 2.25rem 2.25rem .85rem 2.25rem;
-  box-shadow: 0 20px 46px color-mix(in srgb, var(--ui-primary) 20%, transparent);
+}
+.dark .maan-hero-visual {
+  background:
+    radial-gradient(circle at 28% 18%, rgba(61, 138, 197, .28), transparent 50%),
+    radial-gradient(circle at 78% 26%, rgba(43, 163, 101, .22), transparent 50%),
+    radial-gradient(circle at 50% 80%, rgba(124, 97, 220, .18), transparent 50%),
+    linear-gradient(160deg, #11243A, #0B1623);
 }
 
-.maan-photo-card img {
-  width: 100%;
-  height: 18rem;
-  object-fit: cover;
-}
-
-.maan-path-card {
+.maan-hero-visual::before {
+  content: "";
   position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at 1px 1px, rgba(15, 39, 65, .04) 1px, transparent 0);
+  background-size: 22px 22px;
+  pointer-events: none;
+}
+
+/* ─── Section accents ─── */
+
+.maan-section {
+  padding-block: clamp(3.5rem, 8vw, 6rem);
+}
+
+.maan-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--maan-autism);
+  padding: .35rem .75rem;
+  border-radius: 999px;
+  background: var(--maan-autism-soft);
+}
+[dir="rtl"] .maan-eyebrow { letter-spacing: .04em; text-transform: none; font-size: .85rem; }
+.dark .maan-eyebrow { background: rgba(61, 138, 197, .18); color: #8EC4E8; }
+
+.maan-eyebrow--down { color: var(--maan-down); background: var(--maan-down-soft); }
+.dark .maan-eyebrow--down { background: rgba(43, 163, 101, .18); color: #74D19E; }
+.maan-eyebrow--ld { color: var(--maan-ld); background: var(--maan-ld-soft); }
+.dark .maan-eyebrow--ld { background: rgba(124, 97, 220, .18); color: #B3A0F2; }
+.maan-eyebrow--cta { color: var(--maan-cta); background: #FFDCD2; }
+.dark .maan-eyebrow--cta { background: rgba(233, 75, 53, .18); color: #FF8B73; }
+
+.maan-h2 {
+  color: var(--maan-ink);
+  font-weight: 700;
+  font-size: clamp(1.75rem, 3.4vw, 2.5rem);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.dark .maan-h2 { color: #F1F8FD; }
+
+.maan-lead {
+  color: var(--maan-ink-muted);
+  font-size: 1.0625rem;
+  line-height: 1.85;
+  max-width: 56ch;
+}
+.dark .maan-lead { color: #B8CADC; }
+
+/* ─── Cards ─── */
+
+.maan-card {
+  position: relative;
+  border-radius: 1.25rem;
+  border: 1px solid var(--maan-line);
+  background: var(--maan-surface-alt);
+  padding: 1.5rem;
+  box-shadow: 0 1px 0 rgba(15, 39, 65, .04), 0 10px 28px -22px rgba(15, 39, 65, .25);
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+.dark .maan-card {
+  background: #11243A;
+  border-color: rgba(94, 134, 175, .2);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, .25), 0 10px 28px -22px rgba(0, 0, 0, .5);
+}
+.maan-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 1px 0 rgba(15, 39, 65, .04), 0 18px 36px -22px rgba(15, 39, 65, .35);
+}
+
+.maan-card--autism { border-top: 4px solid var(--maan-autism); }
+.maan-card--down   { border-top: 4px solid var(--maan-down); }
+.maan-card--ld     { border-top: 4px solid var(--maan-ld); }
+
+.maan-card-icon {
   display: grid;
   place-items: center;
-  width: 7.25rem;
-  height: 7.25rem;
-  border-radius: 2rem;
-  background: color-mix(in srgb, var(--ui-bg) 84%, var(--color-amber-50));
-  color: var(--ui-primary);
-  font-weight: 800;
-  box-shadow: 0 16px 30px color-mix(in srgb, var(--ui-primary) 15%, transparent);
+  width: 3rem;
+  height: 3rem;
+  border-radius: .9rem;
+  background: var(--maan-autism-soft);
+  color: var(--maan-autism);
+  margin-bottom: 1rem;
+}
+.dark .maan-card-icon { background: rgba(61, 138, 197, .18); color: #8EC4E8; }
+.maan-card-icon--down { background: var(--maan-down-soft); color: var(--maan-down); }
+.dark .maan-card-icon--down { background: rgba(43, 163, 101, .18); color: #74D19E; }
+.maan-card-icon--ld { background: var(--maan-ld-soft); color: var(--maan-ld); }
+.dark .maan-card-icon--ld { background: rgba(124, 97, 220, .18); color: #B3A0F2; }
+.maan-card-icon--cta { background: #FFDCD2; color: var(--maan-cta); }
+.dark .maan-card-icon--cta { background: rgba(233, 75, 53, .18); color: #FF8B73; }
+
+.maan-card-title {
+  font-weight: 650;
+  color: var(--maan-ink);
+  font-size: 1.125rem;
+  line-height: 1.4;
+}
+.dark .maan-card-title { color: #F1F8FD; }
+
+.maan-card-body { color: var(--maan-ink-muted); font-size: .95rem; line-height: 1.75; }
+.dark .maan-card-body { color: #B8CADC; }
+
+/* ─── Section bands (color-coded by program area) ─── */
+
+.maan-band {
+  border-top: 1px solid var(--maan-line);
+  border-bottom: 1px solid var(--maan-line);
+  background: linear-gradient(180deg, #FFFFFF, var(--maan-surface));
+}
+.dark .maan-band { background: linear-gradient(180deg, #0F1E30, #0B1623); border-color: rgba(94, 134, 175, .18); }
+
+.maan-band--autism { background: linear-gradient(180deg, #F1F8FD, var(--maan-surface)); }
+.dark .maan-band--autism { background: linear-gradient(180deg, #0F2742, #0B1623); }
+.maan-band--down   { background: linear-gradient(180deg, #ECFAF2, var(--maan-surface)); }
+.dark .maan-band--down   { background: linear-gradient(180deg, #0F2A1F, #0B1623); }
+.maan-band--ld     { background: linear-gradient(180deg, #F4F1FE, var(--maan-surface)); }
+.dark .maan-band--ld     { background: linear-gradient(180deg, #1B142F, #0B1623); }
+
+/* ─── CTA Buttons ─── */
+
+.maan-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  background: var(--maan-cta);
+  color: white;
+  font-weight: 600;
+  padding: .8rem 1.4rem;
+  border-radius: 1rem;
+  border: 1px solid transparent;
+  box-shadow: 0 8px 20px -8px rgba(233, 75, 53, .55);
+  transition: background-color .2s, transform .15s, box-shadow .2s;
+}
+.maan-cta-btn:hover {
+  background: var(--maan-cta-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px -8px rgba(233, 75, 53, .65);
+}
+.maan-cta-btn:focus-visible {
+  outline: 2px solid var(--maan-cta);
+  outline-offset: 3px;
 }
 
-.maan-path-card:nth-of-type(2) {
-  right: 2rem;
-  bottom: 7.5rem;
+.maan-ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  color: var(--maan-ink);
+  font-weight: 600;
+  padding: .8rem 1.2rem;
+  border-radius: 1rem;
+  border: 1px solid var(--maan-line);
+  background: transparent;
+  transition: background-color .15s, border-color .15s;
+}
+.maan-ghost-btn:hover { background: var(--maan-autism-soft); border-color: var(--maan-autism); }
+.dark .maan-ghost-btn { color: #E5EEF8; }
+.dark .maan-ghost-btn:hover { background: rgba(61, 138, 197, .2); }
+
+/* ─── Floating WhatsApp FAB ─── */
+
+.maan-whatsapp-fab {
+  position: fixed;
+  bottom: 1.25rem;
+  inset-inline-end: 1.25rem;
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  padding: .75rem 1.05rem;
+  border-radius: 999px;
+  background: #25D366;
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 12px 28px -8px rgba(37, 211, 102, .6);
+  transition: transform .15s, box-shadow .2s;
+}
+.maan-whatsapp-fab:hover { transform: translateY(-2px); box-shadow: 0 18px 36px -8px rgba(37, 211, 102, .65); }
+.maan-whatsapp-fab:focus-visible { outline: 3px solid #25D366; outline-offset: 3px; }
+@media (max-width: 640px) {
+  .maan-whatsapp-fab {
+    bottom: 5.25rem; /* sit above the mobile sticky bar */
+  }
 }
 
-.maan-path-card:nth-of-type(3) {
-  left: 3rem;
-  bottom: 3rem;
-  background: color-mix(in srgb, var(--ui-secondary) 18%, var(--ui-bg));
+/* ─── Mobile sticky bottom bar (Phase 8 baseline) ─── */
+.maan-mobile-bar {
+  position: fixed;
+  bottom: 0;
+  inset-inline: 0;
+  z-index: 55;
+  display: none;
+  grid-template-columns: 1fr 1fr;
+  gap: .5rem;
+  padding: .65rem .75rem env(safe-area-inset-bottom);
+  border-top: 1px solid var(--maan-line);
+  background: color-mix(in srgb, var(--maan-surface) 92%, white);
+  backdrop-filter: blur(14px);
+}
+.dark .maan-mobile-bar { background: color-mix(in srgb, #0B1623 92%, black); border-top-color: rgba(94, 134, 175, .2); }
+@media (max-width: 640px) {
+  .maan-mobile-bar { display: grid; }
+  .maan-main { padding-bottom: 4.5rem; }
 }
 
-.maan-note-card {
-  position: absolute;
-  right: 2rem;
-  bottom: 2rem;
-  max-width: 19rem;
-  border: 1px solid color-mix(in srgb, var(--ui-primary) 14%, transparent);
-  border-radius: 1.75rem;
-  background: color-mix(in srgb, var(--ui-bg) 86%, var(--color-amber-50));
-  padding: 1.125rem;
-  box-shadow: 0 18px 38px color-mix(in srgb, var(--ui-primary) 13%, transparent);
-  backdrop-filter: blur(10px);
+/* ─── Statistics ─── */
+.maan-stat {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid var(--maan-line);
+  background: var(--maan-surface-alt);
 }
+.dark .maan-stat { background: #11243A; border-color: rgba(94, 134, 175, .2); }
 
-.maan-garden-card {
-  border: 1px solid color-mix(in srgb, var(--ui-primary) 14%, transparent);
-  border-radius: 1.875rem 1.875rem .875rem 1.875rem;
-  background: color-mix(in srgb, var(--ui-bg) 86%, var(--color-amber-50));
-  box-shadow: 0 16px 34px color-mix(in srgb, var(--ui-primary) 10%, transparent);
+.maan-stat-num {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 700;
+  color: var(--maan-autism);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
 }
+.dark .maan-stat-num { color: #8EC4E8; }
+.maan-stat-label { color: var(--maan-ink-muted); font-size: .9rem; margin-top: .35rem; }
+.dark .maan-stat-label { color: #B8CADC; }
 
-.maan-garden-card:hover {
-  box-shadow: 0 22px 42px color-mix(in srgb, var(--ui-primary) 14%, transparent);
+/* ─── FAQ ─── */
+.maan-faq-item {
+  border-radius: 1rem;
+  border: 1px solid var(--maan-line);
+  background: var(--maan-surface-alt);
+  padding: 1rem 1.25rem;
 }
+.dark .maan-faq-item { background: #11243A; border-color: rgba(94, 134, 175, .2); }
+.maan-faq-item + .maan-faq-item { margin-top: .75rem; }
+.maan-faq-summary {
+  cursor: pointer;
+  font-weight: 650;
+  color: var(--maan-ink);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.dark .maan-faq-summary { color: #F1F8FD; }
+.maan-faq-summary::-webkit-details-marker { display: none; }
+.maan-faq-summary::after {
+  content: "+";
+  font-weight: 600;
+  color: var(--maan-autism);
+  transition: transform .2s;
+}
+[open] > .maan-faq-summary::after { content: "−"; }
+.maan-faq-body { color: var(--maan-ink-muted); margin-top: .65rem; line-height: 1.85; font-size: .95rem; }
+.dark .maan-faq-body { color: #B8CADC; }
+
+/* ─── Form (refined for accessibility) ─── */
 
 .maan-form-section {
-  border-color: color-mix(in srgb, var(--ui-primary) 14%, transparent);
-  background:
-    radial-gradient(circle at 12% 18%, rgba(255, 225, 168, .38), transparent 20rem),
-    radial-gradient(circle at 86% 12%, rgba(207, 223, 195, .72), transparent 22rem),
-    linear-gradient(120deg, color-mix(in srgb, var(--ui-bg) 88%, var(--color-amber-50)), color-mix(in srgb, var(--ui-bg) 84%, var(--color-green-50)));
+  border-color: var(--maan-line);
+  background: linear-gradient(180deg, #F1F8FD, var(--maan-surface));
 }
-
-.dark .maan-form-section {
-  background:
-    radial-gradient(circle at 12% 18%, rgba(169, 112, 50, .14), transparent 20rem),
-    radial-gradient(circle at 86% 12%, rgba(108, 143, 120, .18), transparent 22rem),
-    linear-gradient(120deg, var(--color-stone-950), var(--color-green-950));
-}
+.dark .maan-form-section { background: linear-gradient(180deg, #0F2742, #0B1623); }
 
 .maan-form-card {
-  border: 1px solid color-mix(in srgb, var(--ui-primary) 14%, transparent);
-  border-radius: 2rem 2rem 1rem 2rem;
-  background: color-mix(in srgb, var(--ui-bg) 90%, var(--color-amber-50));
-  box-shadow:
-    16px 16px 34px color-mix(in srgb, var(--ui-primary) 10%, transparent),
-    -12px -12px 28px color-mix(in srgb, white 74%, transparent);
+  border: 1px solid var(--maan-line);
+  border-radius: 1.25rem;
+  background: var(--maan-surface-alt);
+  padding: clamp(1.25rem, 3vw, 2rem);
+  box-shadow: 0 30px 50px -32px rgba(15, 39, 65, .25);
 }
-
-.dark .maan-form-card {
-  border-color: color-mix(in srgb, var(--ui-primary) 22%, transparent);
-  background: color-mix(in srgb, var(--ui-bg) 88%, var(--color-amber-950));
-  box-shadow:
-    16px 16px 34px rgba(0, 0, 0, .24),
-    -10px -10px 24px rgba(255, 255, 255, .03);
-}
+.dark .maan-form-card { background: #11243A; border-color: rgba(94, 134, 175, .2); }
 
 .maan-form-input {
   width: 100%;
-  border: 1px solid color-mix(in srgb, var(--ui-primary) 14%, transparent);
-  border-radius: 1.1rem;
-  background: color-mix(in srgb, var(--ui-bg) 94%, var(--color-amber-50));
-  color: var(--ui-text-highlighted);
+  border: 1px solid var(--maan-line);
+  border-radius: .85rem;
+  background: var(--maan-surface);
+  color: var(--maan-ink);
+  font-family: inherit;
+  font-size: 1rem;
   line-height: 1.5;
   outline: none;
-  padding: .85rem 1rem;
-  transition: border-color .2s ease, box-shadow .2s ease;
+  padding: .8rem 1rem;
+  transition: border-color .2s, box-shadow .2s;
 }
-
-.dark .maan-form-input {
-  border-color: color-mix(in srgb, var(--ui-primary) 24%, transparent);
-  background: color-mix(in srgb, var(--ui-bg) 92%, var(--color-amber-950));
-}
-
-.maan-form-input::placeholder {
-  color: var(--ui-text-muted);
-}
-
-.maan-form-input:focus {
-  border-color: color-mix(in srgb, var(--ui-primary) 44%, transparent);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ui-primary) 14%, transparent);
-}
+.dark .maan-form-input { background: #0B1623; color: #E5EEF8; border-color: rgba(94, 134, 175, .25); }
+.maan-form-input::placeholder { color: var(--maan-ink-muted); }
+.maan-form-input:focus { border-color: var(--maan-autism); box-shadow: 0 0 0 4px rgba(61, 138, 197, .18); }
 
 .maan-dashboard-editor {
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--ui-primary) 14%, transparent);
-  border-radius: 1.1rem;
-  background: color-mix(in srgb, var(--ui-bg) 94%, var(--color-amber-50));
-  color: var(--ui-text-highlighted);
-  transition: border-color .2s ease, box-shadow .2s ease;
+  border: 1px solid var(--maan-line);
+  border-radius: .85rem;
+  background: var(--maan-surface-alt);
+  color: var(--maan-ink);
+  transition: border-color .2s, box-shadow .2s;
 }
-
-.dark .maan-dashboard-editor {
-  border-color: color-mix(in srgb, var(--ui-primary) 24%, transparent);
-  background: color-mix(in srgb, var(--ui-bg) 92%, var(--color-amber-950));
-}
-
+.dark .maan-dashboard-editor { background: #11243A; border-color: rgba(94, 134, 175, .25); color: #E5EEF8; }
 .maan-dashboard-editor:focus-within {
-  border-color: color-mix(in srgb, var(--ui-primary) 44%, transparent);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ui-primary) 14%, transparent);
+  border-color: var(--maan-autism);
+  box-shadow: 0 0 0 4px rgba(61, 138, 197, .18);
 }
-
 .maan-dashboard-editor [data-slot="content"],
-.maan-dashboard-editor .ProseMirror {
-  min-height: 18rem;
-}
-
-.maan-dashboard-editor .ProseMirror {
-  outline: none;
-}
-
-.maan-dashboard-editor .ProseMirror > * + * {
-  margin-top: .9rem;
-}
-
-.maan-dashboard-editor .ProseMirror h2 {
-  font-size: 1.35rem;
-  font-weight: 650;
-  line-height: 1.3;
-}
-
-.maan-dashboard-editor .ProseMirror h3 {
-  font-size: 1.1rem;
-  font-weight: 650;
-  line-height: 1.35;
-}
-
+.maan-dashboard-editor .ProseMirror { min-height: 18rem; }
+.maan-dashboard-editor .ProseMirror { outline: none; }
+.maan-dashboard-editor .ProseMirror > * + * { margin-top: .9rem; }
+.maan-dashboard-editor .ProseMirror h2 { font-size: 1.35rem; font-weight: 650; line-height: 1.3; }
+.maan-dashboard-editor .ProseMirror h3 { font-size: 1.1rem; font-weight: 650; line-height: 1.35; }
 .maan-dashboard-editor .ProseMirror ul,
-.maan-dashboard-editor .ProseMirror ol {
-  padding-inline-start: 1.5rem;
-}
-
-.maan-dashboard-editor .ProseMirror ul {
-  list-style: disc;
-}
-
-.maan-dashboard-editor .ProseMirror ol {
-  list-style: decimal;
-}
-
+.maan-dashboard-editor .ProseMirror ol { padding-inline-start: 1.5rem; }
+.maan-dashboard-editor .ProseMirror ul { list-style: disc; }
+.maan-dashboard-editor .ProseMirror ol { list-style: decimal; }
 .maan-dashboard-editor .ProseMirror blockquote {
-  border-inline-start: 3px solid var(--ui-primary);
-  color: var(--ui-text-muted);
+  border-inline-start: 3px solid var(--maan-autism);
+  color: var(--maan-ink-muted);
   padding-inline-start: 1rem;
 }
 
@@ -316,108 +570,73 @@ body {
   display: flex;
   align-items: center;
   gap: .7rem;
-  border: 1px solid color-mix(in srgb, var(--ui-primary) 12%, transparent);
-  border-radius: 1rem;
-  background: color-mix(in srgb, var(--ui-bg) 90%, var(--color-amber-50));
-  color: var(--ui-text);
+  border: 1px solid var(--maan-line);
+  border-radius: .85rem;
+  background: var(--maan-surface-alt);
+  color: var(--maan-ink);
   cursor: pointer;
   padding: .75rem .9rem;
 }
+.dark .maan-choice { background: #11243A; color: #E5EEF8; border-color: rgba(94, 134, 175, .2); }
+.maan-choice input { accent-color: var(--maan-autism); }
 
-.maan-choice input {
-  accent-color: var(--ui-primary);
+/* ─── Prose card (blog body wrapper) ─── */
+.maan-prose-card {
+  border: 1px solid var(--maan-line);
+  border-radius: 1.5rem;
+  background: var(--maan-surface-alt);
+  padding: clamp(1.5rem, 4vw, 3rem);
+  box-shadow: 0 30px 50px -32px rgba(15, 39, 65, .2);
+}
+.dark .maan-prose-card { background: #11243A; border-color: rgba(94, 134, 175, .2); }
+
+.maan-prose { color: var(--maan-ink); font-size: 1.0625rem; line-height: 1.85; }
+.dark .maan-prose { color: #E5EEF8; }
+.maan-prose > * + * { margin-top: 1.25rem; }
+.maan-prose h2 { color: var(--maan-ink); font-size: 1.5rem; font-weight: 650; line-height: 1.35; margin-top: 2rem; }
+.dark .maan-prose h2 { color: #F1F8FD; }
+.maan-prose p { color: var(--maan-ink-muted); }
+.dark .maan-prose p { color: #B8CADC; }
+
+/* ─── Trust strip ─── */
+.maan-trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem 1.5rem;
+  border-radius: 1rem;
+  border: 1px dashed var(--maan-line);
+  color: var(--maan-ink-muted);
+  font-size: .85rem;
 }
 
-.maan-step-number {
-  border-radius: 1.25rem;
-  background: color-mix(in srgb, var(--ui-secondary) 20%, var(--ui-bg));
-  color: var(--ui-primary);
+/* Respect reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  html { scroll-behavior: auto; }
+}
+
+/* ─── Legacy class compatibility (still used by blog/contact pages) ─── */
+.maan-blog-hero,
+.maan-contact-hero {
+  border-color: var(--maan-line);
+  background:
+    radial-gradient(ellipse at 12% 8%, rgba(189, 221, 243, .55), transparent 28rem),
+    radial-gradient(ellipse at 92% 12%, rgba(168, 228, 194, .42), transparent 26rem),
+    linear-gradient(180deg, #FFFFFF, var(--maan-surface));
+}
+.dark .maan-blog-hero,
+.dark .maan-contact-hero {
+  background:
+    radial-gradient(ellipse at 12% 8%, rgba(61, 138, 197, .22), transparent 28rem),
+    radial-gradient(ellipse at 92% 12%, rgba(43, 163, 101, .18), transparent 26rem),
+    linear-gradient(180deg, #0F1E30, #0B1623);
 }
 
 .maan-section-band {
-  border-color: color-mix(in srgb, var(--ui-primary) 14%, transparent);
-  background:
-    radial-gradient(circle at 12% 20%, rgba(255, 225, 168, .32), transparent 18rem),
-    linear-gradient(120deg, color-mix(in srgb, var(--ui-bg) 88%, var(--color-amber-50)), color-mix(in srgb, var(--ui-bg) 82%, var(--color-green-50)));
+  border-color: var(--maan-line);
+  background: linear-gradient(180deg, #FFFFFF, var(--maan-surface));
 }
-
-.maan-blog-hero,
-.maan-contact-hero {
-  border-color: color-mix(in srgb, var(--ui-primary) 14%, transparent);
-  background:
-    radial-gradient(circle at 12% 12%, rgba(255, 225, 168, .5), transparent 18rem),
-    radial-gradient(circle at 88% 8%, rgba(207, 223, 195, .74), transparent 20rem),
-    linear-gradient(120deg, var(--color-amber-50), var(--color-green-50));
-}
-
-.dark .maan-blog-hero,
-.dark .maan-contact-hero,
-.dark .maan-section-band {
-  background:
-    radial-gradient(circle at 12% 12%, rgba(169, 112, 50, .16), transparent 18rem),
-    radial-gradient(circle at 88% 8%, rgba(108, 143, 120, .2), transparent 20rem),
-    linear-gradient(120deg, var(--color-stone-950), var(--color-green-950));
-}
-
-.maan-programs [data-slot="item"],
-.maan-programs [data-slot="feature"],
-.maan-cta-section [data-slot="root"],
-.maan-cta-section [data-slot="container"] > [data-slot="root"] {
-  border-radius: 1.875rem 1.875rem .875rem 1.875rem;
-}
-
-.maan-prose-card {
-  border: 1px solid color-mix(in srgb, var(--ui-primary) 12%, transparent);
-  border-radius: 2rem 2rem 1rem 2rem;
-  background: color-mix(in srgb, var(--ui-bg) 91%, var(--color-amber-50));
-  padding: clamp(1.35rem, 4vw, 3rem);
-  box-shadow: 0 20px 44px color-mix(in srgb, var(--ui-primary) 10%, transparent);
-}
-
-.maan-prose {
-  color: var(--ui-text);
-  font-size: 1.0625rem;
-  line-height: 1.85;
-}
-
-.maan-prose > * + * {
-  margin-top: 1.25rem;
-}
-
-.maan-prose h2 {
-  color: color-mix(in srgb, var(--ui-text-highlighted) 88%, var(--ui-primary));
-  font-size: 1.5rem;
-  font-weight: 650;
-  line-height: 1.3;
-  margin-top: 2rem;
-}
-
-.maan-prose p {
-  color: var(--ui-text-muted);
-}
-
-@media (max-width: 640px) {
-  .maan-garden-visual {
-    min-height: 26rem;
-  }
-
-  .maan-photo-card {
-    inset: 1rem 1rem auto;
-    border-width: 5px;
-  }
-
-  .maan-photo-card img {
-    height: 15rem;
-  }
-
-  .maan-path-card {
-    width: 6.25rem;
-    height: 6.25rem;
-  }
-
-  .maan-note-card {
-    left: 1rem;
-    right: 1rem;
-    bottom: 1rem;
-  }
-}
+.dark .maan-section-band { background: linear-gradient(180deg, #0F1E30, #0B1623); border-color: rgba(94, 134, 175, .18); }

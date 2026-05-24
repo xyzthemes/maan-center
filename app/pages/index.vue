@@ -10,51 +10,104 @@ const { data: posts } = await useAsyncData<MaanPost[]>('maan-home-posts', async 
   default: () => []
 })
 const { data: pageSeo } = await useAsyncData<MaanSeo>('maan-page-seo-home', () => getPageSeo('/', {
-  title: 'Maan Special Education Center',
-  description: 'Maan Special Education Center provides individualized learning, therapy, and family support for children with diverse needs.'
+  title: 'Maan Special Education Center | Bahrain',
+  description: 'Maan Special Education Center in Bahrain — assessment, individualized education plans, and integrated therapy for autism spectrum, Down syndrome, and learning difficulties.'
 }))
 const { data: resourcesForm } = await useAsyncData<MaanFormBlock | undefined>('maan-home-resources-form', () => getFormBlockById('1419faec-e263-431c-bd5f-a57f394c39f6'))
 
-const services = [
+// ────────────────────────────────────────────────────────────────────
+const programs = [
   {
-    icon: 'i-lucide-clipboard-check',
-    title: 'Individualized Education Plans',
-    description: 'Assessment-led goals, classroom strategies, and progress reviews built around each learner.'
+    variant: 'autism' as const,
+    icon: 'i-lucide-puzzle',
+    title: 'Autism Spectrum Programs',
+    description: 'Behavior modification, alternative communication, and graduated inclusion within a science-based individual plan.',
+    to: '/programs/autism',
+    ctaLabel: 'Explore program'
   },
   {
-    icon: 'i-lucide-message-circle-heart',
-    title: 'Speech and Communication',
-    description: 'Practical communication support for spoken language, social interaction, and assisted communication.'
+    variant: 'down' as const,
+    icon: 'i-lucide-heart-handshake',
+    title: 'Down Syndrome Programs',
+    description: 'Early intervention, Portage-based motor support, and muscle strengthening focused on daily independence.',
+    to: '/programs/down-syndrome',
+    ctaLabel: 'Explore program'
   },
   {
-    icon: 'i-lucide-hand-heart',
-    title: 'Occupational Therapy',
-    description: 'Fine motor, sensory regulation, and daily living support that helps children participate with confidence.'
-  },
-  {
-    icon: 'i-lucide-users',
-    title: 'Family Guidance',
-    description: 'Parent meetings, home routines, and shared strategies so support continues beyond the center.'
+    variant: 'ld' as const,
+    icon: 'i-lucide-book-open-check',
+    title: 'Learning Difficulties Programs',
+    description: 'Reading and writing support, academic skills development, and visual-first advanced arithmetic.',
+    to: '/programs/learning-difficulties',
+    ctaLabel: 'Explore program'
   }
 ]
 
-const pathways = [
-  'Early assessment and intake',
-  'Individual learning plan',
-  'Therapy and classroom support',
-  'Progress review with families'
+const assessmentTools = [
+  { icon: 'i-lucide-clipboard-check', name: 'CARS Scale', desc: 'Structured assessment of autism spectrum trait intensity in children.' },
+  { icon: 'i-lucide-list-checks', name: 'GILLIAM Scale', desc: 'Widely used screening tool for behavioral indicators of autism.' },
+  { icon: 'i-lucide-brain', name: 'Intelligence Measures', desc: 'Standardized cognitive assessments to map strengths and learning needs.' }
+]
+
+const iepMethods = [
+  { icon: 'i-lucide-target', name: 'Lovaas', desc: 'Intensive applied behavior analysis that builds skills step by step.' },
+  { icon: 'i-lucide-grid-3x3', name: 'TEACCH', desc: 'Structured visual teaching that supports independence at school and home.' },
+  { icon: 'i-lucide-baby', name: 'Portage', desc: 'Family-based early intervention rooted in observing the child in their environment.' }
+]
+
+const therapies = [
+  { icon: 'i-lucide-message-circle-heart', name: 'Speech & Language', desc: 'Support for verbal, alternative, and social-language communication.' },
+  { icon: 'i-lucide-hand-heart', name: 'Occupational Therapy', desc: 'Fine motor and daily-living skills development.' },
+  { icon: 'i-lucide-waves', name: 'Sensory Integration', desc: 'Calibrating sensory input to improve attention and participation.' }
+]
+
+const whyUs = [
+  { icon: 'i-lucide-shield-check', title: 'Accurate scientific assessment', desc: 'Internationally recognized tools and clear methodology before any plan.' },
+  { icon: 'i-lucide-users-round', title: 'Multidisciplinary team', desc: 'Teachers, therapists, and specialists working from one shared plan.' },
+  { icon: 'i-lucide-home', title: 'Family support every step', desc: 'Home plans and recurring reviews bridge the center and the home.' },
+  { icon: 'i-lucide-sparkles', title: 'Calm, sensory-friendly space', desc: 'Environments designed to lower stimulation and ease focus.' }
+]
+
+const faqs = [
+  { q: 'How long is a single session?', a: 'Sessions typically run 45–60 minutes. The exact duration is set after the initial assessment based on the child’s needs.' },
+  { q: 'What age range does the center accept?', a: 'We support children from an early age through school-age. The assessment team determines the right service per age and need.' },
+  { q: 'How does the assessment process begin?', a: 'It starts with a family meeting to gather context, followed by an observation session and applicable measures, then a written report and action plan.' },
+  { q: 'What role does the family play in the plan?', a: 'The family is a core partner. We share goals and observations regularly and provide simplified home plans to reinforce progress.' },
+  { q: 'How do I book an appointment?', a: 'Contact us via WhatsApp, phone, or the form below. Our team follows up within one working day.' }
+]
+
+const stats = [
+  { value: '+100', label: 'Children supported' },
+  { value: '+3,000', label: 'Therapy hours delivered' },
+  { value: '+80', label: 'Families walked alongside' },
+  { value: 'Years', label: 'Of specialist experience' }
+]
+
+const testimonials = [
+  {
+    quote: 'We found a team that listens to the family first. Our child’s plan became clear and doable at home.',
+    attribution: 'Parent, Manama'
+  },
+  {
+    quote: 'The continuous communication with therapists is what we needed — slow, steady progress.',
+    attribution: 'Parent, Muharraq'
+  },
+  {
+    quote: 'The space is calm and well-suited to our child. The difference was clear from the very first session.',
+    attribution: 'Parent, Riffa'
+  }
 ]
 
 const resolvedSeo = useMaanSeo({
   seo: pageSeo.value || undefined,
   fallback: {
-    title: 'Maan Special Education Center',
-    description: 'Maan Special Education Center provides individualized learning, therapy, and family support for children with diverse needs.'
+    title: 'Maan Special Education Center | Bahrain',
+    description: 'Assessment, individualized plans, and integrated therapy for children with autism spectrum disorder, Down syndrome, and learning difficulties — in Bahrain.'
   },
   ogFallback: {
     title: 'Learning support shaped around every child.',
-    description: 'Individualized education, therapy, and family support for children with diverse learning needs.',
-    eyebrow: 'Special Education Center',
+    description: 'Science-based assessment, individualized education plans, and integrated therapy.',
+    eyebrow: 'Maan Special Education Center',
     locale: 'en'
   }
 })
@@ -66,12 +119,12 @@ useSchemaOrg([
     inLanguage: 'en'
   }),
   defineItemList({
-    name: 'Special education and therapy support',
-    itemListElement: services.map((service, index) => ({
+    name: 'Maan Special Education Center — programs',
+    itemListElement: programs.map((p, i) => ({
       '@type': 'ListItem',
-      'position': index + 1,
-      'name': service.title,
-      'description': service.description
+      'position': i + 1,
+      'name': p.title,
+      'description': p.description
     }))
   })
 ])
@@ -79,195 +132,584 @@ useSchemaOrg([
 
 <template>
   <div class="maan-page">
-    <section class="maan-hero border-b border-default">
-      <UContainer class="grid gap-10 py-16 sm:py-20 lg:grid-cols-[1.05fr_.95fr] lg:items-center">
+    <!-- HERO -->
+    <section class="maan-hero border-b">
+      <UContainer class="grid gap-10 py-14 sm:py-20 lg:grid-cols-[1.05fr_.95fr] lg:items-center">
         <div class="max-w-3xl">
-          <UBadge
-            color="primary"
-            variant="subtle"
-            class="mb-5"
-          >
-            Special Education Center
-          </UBadge>
-          <h1 class="maan-hero-title text-5xl font-semibold text-highlighted sm:text-6xl">
-            Learning support shaped around every child.
+          <span class="maan-eyebrow">
+            <UIcon
+              name="i-lucide-sparkles"
+              class="size-3.5"
+            />
+            Special Education Center in Bahrain
+          </span>
+          <h1 class="maan-hero-title mt-5 text-4xl font-bold sm:text-5xl lg:text-6xl">
+            Learning and therapy shaped around every child.
           </h1>
-          <p class="maan-hero-copy mt-6 max-w-2xl text-lg leading-8 text-muted">
-            Maan Special Education Center helps children build communication, independence, social confidence, and academic readiness through individualized plans and coordinated therapy.
+          <p class="maan-hero-copy mt-6 max-w-2xl text-lg">
+            Maan Special Education Center delivers accurate assessment, individualized education plans,
+            and integrated therapy for children with autism spectrum disorder, Down syndrome, and
+            learning difficulties — in a calm space that respects each child’s pace.
           </p>
           <div class="mt-8 flex flex-wrap gap-3">
-            <UButton
-              to="#programs"
-              size="xl"
-              trailing-icon="i-lucide-arrow-right"
+            <NuxtLink
+              to="/contact"
+              class="maan-cta-btn"
             >
-              Explore programs
-            </UButton>
-            <UButton
-              to="/blog"
-              color="neutral"
-              variant="subtle"
-              size="xl"
-              icon="i-lucide-book-open"
+              <UIcon
+                name="i-lucide-calendar-check"
+                class="size-5"
+              />
+              <span>Book an assessment</span>
+            </NuxtLink>
+            <a
+              href="https://wa.me/97332055666?text=I%20would%20like%20a%20consultation%20about%20my%20child"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="maan-ghost-btn"
             >
-              Read the blog
-            </UButton>
+              <UIcon
+                name="i-lucide-message-circle"
+                class="size-5"
+              />
+              <span>Chat on WhatsApp</span>
+            </a>
+          </div>
+          <div
+            class="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm"
+            style="color: var(--maan-ink-muted);"
+          >
+            <span class="inline-flex items-center gap-1.5">
+              <UIcon
+                name="i-lucide-shield-check"
+                class="size-4"
+                style="color: var(--maan-down);"
+              />
+              Accurate scientific assessment
+            </span>
+            <span class="inline-flex items-center gap-1.5">
+              <UIcon
+                name="i-lucide-users-round"
+                class="size-4"
+                style="color: var(--maan-autism);"
+              />
+              Multidisciplinary team
+            </span>
+            <span class="inline-flex items-center gap-1.5">
+              <UIcon
+                name="i-lucide-heart"
+                class="size-4"
+                style="color: var(--maan-cta);"
+              />
+              Full family support
+            </span>
           </div>
         </div>
 
-        <div class="maan-garden-visual">
-          <div class="maan-photo-card">
-            <img
-              src="https://commons.wikimedia.org/wiki/Special:Redirect/file/Autistic_children_receiving_individual_education_in_special_classes_%28FL63605208%29.jpg"
-              alt="A teacher supporting children during individual education activities"
-            >
-          </div>
-          <div class="maan-path-card">
-            Practice
-          </div>
-          <div class="maan-path-card">
-            Repeat
-          </div>
-          <div class="maan-note-card">
-            <p class="text-sm font-medium text-highlighted">
-              Coordinated care team
-            </p>
-            <p class="mt-1 text-sm leading-6 text-muted">
-              Educators, therapists, and families work from one shared plan.
-            </p>
-          </div>
+        <MaanHeroVisual locale="en" />
+      </UContainer>
+    </section>
+
+    <!-- STATS -->
+    <section
+      class="border-b"
+      style="border-color: var(--maan-line);"
+    >
+      <UContainer class="py-10 sm:py-14">
+        <MaanStats :items="stats" />
+        <p
+          class="mt-4 text-center text-xs"
+          style="color: var(--maan-ink-muted);"
+        >
+          <!-- TODO_IMPLEMENTATION_REFERENCES: replace with audited figures. -->
+          Figures are estimates pending administration confirmation.
+        </p>
+      </UContainer>
+    </section>
+
+    <!-- PROGRAMS -->
+    <section
+      id="programs"
+      class="maan-section"
+    >
+      <UContainer>
+        <div class="mx-auto max-w-2xl text-center">
+          <span class="maan-eyebrow">Three programs</span>
+          <h2 class="maan-h2 mt-4">
+            Three specialty areas — one plan designed around your child.
+          </h2>
+          <p class="maan-lead mx-auto mt-4">
+            Start from the program closest to your child’s needs. Each is led by a specialist team and
+            built on a careful scientific assessment.
+          </p>
+        </div>
+        <div class="mt-12 grid gap-6 md:grid-cols-3">
+          <MaanProgramCard
+            v-for="p in programs"
+            :key="p.to"
+            v-bind="p"
+            locale="en"
+          />
         </div>
       </UContainer>
     </section>
 
-    <UPageSection
-      id="programs"
-      class="maan-programs"
-      title="Programs built for steady progress"
-      description="A focused set of education and therapy services designed around each child’s strengths, needs, and daily routines."
-      :features="services"
-    />
-
-    <section class="maan-section-band border-y border-default">
-      <UContainer class="grid gap-10 py-16 lg:grid-cols-[.85fr_1.15fr] lg:items-start">
+    <!-- ASSESSMENT -->
+    <section class="maan-band maan-band--autism">
+      <UContainer class="maan-section grid gap-10 lg:grid-cols-[.85fr_1.15fr] lg:items-start">
         <div>
-          <UBadge
-            color="secondary"
-            variant="subtle"
-            class="mb-4"
-          >
-            How Support Works
-          </UBadge>
-          <h2 class="text-3xl font-semibold text-highlighted sm:text-4xl">
-            Clear steps for families from intake to progress review.
+          <span class="maan-eyebrow">Initial assessment & intake</span>
+          <h2 class="maan-h2 mt-4">
+            We start by understanding your child before suggesting any plan.
           </h2>
-          <p class="mt-5 text-base leading-7 text-muted">
-            The center keeps support practical and collaborative, with goals that can be understood by teachers, therapists, and caregivers.
+          <p class="maan-lead mt-4">
+            We use internationally recognized measures to draw an accurate picture of strengths and needs,
+            then share it with the family in a clear written report.
           </p>
         </div>
-
         <div class="grid gap-4 sm:grid-cols-2">
           <div
-            v-for="(pathway, index) in pathways"
-            :key="pathway"
-            class="maan-garden-card p-6"
+            v-for="tool in assessmentTools"
+            :key="tool.name"
+            class="maan-card"
           >
-            <div class="maan-step-number mb-5 flex size-10 items-center justify-center text-sm font-semibold">
-              {{ index + 1 }}
+            <div class="maan-card-icon">
+              <UIcon
+                :name="tool.icon"
+                class="size-5"
+              />
             </div>
-            <h3 class="text-lg font-semibold text-highlighted">
-              {{ pathway }}
+            <h3 class="maan-card-title">
+              {{ tool.name }}
             </h3>
-            <p class="mt-2 text-sm leading-6 text-muted">
-              Practical next steps, shared notes, and measurable goals keep the plan moving.
+            <p class="maan-card-body mt-2">
+              {{ tool.desc }}
             </p>
           </div>
         </div>
       </UContainer>
     </section>
 
-    <UContainer class="py-16 sm:py-20">
-      <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <UBadge
-            color="primary"
-            variant="subtle"
-            class="mb-4"
+    <!-- IEP METHODS -->
+    <section class="maan-section">
+      <UContainer>
+        <div class="mx-auto max-w-2xl text-center">
+          <span class="maan-eyebrow maan-eyebrow--ld">Individualized Education Plan (IEP)</span>
+          <h2 class="maan-h2 mt-4">
+            Established methodologies behind every plan.
+          </h2>
+          <p class="maan-lead mx-auto mt-4">
+            We build each IEP on internationally recognized methodologies, choosing the tools
+            that best fit your child’s profile.
+          </p>
+        </div>
+        <div class="mt-12 grid gap-6 md:grid-cols-3">
+          <div
+            v-for="m in iepMethods"
+            :key="m.name"
+            class="maan-card"
           >
-            Latest Articles
-          </UBadge>
-          <h2 class="text-3xl font-semibold text-highlighted">
-            Guidance for everyday support
+            <div class="maan-card-icon maan-card-icon--ld">
+              <UIcon
+                :name="m.icon"
+                class="size-6"
+              />
+            </div>
+            <h3 class="maan-card-title">
+              {{ m.name }}
+            </h3>
+            <p class="maan-card-body mt-2">
+              {{ m.desc }}
+            </p>
+          </div>
+        </div>
+      </UContainer>
+    </section>
+
+    <!-- THERAPIES -->
+    <section class="maan-band maan-band--down">
+      <UContainer class="maan-section">
+        <div class="mx-auto max-w-2xl text-center">
+          <span class="maan-eyebrow maan-eyebrow--down">Therapeutic & educational support</span>
+          <h2 class="maan-h2 mt-4">
+            Specialist sessions that reinforce the individualized plan.
           </h2>
         </div>
-        <UButton
-          to="/blog"
-          color="neutral"
-          variant="outline"
-          trailing-icon="i-lucide-arrow-right"
-        >
-          View all
-        </UButton>
-      </div>
-
-      <div class="grid gap-6 md:grid-cols-3">
-        <article
-          v-for="post in posts"
-          :key="post.slug"
-          class="maan-garden-card group p-6 transition hover:-translate-y-1"
-        >
-          <UBadge
-            color="neutral"
-            variant="soft"
+        <div class="mt-12 grid gap-6 md:grid-cols-3">
+          <div
+            v-for="t in therapies"
+            :key="t.name"
+            class="maan-card"
           >
-            {{ post.category }}
-          </UBadge>
-          <h3 class="mt-5 text-xl font-semibold leading-7 text-highlighted">
-            <NuxtLink :to="`/blog/${post.slug}`">
-              {{ post.title }}
-            </NuxtLink>
-          </h3>
-          <p class="mt-3 line-clamp-3 text-sm leading-6 text-muted">
-            {{ post.description }}
+            <div class="maan-card-icon maan-card-icon--down">
+              <UIcon
+                :name="t.icon"
+                class="size-6"
+              />
+            </div>
+            <h3 class="maan-card-title">
+              {{ t.name }}
+            </h3>
+            <p class="maan-card-body mt-2">
+              {{ t.desc }}
+            </p>
+          </div>
+        </div>
+      </UContainer>
+    </section>
+
+    <!-- FAMILY PROGRESS -->
+    <section class="maan-section">
+      <UContainer class="grid gap-10 lg:grid-cols-2 lg:items-center">
+        <div>
+          <span class="maan-eyebrow">Digital family follow-up</span>
+          <h2 class="maan-h2 mt-4">
+            A digital home plan delivered on a regular cadence.
+          </h2>
+          <p class="maan-lead mt-4">
+            We translate team observations and session goals into a readable, doable home plan
+            shared with you on a recurring schedule, so progress continues between sessions.
           </p>
-          <div class="mt-6 flex items-center justify-between text-sm text-muted">
-            <NuxtTime
-              :datetime="post.publishedAt"
-              month="short"
-              day="numeric"
-            />
+          <ul
+            class="mt-6 space-y-3 text-sm"
+            style="color: var(--maan-ink);"
+          >
+            <li class="flex items-start gap-3">
+              <UIcon
+                name="i-lucide-check-circle-2"
+                class="size-5 mt-0.5"
+                style="color: var(--maan-down);"
+              />
+              <span>Written report after each review</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <UIcon
+                name="i-lucide-check-circle-2"
+                class="size-5 mt-0.5"
+                style="color: var(--maan-down);"
+              />
+              <span>Illustrated, doable home exercises</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <UIcon
+                name="i-lucide-check-circle-2"
+                class="size-5 mt-0.5"
+                style="color: var(--maan-down);"
+              />
+              <span>Clear channels to reach the follow-up team</span>
+            </li>
+          </ul>
+        </div>
+        <div class="maan-card p-2">
+          <div
+            class="rounded-xl p-6"
+            style="background: linear-gradient(135deg, var(--maan-autism-soft), var(--maan-down-soft));"
+          >
+            <div class="grid gap-3">
+              <div class="rounded-lg bg-white/80 p-4 shadow-sm">
+                <p
+                  class="text-xs font-semibold"
+                  style="color: var(--maan-autism);"
+                >
+                  Week 12
+                </p>
+                <p
+                  class="mt-1 font-semibold"
+                  style="color: var(--maan-ink);"
+                >
+                  Alternative communication
+                </p>
+                <p
+                  class="mt-1 text-xs"
+                  style="color: var(--maan-ink-muted);"
+                >
+                  4 home sessions / 10 minutes
+                </p>
+              </div>
+              <div class="rounded-lg bg-white/80 p-4 shadow-sm">
+                <p
+                  class="text-xs font-semibold"
+                  style="color: var(--maan-down);"
+                >
+                  Motor skills
+                </p>
+                <p
+                  class="mt-1 font-semibold"
+                  style="color: var(--maan-ink);"
+                >
+                  Pencil grip strengthening
+                </p>
+                <p
+                  class="mt-1 text-xs"
+                  style="color: var(--maan-ink-muted);"
+                >
+                  3 daily, doable exercises
+                </p>
+              </div>
+              <div class="rounded-lg bg-white/80 p-4 shadow-sm">
+                <p
+                  class="text-xs font-semibold"
+                  style="color: var(--maan-ld);"
+                >
+                  Team notes
+                </p>
+                <p
+                  class="mt-1 font-semibold"
+                  style="color: var(--maan-ink);"
+                >
+                  Noticeable focus improvement
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </UContainer>
+    </section>
+
+    <!-- DR OSAMA -->
+    <section
+      id="about-dr-osama"
+      class="maan-section maan-band"
+    >
+      <UContainer>
+        <MaanDrOsamaCard locale="en" />
+      </UContainer>
+    </section>
+
+    <!-- WHY MAAN -->
+    <section class="maan-section">
+      <UContainer>
+        <div class="mx-auto max-w-2xl text-center">
+          <span class="maan-eyebrow maan-eyebrow--cta">Why Maan?</span>
+          <h2 class="maan-h2 mt-4">
+            A trusted reference for families looking for real support.
+          </h2>
+        </div>
+        <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div
+            v-for="w in whyUs"
+            :key="w.title"
+            class="maan-card"
+          >
+            <div class="maan-card-icon">
+              <UIcon
+                :name="w.icon"
+                class="size-6"
+              />
+            </div>
+            <h3 class="maan-card-title">
+              {{ w.title }}
+            </h3>
+            <p class="maan-card-body mt-2">
+              {{ w.desc }}
+            </p>
+          </div>
+        </div>
+      </UContainer>
+    </section>
+
+    <!-- MISSION & VISION -->
+    <section class="maan-section maan-band maan-band--autism">
+      <UContainer>
+        <MaanMissionVision locale="en" />
+      </UContainer>
+    </section>
+
+    <!-- TESTIMONIALS -->
+    <section class="maan-section">
+      <UContainer>
+        <div class="mx-auto max-w-2xl text-center">
+          <span class="maan-eyebrow">Family stories</span>
+          <h2 class="maan-h2 mt-4">
+            Words from families who walked the journey with us.
+          </h2>
+          <p class="maan-lead mx-auto mt-4">
+            We share parent reflections only — never any data about children — out of respect for their privacy.
+          </p>
+        </div>
+        <div class="mt-10">
+          <MaanTestimonials :items="testimonials" />
+        </div>
+      </UContainer>
+    </section>
+
+    <!-- LATEST ARTICLES -->
+    <section class="maan-section maan-band maan-band--ld">
+      <UContainer>
+        <div class="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <span class="maan-eyebrow maan-eyebrow--ld">Comprehensive Scientific Reference</span>
+            <h2 class="maan-h2 mt-4">
+              Maan’s Empowerment Guide
+            </h2>
+            <p class="maan-lead mt-3">
+              Articles and guides from our team for families and educators.
+            </p>
+          </div>
+          <NuxtLink
+            to="/blog"
+            class="maan-ghost-btn"
+          >
+            <span>View all</span>
             <UIcon
               name="i-lucide-arrow-right"
-              class="size-4 text-primary transition group-hover:translate-x-1"
+              class="size-4"
             />
-          </div>
-        </article>
-      </div>
-    </UContainer>
+          </NuxtLink>
+        </div>
 
+        <div class="grid gap-6 md:grid-cols-3">
+          <article
+            v-for="post in posts"
+            :key="post.slug"
+            class="maan-card group"
+          >
+            <UBadge
+              color="primary"
+              variant="subtle"
+            >
+              {{ post.category }}
+            </UBadge>
+            <h3 class="maan-card-title mt-4">
+              <NuxtLink
+                :to="`/blog/${post.slug}`"
+                class="hover:underline"
+              >
+                {{ post.title }}
+              </NuxtLink>
+            </h3>
+            <p class="maan-card-body mt-2 line-clamp-3">
+              {{ post.description }}
+            </p>
+            <div
+              class="mt-5 flex items-center justify-between text-xs"
+              style="color: var(--maan-ink-muted);"
+            >
+              <NuxtTime
+                :datetime="post.publishedAt"
+                month="short"
+                day="numeric"
+              />
+              <span
+                class="inline-flex items-center gap-1 font-semibold"
+                style="color: var(--maan-autism);"
+              >
+                Read article
+                <UIcon
+                  name="i-lucide-arrow-right"
+                  class="size-3.5 transition-transform group-hover:translate-x-0.5"
+                />
+              </span>
+            </div>
+          </article>
+        </div>
+      </UContainer>
+    </section>
+
+    <!-- FAQ -->
+    <section class="maan-section">
+      <UContainer class="grid gap-10 lg:grid-cols-[.85fr_1.15fr] lg:items-start">
+        <div class="lg:sticky lg:top-28">
+          <span class="maan-eyebrow">Frequently Asked</span>
+          <h2 class="maan-h2 mt-4">
+            Quick answers to common parent questions.
+          </h2>
+          <p class="maan-lead mt-4">
+            Couldn’t find your answer? Reach out on WhatsApp — we’ll reply within one working day.
+          </p>
+        </div>
+        <MaanFaq :items="faqs" />
+      </UContainer>
+    </section>
+
+    <!-- RESOURCES FORM (existing CMS-backed) -->
     <MaanForm
       :block="resourcesForm"
       locale="en"
     />
 
-    <UPageSection class="maan-cta-section">
-      <UPageCTA
-        title="Start with a conversation about your child’s needs."
-        description="Maan can help families understand the next practical step, from initial assessment to an individualized support plan."
-        variant="subtle"
-        :links="[{
-          label: 'Contact the center',
-          to: '/contact',
-          icon: 'i-lucide-mail',
-          color: 'primary'
-        }, {
-          label: 'Read family resources',
-          to: '/blog',
-          icon: 'i-lucide-book-open',
-          color: 'neutral',
-          variant: 'outline'
-        }]"
-      />
-    </UPageSection>
+    <!-- FINAL CTA -->
+    <section class="maan-section maan-band">
+      <UContainer>
+        <div class="maan-card mx-auto max-w-4xl p-8 text-center sm:p-12">
+          <h2 class="maan-h2">
+            Start your child’s journey with Maan.
+          </h2>
+          <p class="maan-lead mx-auto mt-4">
+            One step away from a thoughtful assessment and a plan built for your child.
+            Pick the channel that suits you.
+          </p>
+          <div class="mt-8 flex flex-wrap justify-center gap-3">
+            <NuxtLink
+              to="/contact"
+              class="maan-cta-btn"
+            >
+              <UIcon
+                name="i-lucide-calendar-check"
+                class="size-5"
+              />
+              <span>Book an assessment now</span>
+            </NuxtLink>
+            <a
+              href="https://wa.me/97332055666?text=I%20would%20like%20a%20consultation%20about%20my%20child"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="maan-ghost-btn"
+            >
+              <UIcon
+                name="i-lucide-message-circle"
+                class="size-5"
+              />
+              <span>WhatsApp chat</span>
+            </a>
+            <a
+              href="tel:+97332055666"
+              class="maan-ghost-btn"
+            >
+              <UIcon
+                name="i-lucide-phone"
+                class="size-5"
+              />
+              <span dir="ltr">+973 3205 5666</span>
+            </a>
+          </div>
+          <p
+            class="mt-6 text-xs"
+            style="color: var(--maan-ink-muted);"
+          >
+            Your data is encrypted, secure, and never shared.
+          </p>
+        </div>
+      </UContainer>
+    </section>
+
+    <!-- CAREERS -->
+    <section
+      id="careers"
+      class="maan-section"
+    >
+      <UContainer>
+        <div class="maan-card flex flex-col items-center gap-3 p-8 text-center sm:p-10">
+          <span class="maan-eyebrow maan-eyebrow--down">Join us</span>
+          <h2 class="maan-h2">
+            Careers & Volunteers
+          </h2>
+          <p class="maan-lead">
+            We welcome specialists, educators, and volunteers passionate about supporting children
+            with diverse needs. Reach out and we’ll share open opportunities.
+          </p>
+          <NuxtLink
+            to="/contact"
+            class="maan-cta-btn mt-2"
+          >
+            <UIcon
+              name="i-lucide-send"
+              class="size-5"
+            />
+            <span>Send your CV</span>
+          </NuxtLink>
+        </div>
+      </UContainer>
+    </section>
   </div>
 </template>

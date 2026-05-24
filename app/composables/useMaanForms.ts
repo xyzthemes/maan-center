@@ -35,87 +35,104 @@ export type MaanFormBlock = {
   form: MaanForm
 }
 
-export const createMaanContactFormFallback = (locale: 'en' | 'ar' = 'en'): MaanFormBlock => ({
-  id: locale === 'ar' ? 'maan-contact-form-fallback-ar' : 'maan-contact-form-fallback',
-  tagline: locale === 'ar' ? 'تواصل' : 'Contact',
-  headline: locale === 'ar'
-    ? 'اسأل عن التقييم والخدمات العلاجية والدعم التعليمي الفردي'
-    : 'Ask about assessment, therapy, and individualized education support',
-  form: {
-    id: '36493b64-2bad-4c58-9d70-785ccb12ee26',
-    title: 'Family Enquiry',
-    isActive: true,
-    submitLabel: 'Send enquiry',
-    onSuccess: 'message',
-    successMessage: 'Thank you. The Maan team will review your enquiry and follow up with the next step.',
-    fields: [{
-      id: 'maan-fallback-first-name',
-      name: 'first-name',
-      type: 'text',
-      label: 'First Name',
-      placeholder: 'John',
-      width: '50',
-      choices: [],
-      required: true,
-      sort: 1
-    }, {
-      id: 'maan-fallback-last-name',
-      name: 'last-name',
-      type: 'text',
-      label: 'Last Name',
-      placeholder: 'Doe',
-      width: '50',
-      choices: [],
-      required: true,
-      sort: 2
-    }, {
-      id: 'maan-fallback-email',
-      name: 'email',
-      type: 'text',
-      label: 'Email',
-      placeholder: 'john@example.com',
-      validation: 'email|max:255',
-      width: '100',
-      choices: [],
-      required: true,
-      sort: 3
-    }, {
-      id: 'maan-fallback-department',
-      name: 'department',
-      type: 'select',
-      label: 'What support are you interested in?',
-      width: '100',
-      choices: [{
-        text: 'Assessment',
-        value: 'assessment'
+// Phase 3 — Family Enquiry: parent name + phone + child age (required) +
+// service interest + message. Submissions route to /api/forms/submit and
+// land in the dashboard's Submissions table.
+export const createMaanContactFormFallback = (locale: 'en' | 'ar' = 'en'): MaanFormBlock => {
+  const isAr = locale === 'ar'
+  return {
+    id: isAr ? 'maan-contact-form-fallback-ar' : 'maan-contact-form-fallback',
+    tagline: isAr ? 'تواصل' : 'Contact',
+    headline: isAr
+      ? 'اسأل عن التقييم والخدمات العلاجية والدعم التعليمي الفردي'
+      : 'Ask about assessment, therapy, and individualized education support',
+    form: {
+      id: '36493b64-2bad-4c58-9d70-785ccb12ee26',
+      title: isAr ? 'استفسار الأسرة' : 'Family Enquiry',
+      isActive: true,
+      submitLabel: isAr ? 'إرسال الاستفسار' : 'Send enquiry',
+      onSuccess: 'redirect',
+      successMessage: isAr
+        ? 'شكراً لتواصلكم. سيتابع فريق معاً معكم خلال يوم العمل.'
+        : 'Thank you. The Maan team will follow up within one working day.',
+      successRedirectUrl: isAr ? '/ar/contact/thank-you' : '/contact/thank-you',
+      fields: [{
+        id: 'maan-fallback-parent-name',
+        name: 'parent-name',
+        type: 'text',
+        label: isAr ? 'اسم ولي الأمر' : 'Parent name',
+        placeholder: isAr ? 'الاسم الكامل' : 'Full name',
+        width: '50',
+        choices: [],
+        required: true,
+        sort: 1
       }, {
-        text: 'Individualized education',
-        value: 'individualized-education'
+        id: 'maan-fallback-phone',
+        name: 'phone',
+        type: 'text',
+        label: isAr ? 'رقم الهاتف' : 'Phone number',
+        placeholder: '+973 …',
+        validation: 'max:30',
+        width: '50',
+        choices: [],
+        required: true,
+        sort: 2
       }, {
-        text: 'Speech and communication',
-        value: 'speech-communication'
+        id: 'maan-fallback-child-age',
+        name: 'child-age',
+        type: 'text',
+        label: isAr ? 'عمر الطفل' : 'Child age',
+        placeholder: isAr ? 'مثال: ٤ سنوات' : 'e.g. 4 years',
+        validation: 'max:20',
+        width: '50',
+        choices: [],
+        required: true,
+        sort: 3
       }, {
-        text: 'Occupational therapy',
-        value: 'occupational-therapy'
+        id: 'maan-fallback-service',
+        name: 'service',
+        type: 'select',
+        label: isAr ? 'نوع الخدمة المطلوبة' : 'Service of interest',
+        width: '50',
+        choices: [
+          { text: isAr ? 'تقييم أولي' : 'Initial assessment', value: 'assessment' },
+          { text: isAr ? 'اضطراب طيف التوحد' : 'Autism spectrum', value: 'autism' },
+          { text: isAr ? 'متلازمة داون' : 'Down syndrome', value: 'down-syndrome' },
+          { text: isAr ? 'صعوبات التعلم' : 'Learning difficulties', value: 'learning-difficulties' },
+          { text: isAr ? 'علاج النطق' : 'Speech therapy', value: 'speech' },
+          { text: isAr ? 'العلاج الوظيفي' : 'Occupational therapy', value: 'ot' },
+          { text: isAr ? 'استشارة أسرية' : 'Family guidance', value: 'family' },
+          { text: isAr ? 'وظائف ومتطوعين' : 'Careers & volunteers', value: 'careers' }
+        ],
+        required: true,
+        sort: 4
       }, {
-        text: 'Family guidance',
-        value: 'family-guidance'
-      }],
-      required: false,
-      sort: 4
-    }, {
-      id: 'maan-fallback-comments',
-      name: 'comments',
-      type: 'textarea',
-      label: 'How can we help?',
-      placeholder: 'Share your child\'s age, needs, and preferred next step.',
-      width: '100',
-      choices: [],
-      required: false,
-      sort: 5
-    }]
+        id: 'maan-fallback-email',
+        name: 'email',
+        type: 'text',
+        label: isAr ? 'البريد الإلكتروني (اختياري)' : 'Email (optional)',
+        placeholder: 'name@example.com',
+        validation: 'email|max:255',
+        width: '100',
+        choices: [],
+        required: false,
+        sort: 5
+      }, {
+        id: 'maan-fallback-message',
+        name: 'message',
+        type: 'textarea',
+        label: isAr ? 'كيف نقدر نساعدكم؟' : 'How can we help?',
+        placeholder: isAr
+          ? 'شاركونا احتياج طفلكم وأي تشخيص أو تقرير سابق.'
+          : 'Share your child’s needs and any prior diagnosis or report.',
+        width: '100',
+        choices: [],
+        required: false,
+        sort: 6
+      }]
+    }
   }
-})
+}
 
 // Phase 5: internal API shapes returned by /api/public/forms/[id] and
 // /api/public/form-blocks/[id]. JSON serialization turns Prisma's `null`s into

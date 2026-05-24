@@ -125,20 +125,26 @@ Verification (all passed):
 - ✅ `server/utils/db/types.ts` re-exports `PrismaClient`, `ContentStatus`, and all 10 model types — auto-imported via Nitro.
 - ✅ `pnpm exec nuxt typecheck` clean.
 
-### Phase 3 — Data dump + seed from Directus
+### Phase 3 — Data dump + seed from Directus ✅
 
 Move the existing content over so we don't lose any work:
 
-- Write `prisma/seed.ts` that fetches `posts`, `pages`, `forms`, `form_fields`, `form_submissions` from the current Directus instance using the existing MCP token, and `prisma.<model>.upsert`s them into the new database.
-- Map Directus ids → keep them as the Prisma ids (they're UUIDs already; no remapping needed). This means relations and external bookmarks/permalinks still resolve.
-- One-off `seed:users` step: create User rows for the four Directus users we know about (`writer@example.com`, etc.). Better Auth needs them to exist with hashed passwords; either prompt password reset on first sign-in or set temporary passwords and email the team.
-- Run `pnpm db:seed` against the Fly Postgres database.
+- [x] `prisma/seed.ts` fetches `posts`, `pages`, `forms`, `form_fields`, `form_submissions`, `form_submission_values`, and `/users` from the current Directus instance using the MCP-config token (reused via the same auth pattern as `.tmp/blogger-import/directus.mjs`).
+- [x] All collections upsert by Directus id (UUIDs preserved). Re-running the seed is idempotent.
+- [x] Resumable: every Directus fetch retries 502/503/504 + network errors with exponential backoff (8 attempts, capped at 30s). Each collection is wrapped in its own try/catch so a thrown error per-phase doesn't abort the run.
+- [x] Users seeded with `Account.password = NULL`; plaintext temp passwords printed to stdout for the operator only (never written to the DB). Phase 4 cutover emails a Better Auth `passwordReset` link instead.
+- [x] Service-token bot users (no email) are skipped — Better Auth requires an email, and post-cutover the public site reads through Prisma without a bot account.
 
-Verification:
-- `SELECT count(*) FROM "Post"` matches the Directus post count (we have ~30 today).
-- `SELECT count(*) FROM "Page"` matches.
-- `SELECT count(*) FROM "FormSubmission"` matches.
-- Spot-check that one post's `content` field is identical byte-for-byte to its Directus equivalent.
+Verification (`pnpm tsx .tmp/verify-seed.ts`, all passed):
+- ✅ `User` = 4 (matches Directus's 4 emailed users; 1 email-less Frontend Bot intentionally skipped).
+- ✅ `Post` = 28 (matches Directus).
+- ✅ `Page` = 10 (matches Directus).
+- ✅ `Form` = 2, `FormField` = 7, `FormSubmission` = 2, `FormSubmissionValue` = 7 (all match Directus).
+- ✅ Byte-for-byte spot-check on post `149eacf7-fe52-4e49-a013-f8514ad962ab` (`ar-supporting-communication-through-play`): title + 491-byte `content` field identical.
+
+Notes:
+- `FormSubmissionValue` denormalizes `name`/`label` from the related field at seed time so historical submissions survive later field deletions — Directus stores the FK only, so the seed reads each field once (cached) to populate the snapshot columns.
+- The seed had to be run twice during this phase: the first run discovered that Directus's column is `form_submission` (not `submission`), so the second pass picked up the 7 submission values that the first skipped. The upsert-by-id design made this safe.
 
 ### Phase 4 — Auth swap
 

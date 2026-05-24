@@ -29,9 +29,13 @@ const bucket = process.env.BUCKET_NAME ?? 'maan-media'
 /**
  * Public CDN URL pattern for a Tigris public bucket.
  * Served via Fly's anycast edge — no separate CDN needed.
+ *
+ * Virtual-hosted-style URL: `https://<bucket>.fly.storage.tigris.dev/<key>`.
+ * (The earlier `pub-<bucket>` subdomain prefix is no longer routed by Tigris —
+ * it resolves to a bucket named `pub-<bucket>` which doesn't exist.)
  */
 export const publicUrl = (key: string) =>
-  `https://pub-${bucket}.fly.storage.tigris.dev/${key.replace(/^\/+/, '')}`
+  `https://${bucket}.fly.storage.tigris.dev/${key.replace(/^\/+/, '')}`
 
 export interface UploadParams {
   key: string

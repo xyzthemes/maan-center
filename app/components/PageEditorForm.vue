@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { EditorToolbarItem } from '@nuxt/ui'
 import type { PageForm } from '~/composables/usePageForm'
 
 const props = defineProps<{
@@ -22,27 +21,6 @@ const form = computed({
   set: (value: PageForm) => emit('update:modelValue', value)
 })
 
-const editorToolbarItems: EditorToolbarItem[][] = [
-  [
-    { kind: 'paragraph', icon: 'i-lucide-pilcrow', tooltip: { text: 'Paragraph' } },
-    { kind: 'heading', level: 2, label: 'H2', tooltip: { text: 'Heading 2' } },
-    { kind: 'heading', level: 3, label: 'H3', tooltip: { text: 'Heading 3' } }
-  ],
-  [
-    { kind: 'mark', mark: 'bold', icon: 'i-lucide-bold', tooltip: { text: 'Bold' } },
-    { kind: 'mark', mark: 'italic', icon: 'i-lucide-italic', tooltip: { text: 'Italic' } },
-    { kind: 'blockquote', icon: 'i-lucide-quote', tooltip: { text: 'Quote' } }
-  ],
-  [
-    { kind: 'bulletList', icon: 'i-lucide-list', tooltip: { text: 'Bullet list' } },
-    { kind: 'orderedList', icon: 'i-lucide-list-ordered', tooltip: { text: 'Numbered list' } }
-  ],
-  [
-    { kind: 'undo', icon: 'i-lucide-undo-2', tooltip: { text: 'Undo' } },
-    { kind: 'redo', icon: 'i-lucide-redo-2', tooltip: { text: 'Redo' } },
-    { kind: 'clearFormatting', icon: 'i-lucide-eraser', tooltip: { text: 'Clear formatting' } }
-  ]
-]
 </script>
 
 <template>
@@ -114,23 +92,10 @@ const editorToolbarItems: EditorToolbarItem[][] = [
 
     <div>
       <span class="mb-2 block text-sm font-semibold text-highlighted">{{ t.content }}</span>
-      <UEditor
+      <DashboardEditor
         v-model="form.content"
-        content-type="html"
         :placeholder="t.contentPlaceholder"
-        :image="false"
-        :mention="false"
-        class="maan-dashboard-editor"
-        :ui="{ content: 'min-h-72 px-4 py-3 focus:outline-none' }"
-      >
-        <template #default="{ editor }">
-          <UEditorToolbar
-            :editor="editor"
-            :items="editorToolbarItems"
-            class="border-b border-default px-2 py-2"
-          />
-        </template>
-      </UEditor>
+      />
       <p class="mt-2 text-xs leading-5 text-muted">
         {{ t.savedAsHtml }}
       </p>

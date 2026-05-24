@@ -67,7 +67,7 @@ Owner-action items:
   fly storage create --org maan --name maan-media --public --yes
   ```
 
-  Auto-injected env vars are in `.env`: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION=auto`, `AWS_ENDPOINT_URL_S3=https://fly.storage.tigris.dev`, `BUCKET_NAME=maan-media`. Public CDN URL pattern: `https://pub-maan-media.fly.storage.tigris.dev/<key>`.
+  Auto-injected env vars are in `.env`: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION=auto`, `AWS_ENDPOINT_URL_S3=https://fly.storage.tigris.dev`, `BUCKET_NAME=maan-media`. Public CDN URL pattern: `https://maan-media.fly.storage.tigris.dev/<key>`. (Phase 6 corrected this — the earlier `pub-<bucket>.fly.storage.tigris.dev` prefix is no longer routed by Tigris and resolves to a non-existent bucket.)
 
 - [ ] Sync `DATABASE_URL` + the five Tigris env vars to the Railway production environment (deferred until Phase 5 / deploy time — Phase 1's code-side scaffolding doesn't need production runtime).
 
@@ -213,21 +213,31 @@ Out of scope, deferred to Phase 7:
 - Renaming `DashboardPost`/`DashboardPage` to `Post`/`Page` and flipping the response wire shape from snake_case to camelCase.
 - Tightening `requireUserSession(event, { user: { role: 'admin' } })` per route now that we know which writer/admin roles correspond to which actions.
 
-### Phase 6 — Image uploads via Tigris (rich-text editor wiring)
+### Phase 6 — Image uploads via Tigris (rich-text editor wiring) ✅
 
-The Tigris bucket and the `uploadObject` helper exist from Phase 1; this phase wires them into the dashboard.
+The Tigris bucket and `uploadObject` helper landed in Phase 1; this phase wires them into the dashboard editor.
 
-Code-side:
-- Add `server/api/upload.post.ts` — authenticated (Better Auth `requireRole(['admin', 'writer'])`). Accepts a `multipart/form-data` file. Generates a key like `posts/${ulid()}-${slugify(originalName)}`. Calls `uploadObject`. Returns `{ url }`.
-- Enable the image button in the dashboard `UEditor` (currently `:image="false"` in both `PostEditorForm.vue` and `PageEditorForm.vue`). Wire the upload to `/api/upload.post.ts` and insert the returned URL as an `<img>` into the editor.
-- Add an `alt` text prompt before the URL is inserted (accessibility — a11y audits flag image-without-alt).
-- Optional: add a content-size cap (e.g. 5 MB) and a MIME-type allowlist (`image/png`, `image/jpeg`, `image/webp`, `image/avif`) at the API route. Reject anything else with a 400.
+What landed:
+- [x] `server/api/upload.post.ts` — authenticated upload route. Validates a 5 MB cap (413 on oversize) and a MIME allowlist (`png`/`jpeg`/`webp`/`avif`/`gif`; rejects others with 400). Generates a clean key `posts/<8-char-uuid-suffix>-<slugified-stem>.<ext>` and calls `uploadObject`. Returns `{ url, key, size, contentType }`.
+- [x] `app/components/DashboardEditor.vue` — shared wrapper around Nuxt UI's `UEditor`. Adds an image button (`kind: 'image'` in the toolbar) and a custom `image` handler that prompts for alt text, POSTs the file as `multipart/form-data` to `/api/upload`, then inserts `<img src="..." alt="...">` via Tiptap's `setImage` command. Hidden `<input type="file">` is driven by the handler.
+- [x] `PostEditorForm.vue` + `PageEditorForm.vue` — replaced their inline `UEditor` + toolbar with `<DashboardEditor v-model="form.content">`. Both pages now share the same toolbar config; no behavior drift between them.
+- [x] **Fixed**: corrected the Tigris public URL pattern in `server/utils/storage/tigris.ts`. Phase 1's documented `pub-<bucket>.fly.storage.tigris.dev` is no longer routed by Tigris (it resolves to a missing bucket named `pub-maan-media`). The working pattern is `https://<bucket>.fly.storage.tigris.dev/<key>`. Also re-applied `fly storage update maan-media --public` because the bucket was returning `AccessDenied` despite Phase 1's intent.
 
-Verification:
-- Sign in as a writer, open a post, click the editor's image button, pick a 200KB PNG, confirm it appears inline.
-- Hit the returned public URL directly in a browser and confirm it serves with `cache-control: public, max-age=31536000` (Tigris default).
-- Try uploading a 10MB file and confirm the 400 response.
-- Try uploading without an admin session — confirm 401.
+Verification (against `localhost:3000` with a throwaway test user, all passed):
+- ✅ `pnpm exec nuxt typecheck` clean.
+- ✅ `POST /api/upload` without session → `401`.
+- ✅ `POST /api/upload` with session + valid 85-byte PNG → `201` + `{ url, key, size: 85, contentType: 'image/png' }`.
+- ✅ `GET` on the returned URL → `200` with `cache-control: public, max-age=31536000, immutable` and `content-type: image/png` (Tigris CDN delivered).
+- ✅ `POST` of a `text/plain` file → `400 Unsupported MIME type: text/plain`.
+- ✅ `POST` of a 6 MB PNG → `413 File too large (6.0 MB). Max 5 MB`.
+
+Out of scope, deferred to Phase 7:
+- Tightening `requireUserSession(event)` on the upload route to `{ user: { role: ['admin', 'writer'] } }` once the seeded users have proper roles assigned.
+- A "Hero image" picker on the post/page form (separate from inline editor images — `Post.image` is already a column).
+- Drag-and-drop into the editor (currently click-the-button only).
+
+Notes:
+- The auto-injected Tigris key for the bucket is **write-scoped**: it can `PutObject` and `HeadObject` but cannot `ListObjectsV2`, `DeleteObject`, `GetBucketAcl`, or `PutBucketPolicy`. Smart default; means smoke-test objects can't be cleaned up programmatically (they're 85 bytes each, irrelevant to production).
 
 ### Phase 7 — Drop Directus
 

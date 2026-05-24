@@ -1,14 +1,18 @@
-// Phase 3 — seed Postgres from Directus.
+// One-time data migration: seed Postgres from the legacy Directus instance.
+//
+// HISTORICAL — kept for traceability of the original Phase 3 migration. Will
+// stop working the moment the Directus service in `.vscode/mcp.json` is shut
+// down. Future seed work should be a new script tailored to its purpose; do
+// not extend this one.
 //
 // Resumable by design: every collection is paginated, every page fetch retries
 // 502/503/504 with backoff, and every row is `upsert`ed by Directus id so
-// re-running is safe. Run with `pnpm db:seed` while `fly proxy 5432 -a maan-db`
-// is active.
+// re-running is safe.
 //
 // User passwords: rows are created with `Account.password = NULL`. Plaintext
 // temporary passwords are printed to stdout for the operator only — capture
-// them out-of-band. Phase 4 swaps in Better Auth's passwordReset flow at
-// cutover, so seeded passwords never enter the auth path.
+// them out-of-band. The Better Auth `passwordReset` flow is what real users
+// will see at cutover, so seeded passwords never enter the auth path.
 
 import 'dotenv/config'
 import { randomBytes, randomUUID } from 'node:crypto'

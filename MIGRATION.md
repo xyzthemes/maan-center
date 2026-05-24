@@ -239,20 +239,34 @@ Out of scope, deferred to Phase 7:
 Notes:
 - The auto-injected Tigris key for the bucket is **write-scoped**: it can `PutObject` and `HeadObject` but cannot `ListObjectsV2`, `DeleteObject`, `GetBucketAcl`, or `PutBucketPolicy`. Smart default; means smoke-test objects can't be cleaned up programmatically (they're 85 bytes each, irrelevant to production).
 
-### Phase 7 — Drop Directus
+### Phase 7 — Drop Directus ✅
 
-Once the dashboard and public site work entirely off Prisma:
+The dashboard and public site run entirely off Prisma; this phase cuts the last threads.
 
-- Remove `nuxt-directus` from `nuxt.config.ts` modules.
-- Remove `nuxt-directus` from `package.json` dependencies.
-- Delete `server/utils/dashboard-directus.ts`.
-- Remove `NUXT_PUBLIC_DIRECTUS_URL` and `DIRECTUS_SERVER_TOKEN` from `.env.example`, `README.md`, `nuxt.config.ts` `runtimeConfig`.
-- Delete the Directus type definitions (`DirectusPost`, `DirectusPage`, `DirectusForm`, etc.) — replaced by Prisma's generated types.
-- Optional: rename the existing `DashboardPost` / `DashboardPage` composable types to just `Post` / `Page` since there's no longer ambiguity.
+What landed:
+- [x] `nuxt-directus` removed from `nuxt.config.ts` modules and from `package.json` dependencies (`pnpm remove nuxt-directus`).
+- [x] `directusToken` + `public.directus.url` removed from `nuxt.config.ts` `runtimeConfig`; the `directusUrl`/`directusToken` env-var reads at the top of the file also gone.
+- [x] `NUXT_PUBLIC_DIRECTUS_URL` / `DIRECTUS_SERVER_TOKEN` removed from `.env.example` (Phase 5 already removed them from `.env`).
+- [x] `README.md` rewritten — stack section now lists Nuxt 4 + Prisma 7 + Fly Postgres + Better Auth + Tigris; removed the Railway template variables block; added a pointer to MIGRATION.md and the `fly proxy` requirement for local dev.
+- [x] `server/utils/dashboard-directus.ts` — already deleted in Phase 5.
+- [x] Component rename: `MaanDirectusForm.vue` → `MaanForm.vue`; updated four consumers (`/`, `/blog`, `/contact`, `/ar/contact`).
+- [x] Stale `// Directus` comments either removed (`server/api/dashboard/posts/[id].delete.ts`) or kept as deliberate historical context (`dashboard-shapes.ts`, `useMaanContent.ts` — they explain why the wire shape is still snake_case).
+- [x] `prisma/seed.ts` header marked **HISTORICAL** — it's the one-time data-migration script and will stop working when the Directus service is shut down. Stays in the repo for traceability; future seed work belongs in a new script.
 
-Verification:
-- `grep -r "directus\|Directus" app/ server/ --include='*.ts' --include='*.vue'` returns zero matches outside of comments.
-- The Railway Directus service can be shut down without breaking the app.
+Verification (`pnpm dev` against `localhost:3000`, all passed):
+- ✅ `pnpm exec nuxt typecheck` clean.
+- ✅ `grep -rE "directus|Directus" app/ server/ --include='*.ts' --include='*.vue'` returns zero non-comment matches.
+- ✅ `grep "nuxt-directus" package.json` returns nothing.
+- ✅ All seven public surfaces serve `200`: `/`, `/blog`, `/contact`, `/ar`, `/ar/blog`, `/ar/contact`, `/dashboard/login`.
+- ✅ `/blog` renders the post listing (Prisma-sourced) with the correct `<title>` and hero `<h1>`.
+- ✅ Homepage renders the form-block headline "Family Resources / Receive practical guidance…" from `FormBlock` (Prisma-sourced).
+- ✅ Railway's Directus service can now be shut down without breaking the app.
+
+Deliberately out of scope (could land later but don't need to ship before retiring Directus):
+- Renaming `DashboardPost`/`DashboardPage` → `Post`/`Page` and flipping the response wire shape from snake_case to camelCase. Bigger touch surface; not required for correctness.
+- Tightening `requireUserSession(event)` to `{ user: { role: ... } }` per route, once we decide writer/admin granularity.
+- Deleting the email-less Frontend Bot User row left over from Phase 3 (inert; was excluded from auth migration on purpose).
+- Production hosting decision (Phase 3.5): expose Fly Postgres via public IP vs. move the Nuxt deploy from Railway to Fly. Unblocks production deployment.
 
 ## Risks + mitigations
 

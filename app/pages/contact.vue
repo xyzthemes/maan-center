@@ -81,7 +81,7 @@ useSchemaOrg([
         </div>
 
         <div class="order-first lg:order-last">
-          <MaanDirectusForm
+          <MaanForm
             :block="contactForm"
             locale="en"
             variant="card"

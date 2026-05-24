@@ -22,7 +22,8 @@ export type MaanSeo = {
 }
 
 // Stored SEO shape on Post/Page (matches the JSON column written by the
-// dashboard editors). Names are snake_case for parity with the Directus era.
+// dashboard editors). Names are snake_case for parity with the original
+// Directus shape — the dashboard composables still consume them as-is.
 type StoredSeo = {
   title?: string
   meta_description?: string

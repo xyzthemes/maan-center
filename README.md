@@ -1,57 +1,16 @@
 # Maan Special Education Center
 
-A bilingual Nuxt website and blog for a special education center. The site uses Nuxt UI and Nuxt SEO, is backed by a headless CMS for posts, pages, and form submissions, and is prepared for one-click deployment on Railway.
+A bilingual (EN + AR) Nuxt website, blog, and editor dashboard for a special education center.
 
 ## Stack
 
-- Nuxt 4
-- Nuxt UI
-- Nuxt SEO
-- Headless CMS for posts, pages, and form submissions
-- Railway Railpack deployment
+- **Nuxt 4** + **Nuxt UI** + **Nuxt SEO**
+- **Prisma 7** (multi-file schema, `prisma-client` generator, `@prisma/adapter-pg`)
+- **Postgres** on Fly.io (`maan-db`, region `cdg`)
+- **Better Auth** (`@onmax/nuxt-better-auth` module + `admin` plugin) for dashboard sessions
+- **Tigris** (Fly.io's S3-compatible object storage) for editor image uploads, served via Fly's anycast edge
 
-## Deploy on Railway
-
-This repo is ready to use as the source for a Railway template.
-
-1. Push this repository to a public GitHub repo.
-2. In Railway, create a new template from your workspace Templates page.
-3. Add a service with this GitHub repo as the source.
-4. Enable Public Networking with HTTP.
-5. Confirm these service settings:
-   - Pre-deploy command: leave blank
-   - Start command: `pnpm start`
-   - Healthcheck path: `/`
-6. Add the variables below in the template composer.
-7. Create the template, test deploy it, then publish it from the Railway Templates page.
-
-Railway will read `railway.json`, which defines the Railpack builder, build command, start command, healthcheck, and restart policy. Do not put `pnpm build` in the pre-deploy command; pre-deploy runs after the image has already been built.
-
-## Template Variables
-
-Optional:
-
-```bash
-NUXT_PUBLIC_DIRECTUS_URL=https://your-cms.example
-DIRECTUS_SERVER_TOKEN=server-token-with-form-submission-create-access
-NUXT_SITE_URL=https://your-domain.example
-NUXT_SITE_INDEXABLE=true
-NUXT_OG_IMAGE_SECRET=generated-secret
-```
-
-Leave `NUXT_PUBLIC_DIRECTUS_URL` blank for a public template unless the template also provisions its own CMS service. Blank deployments use the bundled fallback posts and do not call Maan's production CMS.
-
-`DIRECTUS_SERVER_TOKEN` is server-only and should not be prefixed with `NUXT_PUBLIC_`. It is required for live form submissions when the CMS keeps anonymous users from creating `form_submissions`, which is the safer default.
-
-If `NUXT_SITE_URL` is not set, the app will use Railway's `RAILWAY_PUBLIC_DOMAIN` when available. For local development, it falls back to `http://127.0.0.1:3000`.
-
-Set `NUXT_SITE_INDEXABLE=false` for staging or private test deployments.
-
-`NUXT_OG_IMAGE_SECRET` is only needed if you want dynamic OG image generation at runtime. Without it, Nuxt OG Image runs in zero-runtime mode so arbitrary image generation requests are disabled. Generate a secret with:
-
-```bash
-npx nuxt-og-image generate-secret
-```
+> The Directus + Railway template that originally backed this repo was replaced by the stack above in commits `560e055..58fa54c` on the `prisma-switch` branch. See `MIGRATION.md` for the full migration log.
 
 ## Local Development
 
@@ -61,35 +20,36 @@ Install dependencies:
 pnpm install
 ```
 
-Start the development server:
+Bring up the Fly Postgres tunnel in a separate terminal — the database is flycast-only and not reachable from your laptop without it:
+
+```bash
+fly proxy 5432 -a maan-db
+```
+
+Then start Nuxt:
 
 ```bash
 pnpm dev
 ```
 
-Build for production:
+The app expects the env vars in `.env.example` to be set. The Better Auth + Tigris credentials are written to `.env` when you provision the Fly resources via `fly postgres create` / `fly storage create`.
+
+Useful scripts:
+
+```bash
+pnpm db:generate     # regenerate prisma/generated/client
+pnpm db:migrate      # prisma migrate dev
+pnpm db:studio       # open Prisma Studio against Fly Postgres
+pnpm db:seed         # re-run the seed (see prisma/seed.ts)
+pnpm typecheck       # nuxt typecheck
+pnpm lint            # eslint .
+```
+
+## Build + Production
 
 ```bash
 pnpm build
-```
-
-Run the production server locally:
-
-```bash
 pnpm start
 ```
 
-## Railway Template Publishing Notes
-
-After creating the template, Railway gives you a template URL and template code. Add the public button to this README once you have that code:
-
-```md
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/YOUR_TEMPLATE_CODE?utm_medium=integration&utm_source=template&utm_campaign=maan-special-education-center)
-```
-
-For a good public template listing, include:
-
-- A live demo Railway project.
-- A clear note that the CMS is optional unless the template provisions its own CMS service.
-- Screenshots of the English and Arabic pages.
-- A note that deployers can eject the template repo into their own GitHub account after deployment.
+Production deployment target is deferred (`MIGRATION.md` Phase 3.5) — choices are (a) allocate a public IP for Fly Postgres so Railway can reach it, or (b) move the deploy to Fly.io so the flycast address works natively.

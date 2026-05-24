@@ -245,7 +245,7 @@ useSchemaOrg([
       </div>
     </UContainer>
 
-    <MaanDirectusForm
+    <MaanForm
       :block="resourcesForm"
       locale="en"
     />

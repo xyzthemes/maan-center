@@ -41,7 +41,6 @@
     "better-auth": "^1.6.11",
     "dotenv": "^17.4.2",
     "nuxt": "^4.4.2",
-    "nuxt-directus": "5.7.0",
     "pg": "^8.21.0",
     "prisma": "^7.8.0",
     "satori": "^0.26.0",

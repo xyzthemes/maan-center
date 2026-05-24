@@ -1,5 +1,4 @@
-// Phase 5: delete a post via Prisma. Auth required.
-// (Wasn't a Directus route before; added now for parity with the pages routes.)
+// Delete a post. Auth required.
 
 import { createError, getRouterParam } from 'h3'
 

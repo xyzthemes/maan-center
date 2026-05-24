@@ -5,19 +5,13 @@ const railwaySiteUrl = process.env.RAILWAY_PUBLIC_DOMAIN
 const siteUrl = process.env.NUXT_SITE_URL || railwaySiteUrl || 'http://127.0.0.1:3000'
 const siteName = 'Maan Special Education Center'
 const siteDescription = 'Individualized education, therapy, and family support for children with diverse learning needs.'
-const directusUrl = process.env.NUXT_PUBLIC_DIRECTUS_URL
-  || process.env.DIRECTUS_URL
-  || ''
-const directusToken = process.env.DIRECTUS_SERVER_TOKEN
-  || process.env.DIRECTUS_TOKEN
-  || ''
 const ogImageSecret = process.env.NUXT_OG_IMAGE_SECRET
 const indexable = process.env.NUXT_SITE_INDEXABLE
   ? process.env.NUXT_SITE_INDEXABLE === 'true'
   : process.env.NODE_ENV === 'production' || process.env.NUXT_SITE_ENV === 'production'
 
 export default defineNuxtConfig({
-  modules: ['@nuxtjs/seo', '@nuxt/eslint', '@nuxt/ui', 'nuxt-directus', '@onmax/nuxt-better-auth'],
+  modules: ['@nuxtjs/seo', '@nuxt/eslint', '@nuxt/ui', '@onmax/nuxt-better-auth'],
 
   devtools: {
     enabled: true
@@ -57,12 +51,8 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    directusToken,
     public: {
-      siteUrl,
-      directus: {
-        url: directusUrl
-      }
+      siteUrl
     }
   },
 

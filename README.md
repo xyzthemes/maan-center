@@ -66,9 +66,10 @@ The deploy is configured by:
 Production secrets (set with `fly secrets set --app maan-app KEY=value`):
 
 ```
-DATABASE_URL          # postgres://...@maan-db.flycast:5432/postgres?sslmode=disable
+DATABASE_URL          # postgres://maan_runtime:...@maan-db.flycast:5432/postgres?sslmode=disable
 BETTER_AUTH_SECRET    # 32+ chars; openssl rand -base64 32
-BETTER_AUTH_URL       # https://maan-app.fly.dev or custom domain
+BETTER_AUTH_URL       # https://maan.center
+NUXT_SITE_URL         # https://maan.center
 AWS_ACCESS_KEY_ID     # Tigris key (from fly storage create maan-media)
 AWS_SECRET_ACCESS_KEY # Tigris secret
 BUCKET_NAME           # maan-media
@@ -77,6 +78,8 @@ BUCKET_NAME           # maan-media
 `AWS_REGION` and `AWS_ENDPOINT_URL_S3` are non-secret and set in `fly.toml`'s `[env]`.
 
 The Fly Postgres `flycast` address does not speak TLS — `?sslmode=disable` on `DATABASE_URL` is required. The connection itself is inside Fly's private WireGuard mesh and never leaves it.
+
+The app connects as a dedicated `maan_runtime` non-superuser. Tables in the `postgres` database are owned by that user so `prisma migrate deploy` can ALTER them during the `release_command`. The `postgres` superuser stays available for ad-hoc DBA work via `fly proxy 5432 -a maan-db`.
 
 ### Custom domain
 

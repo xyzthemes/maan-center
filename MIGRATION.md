@@ -169,10 +169,10 @@ Production verification (`https://maan-app.fly.dev`, all passed):
 - ✅ `GET /dashboard/posts` unauthed → `302 → /dashboard/login?redirect=…`.
 
 Notes / follow-ups:
-- The auto-attached `maan_app` database is empty and unused. Could be dropped via `fly postgres connect -a maan-db` if hygiene matters.
-- Production app still uses the `postgres` superuser. A dedicated least-privilege user (granted SELECT/INSERT/UPDATE/DELETE on the public schema only) is a security hardening follow-up.
-- IDE flags `node:22-alpine` for "1 high vulnerability" (likely a transitive alpine package CVE). Worth investigating; not blocking the first deploy.
-- Custom domain wired: `maan.center` (canonical) + `www.maan.center` (301 → apex). Certs issued by Let's Encrypt via `fly certs add`. `BETTER_AUTH_URL` + `NUXT_SITE_URL` secrets updated to `https://maan.center`. `server/middleware/redirect-www.ts` handles the www redirect at the app layer (Fly's load balancer doesn't do HTTP redirects natively).
+- ✅ Custom domain wired: `maan.center` (canonical) + `www.maan.center` (301 → apex). Certs issued by Let's Encrypt via `fly certs add`. `BETTER_AUTH_URL` + `NUXT_SITE_URL` secrets set to `https://maan.center`. `server/middleware/redirect-www.ts` handles the www redirect at the app layer (Fly's load balancer doesn't do HTTP redirects natively).
+- ✅ Least-privilege DB user: created `maan_runtime` (non-superuser), reassigned ownership of all 12 public-schema tables to it (so `prisma migrate deploy` can still ALTER them), updated `DATABASE_URL` secret. The `postgres` superuser is no longer the app's runtime identity. See `.tmp/setup-least-privilege.ts` for the one-time provisioning script.
+- ✅ Dropped the auto-attached `maan_app` database (was empty) and the auto-created `maan_app` superuser (leftover from `fly postgres attach`). Cluster now has just `postgres`/`maan_runtime`/`flypgadmin`/`repmgr` users. The Fly attachment metadata record still exists (`fly postgres detach` requires interactive stdin) — cosmetic, doesn't affect runtime.
+- ✅ Base image swapped from `node:22-alpine` to `node:22-bookworm-slim` to clear the IDE-flagged "high vulnerability". The Debian-slim base has different CVE surface and is the more common production choice anyway.
 
 ### Phase 4 — Auth swap ✅
 
@@ -294,7 +294,20 @@ Deliberately out of scope (could land later but don't need to ship before retiri
 - Renaming `DashboardPost`/`DashboardPage` → `Post`/`Page` and flipping the response wire shape from snake_case to camelCase. Bigger touch surface; not required for correctness.
 - Tightening `requireUserSession(event)` to `{ user: { role: ... } }` per route, once we decide writer/admin granularity.
 - Deleting the email-less Frontend Bot User row left over from Phase 3 (inert; was excluded from auth migration on purpose).
-- ~~Production hosting decision (Phase 3.5)~~: resolved — see Phase 3.5 above. App lives at `https://maan-app.fly.dev`.
+- ~~Production hosting decision (Phase 3.5)~~: resolved — see Phase 3.5 above. App lives at `https://maan.center`.
+
+### Decommissioning Railway
+
+After Phase 3.5 landed and DNS pointed at Fly, Railway became dead weight. The following needs to happen at <https://railway.app> manually (no flyctl-equivalent):
+
+1. Confirm DNS no longer points at Railway: `dig +short A maan.center` should return `66.241.124.39` (Fly), not `66.33.22.105` (Railway's ASN AS400940).
+2. In the Railway project that hosted the legacy Nuxt deploy: **Settings → Danger → Delete service**. The deploy stops billing immediately.
+3. Same for the Directus service — `directus-cms-production-76ca.up.railway.app` per `.vscode/mcp.json`. After this `prisma/seed.ts` will hard-fail; that's expected since the script was historical (see its header comment).
+4. Any Railway Postgres database the old deploys used can be deleted once #2 + #3 are gone.
+5. Remove `maan-directus` from `.vscode/mcp.json` (the MCP server config Claude was using to grep Directus during the migration).
+6. The Railway project itself can be archived/deleted from the workspace.
+
+Once Railway is empty, the only third-party surfaces left in the stack are Fly.io (Postgres + app + Tigris) and the domain registrar.
 
 ## Risks + mitigations
 

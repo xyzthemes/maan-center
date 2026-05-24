@@ -49,8 +49,8 @@ export default defineEventHandler(async (event) => {
       }
     })
     return { data: toDashboardPage(page) }
-  } catch (e: any) {
-    if (e?.code === 'P2002') {
+  } catch (e) {
+    if (isPrismaError(e, 'P2002')) {
       throw createError({ statusCode: 409, statusMessage: 'A page with that permalink already exists.' })
     }
     throw e

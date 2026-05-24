@@ -83,7 +83,7 @@ async function onFilePicked(e: Event) {
   if (!file || !editor) return
 
   // Accessibility — every <img> in our content needs alt text. Ask before upload.
-  // eslint-disable-next-line no-alert
+
   const alt = window.prompt('Describe this image (alt text for screen readers)', '')?.trim() ?? ''
 
   uploadError.value = null

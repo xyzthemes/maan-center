@@ -20,7 +20,6 @@ const form = computed({
   get: () => props.modelValue,
   set: (value: PageForm) => emit('update:modelValue', value)
 })
-
 </script>
 
 <template>

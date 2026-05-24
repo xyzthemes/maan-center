@@ -14,6 +14,11 @@
 // them out-of-band. The Better Auth `passwordReset` flow is what real users
 // will see at cutover, so seeded passwords never enter the auth path.
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @stylistic/max-statements-per-line */
+// The Directus REST API is untyped on our side; everything is `any` by the
+// shape of the upstream payload. Type-narrowing every field access here would
+// double the script for no production benefit (script is HISTORICAL).
+
 import 'dotenv/config'
 import { randomBytes, randomUUID } from 'node:crypto'
 import fs from 'node:fs'
@@ -478,7 +483,7 @@ async function main() {
 }
 
 main()
-  .catch(e => {
+  .catch((e) => {
     console.error('\nSeed aborted:', e)
     process.exitCode = 1
   })

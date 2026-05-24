@@ -33,7 +33,11 @@ const validateField = (
       return `${field.label || field.name} must be a valid email address.`
     }
     if (rule === 'url') {
-      try { new URL(value) } catch { return `${field.label || field.name} must be a valid URL.` }
+      try {
+        new URL(value)
+      } catch {
+        return `${field.label || field.name} must be a valid URL.`
+      }
     }
     if (rule.startsWith('min:') && value.length < Number(rule.split(':')[1])) {
       return `${field.label || field.name} is too short.`

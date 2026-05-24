@@ -14,28 +14,6 @@ export default defineNuxtConfig({
     enabled: true
   },
 
-  // Better Auth (Phase 4). Login lives under the dashboard; protected routes
-  // 302 there with a `?redirect=` query param for safe return-to behavior.
-  auth: {
-    redirects: {
-      login: '/dashboard/login',
-      guest: '/dashboard'
-    }
-  },
-
-  routeRules: {
-    '/dashboard': { auth: 'user' },
-    '/dashboard/posts/**': { auth: 'user' },
-    '/dashboard/pages/**': { auth: 'user' },
-    '/dashboard/submissions/**': { auth: 'user' },
-    '/dashboard/login': { auth: 'guest' },
-    '/ar/dashboard': { auth: 'user' },
-    '/ar/dashboard/posts/**': { auth: 'user' },
-    '/ar/dashboard/pages/**': { auth: 'user' },
-    '/ar/dashboard/submissions/**': { auth: 'user' },
-    '/ar/dashboard/login': { auth: 'guest' }
-  },
-
   css: ['~/assets/css/main.css'],
 
   site: {
@@ -53,7 +31,29 @@ export default defineNuxtConfig({
     }
   },
 
+  routeRules: {
+    '/dashboard': { auth: 'user' },
+    '/dashboard/posts/**': { auth: 'user' },
+    '/dashboard/pages/**': { auth: 'user' },
+    '/dashboard/submissions/**': { auth: 'user' },
+    '/dashboard/login': { auth: 'guest' },
+    '/ar/dashboard': { auth: 'user' },
+    '/ar/dashboard/posts/**': { auth: 'user' },
+    '/ar/dashboard/pages/**': { auth: 'user' },
+    '/ar/dashboard/submissions/**': { auth: 'user' },
+    '/ar/dashboard/login': { auth: 'guest' }
+  },
+
   compatibilityDate: '2025-01-15',
+
+  // Better Auth (Phase 4). Login lives under the dashboard; protected routes
+  // 302 there with a `?redirect=` query param for safe return-to behavior.
+  auth: {
+    redirects: {
+      login: '/dashboard/login',
+      guest: '/dashboard'
+    }
+  },
 
   eslint: {
     config: {

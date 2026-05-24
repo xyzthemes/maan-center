@@ -52,8 +52,8 @@ export default defineEventHandler(async (event) => {
       }
     })
     return { data: toDashboardPost(post) }
-  } catch (e: any) {
-    if (e?.code === 'P2025') {
+  } catch (e) {
+    if (isPrismaError(e, 'P2025')) {
       throw createError({ statusCode: 404, statusMessage: 'Post not found.' })
     }
     throw e

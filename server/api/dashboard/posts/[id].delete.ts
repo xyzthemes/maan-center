@@ -13,8 +13,8 @@ export default defineEventHandler(async (event) => {
   try {
     await prisma.post.delete({ where: { id } })
     return { success: true as const }
-  } catch (e: any) {
-    if (e?.code === 'P2025') {
+  } catch (e) {
+    if (isPrismaError(e, 'P2025')) {
       throw createError({ statusCode: 404, statusMessage: 'Post not found.' })
     }
     throw e

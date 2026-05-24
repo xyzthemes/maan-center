@@ -114,7 +114,7 @@ const mobileCallLabel = computed(() => isArabic.value ? 'اتصل بنا' : 'Cal
 const mobileWhatsLabel = computed(() => isArabic.value ? 'واتساب' : 'WhatsApp')
 const phoneHref = 'tel:+97332055666'
 const localeLabel = computed(() => isArabic.value ? 'English' : 'عربي')
-const developedByLabel = computed(() => isArabic.value ? 'Developed by' : 'صمم بواسطة')
+const developedByLabel = computed(() => isArabic.value ? 'صمم بواسطة' : 'Developed by')
 </script>
 
 <template>
@@ -418,7 +418,7 @@ const developedByLabel = computed(() => isArabic.value ? 'Developed by' : 'صم�
           style="color: var(--maan-ink-muted);"
           aria-label="Website developed by XYZ"
         >
-          <span>{{ isArabic ? 'صمم بواسطة' : 'Developed By' }}</span>
+          <span>{{ developedByLabel }}</span>
           <img
             src="https://cdn.xyz.dev/assets/xyz/brand/logo/long/black.svg"
             alt="XYZ"

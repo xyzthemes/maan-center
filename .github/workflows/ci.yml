@@ -49,6 +49,7 @@ jobs:
           # Build-time placeholders matching the Dockerfile — @onmax/nuxt-better-auth
           # validates BETTER_AUTH_SECRET at module setup, not just runtime.
           # CI never deploys, so these placeholders never leave the runner.
-          BETTER_AUTH_SECRET: build-time-placeholder-only
+          # @onmax/nuxt-better-auth enforces >=32 chars at module setup.
+          BETTER_AUTH_SECRET: ci-build-placeholder-32-plus-chars-not-a-real-secret
           BETTER_AUTH_URL: https://placeholder.invalid
         run: pnpm run build

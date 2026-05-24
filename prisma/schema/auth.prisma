@@ -1,0 +1,86 @@
+// Better Auth tables (https://www.better-auth.com/docs/concepts/database).
+// Field names match Better Auth's Prisma adapter expectations exactly —
+// renaming any of these requires a corresponding `betterAuth({ ...modelName ... })` override.
+
+model User {
+  id            String  @id @default(uuid(7))
+  email         String  @unique
+  name          String
+  image         String?
+  emailVerified Boolean @default(false)
+
+  // Better Auth `admin` plugin fields
+  role       String?   @default("user")
+  banned     Boolean?  @default(false)
+  banReason  String?
+  banExpires DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions Session[]
+  accounts Account[]
+  posts    Post[]
+}
+
+model Session {
+  id        String   @id @default(uuid(7))
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+
+  // Better Auth `admin` plugin: lets an admin impersonate another user
+  impersonatedBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Account {
+  id     String @id @default(uuid(7))
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // The auth provider (e.g. "credential" for email+password, "google", "github")
+  providerId String
+  // The provider's account id (e.g. Google's sub claim, or User.id for credential auth)
+  accountId  String
+
+  // Set only for credential-based auth (email + password). Better Auth handles hashing.
+  password String?
+
+  // Set only for OAuth-based auth
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Verification {
+  id String @id @default(uuid(7))
+
+  // Generic identifier — usually an email for password-reset / email-verification flows
+  identifier String
+
+  // The opaque token that gets emailed to the user; consumed on the verification endpoint
+  value String
+
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([identifier])
+}

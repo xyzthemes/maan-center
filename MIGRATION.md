@@ -89,7 +89,7 @@ Verification (all passed at commit `560e055`):
 - ✅ `pnpm exec nuxt typecheck` clean.
 - ✅ `pnpm lint` clean (only pre-existing `v-html` warnings).
 
-### Phase 2 — Schema + initial migration
+### Phase 2 — Schema + initial migration ✅
 
 Translate the Directus collections we actually use into Prisma models, split across domain files:
 
@@ -118,9 +118,12 @@ Open schema decisions to confirm before writing the first migration:
 - **Status as enum vs. string?** Enum is stricter and indexable. Recommendation: **Postgres enum** (`Draft` | `InReview` | `Published`).
 - **`Form` schema fidelity** — Directus's forms are extensible; do we need every field type (text, email, textarea, dropdown, checkbox)? Recommendation: store `type` as a string for now, validate in code.
 
-Verification:
-- `pnpm db:migrate dev --name init` against the Fly Postgres cluster succeeds.
-- `prisma/migrations/<timestamp>_init/migration.sql` committed.
+Verification (all passed):
+- ✅ `pnpm db:migrate dev --name init` against the Fly Postgres cluster succeeded.
+- ✅ `prisma/migrations/20260524072851_init/migration.sql` committed (219 lines).
+- ✅ Postgres has 10 tables (User, Session, Account, Verification, Post, Page, Form, FormField, FormSubmission, FormSubmissionValue) + the `ContentStatus` enum with `draft`/`in_review`/`published`.
+- ✅ `server/utils/db/types.ts` re-exports `PrismaClient`, `ContentStatus`, and all 10 model types — auto-imported via Nitro.
+- ✅ `pnpm exec nuxt typecheck` clean.
 
 ### Phase 3 — Data dump + seed from Directus
 

@@ -1,0 +1,57 @@
+// Content models — blog Posts and CMS-managed Pages.
+// Both share the ContentStatus enum.
+// `seo` is stored as Json to mirror the Directus shape; we can normalize later.
+
+enum ContentStatus {
+  draft
+  in_review
+  published
+}
+
+model Post {
+  id          String  @id @default(uuid(7))
+  slug        String  @unique
+  title       String
+  description String?
+  content     String? // HTML body authored via UEditor
+
+  // Hero image (Tigris CDN URL). Distinct from any <img> embeds in `content`.
+  image String?
+
+  status      ContentStatus @default(draft)
+  publishedAt DateTime?
+  sort        Int?
+
+  // SEO overrides — { title, meta_description, focus_keyphrase, no_index, no_follow, canonical_url, og_image }
+  seo Json?
+
+  // Author (optional — keeps the data model decoupled from a particular auth model
+  // during the migration; once users exist, every new post should have one)
+  authorId String?
+  author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, publishedAt])
+  @@index([authorId])
+}
+
+model Page {
+  id String @id @default(uuid(7))
+
+  // Routes the catch-all /[...slug].vue renders this page at — e.g. "/about-us" or "/ar/about-us"
+  permalink String @unique
+
+  title       String
+  content     String?
+  status      ContentStatus @default(draft)
+  publishedAt DateTime?
+  sort        Int?
+  seo         Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, sort])
+}

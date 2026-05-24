@@ -1,0 +1,89 @@
+// Public-facing forms (contact, etc.) and their submissions.
+// The shape mirrors Directus's forms / form_fields / form_submissions /
+// form_submission_values collections so Phase 3's seed is a straight copy.
+
+model Form {
+  id          String  @id @default(uuid(7))
+  title       String
+  isActive    Boolean @default(true)
+  submitLabel String?
+
+  // Behavior after a successful submit: show a message inline, or redirect.
+  onSuccess          String  @default("message")
+  successMessage     String?
+  successRedirectUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  fields      FormField[]
+  submissions FormSubmission[]
+}
+
+model FormField {
+  id     String @id @default(uuid(7))
+  formId String
+  form   Form   @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  // Field machine name — used as the key on submission values
+  name String
+
+  // Free-form type string ("text" | "email" | "textarea" | "select" | "checkbox" | ...).
+  // Kept loose to match Directus and avoid migrations every time editors add a field type.
+  type String
+
+  label       String?
+  placeholder String?
+  help        String?
+
+  // Layout width ("full" | "half" | etc.) — UI hint, not enforced.
+  width String?
+
+  // Validation rule string (regex, or a built-in name like "email"). Loose by design.
+  validation String?
+
+  // Choices for select/radio fields: [{ label, value }, ...]
+  choices Json?
+
+  required Boolean @default(false)
+  sort     Int?
+
+  values FormSubmissionValue[]
+
+  @@index([formId, sort])
+}
+
+model FormSubmission {
+  id     String @id @default(uuid(7))
+  formId String
+  form   Form   @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  timestamp DateTime @default(now())
+
+  // Optional context captured at submit time (IP, user-agent, referer) — useful for spam triage
+  ipAddress String?
+  userAgent String?
+
+  values FormSubmissionValue[]
+
+  @@index([formId, timestamp])
+}
+
+model FormSubmissionValue {
+  id           String         @id @default(uuid(7))
+  submissionId String
+  submission   FormSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  // Nullable field FK: if a form's field is deleted later, its historical submissions stay
+  // (their value still lives on as a raw string + label snapshot below).
+  fieldId String?
+  field   FormField? @relation(fields: [fieldId], references: [id], onDelete: SetNull)
+
+  // Snapshot of the field's name + label at submit time — survives later field deletions.
+  name  String
+  label String
+
+  value String?
+
+  @@index([submissionId])
+}

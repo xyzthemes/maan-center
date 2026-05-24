@@ -3,8 +3,23 @@
 // This seam means we can change the generator `output` path or rename the
 // generated package without touching every route file.
 
-export type { PrismaClient } from '~~/prisma/generated/client'
+// PrismaClient is both a runtime value (the constructor) and a type — declare
+// the value form here so consumers can use it directly if they need to.
+export { PrismaClient } from '~~/prisma/generated/client'
 
-// Model + enum re-exports are added as the schema grows. Keep this list
-// to types actually consumed by app code — unused re-exports bloat the
-// Nitro auto-import surface.
+// Enums are both runtime values (the keyed object) and types
+export { ContentStatus } from '~~/prisma/generated/client'
+
+// Model types — add as routes start consuming them
+export type {
+  User,
+  Session,
+  Account,
+  Verification,
+  Post,
+  Page,
+  Form,
+  FormField,
+  FormSubmission,
+  FormSubmissionValue
+} from '~~/prisma/generated/client'

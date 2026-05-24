@@ -28,3 +28,9 @@ logs
 
 # Local scratchpad (one-off scripts, import artifacts, etc.)
 .tmp/
+
+# Remember skill session state — local-only
+.remember/
+
+# Prisma generated client — regenerate locally with `pnpm db:generate`
+prisma/generated/

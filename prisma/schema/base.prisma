@@ -1,0 +1,14 @@
+// Generator + datasource live in this file ONLY.
+// Domain models are split across siblings (auth.prisma, content.prisma, forms.prisma)
+// and Prisma stitches them at validation time — cross-file relations work without imports.
+
+generator client {
+  provider      = "prisma-client"
+  output        = "../generated"
+  queryCompiler = "true"
+  runtime       = "nodejs"
+}
+
+datasource db {
+  provider = "postgresql"
+}

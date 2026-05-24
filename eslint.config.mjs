@@ -3,7 +3,7 @@ import withNuxt from './.nuxt/eslint.config.mjs'
 
 export default withNuxt(
   {
-    ignores: ['.tmp/**']
+    ignores: ['.tmp/**', '.remember/**', 'prisma/generated/**']
   },
   {
     files: ['app/layouts/**/*.vue', 'app/pages/**/*.vue'],

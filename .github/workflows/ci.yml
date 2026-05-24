@@ -29,6 +29,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Generate the Prisma client into ./prisma/generated/. Without this,
+      # `nuxt typecheck` can't resolve the `~~/prisma/generated/client`
+      # import in server/utils/db/{client,types}.ts, cascading into
+      # implicit-any errors in every route that consumes Prisma types.
+      # Inputs here are all static (no github.event.* interpolation), so
+      # safe per workflow-injection guidance.
+      - name: Generate Prisma client
+        run: pnpm run db:generate
+
       - name: Lint
         run: pnpm run lint
 
@@ -36,4 +45,10 @@ jobs:
         run: pnpm run typecheck
 
       - name: Build
+        env:
+          # Build-time placeholders matching the Dockerfile — @onmax/nuxt-better-auth
+          # validates BETTER_AUTH_SECRET at module setup, not just runtime.
+          # CI never deploys, so these placeholders never leave the runner.
+          BETTER_AUTH_SECRET: build-time-placeholder-only
+          BETTER_AUTH_URL: https://placeholder.invalid
         run: pnpm run build

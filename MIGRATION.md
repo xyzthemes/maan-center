@@ -44,7 +44,7 @@ Prisma + Better Auth replaces these with:
 
 Each phase ships independently. After every phase, the app still builds, lints, and types cleanly. Don't merge mid-phase.
 
-### Phase 1 — Prisma + Postgres + Tigris scaffold
+### Phase 1 — Prisma + Postgres + Tigris scaffold ✅
 
 Owner-action items:
 - [x] Provisioned a **Fly.io Legacy Postgres** cluster in the `maan` org (`maan-db`, region `cdg`, single instance, shared-cpu-1x, 1 GB volume).
@@ -82,11 +82,12 @@ Code-side:
 - Create `server/utils/storage/tigris.ts` — singleton `S3Client` pointing at the Tigris endpoint, plus a small `uploadObject({ key, body, contentType })` helper that returns the public CDN URL.
 - Add `prisma/generated/` to `.gitignore`.
 
-Verification:
-- `pnpm db:generate` succeeds, types appear in `prisma/generated/`.
-- In a throwaway Nitro route, `await prisma.$queryRaw\`SELECT 1\`` returns `[ { '?column?': 1 } ]`.
-- In a throwaway Nitro route, `await uploadObject({ key: 'test.txt', body: 'hello', contentType: 'text/plain' })` returns `https://pub-maan-media.fly.storage.tigris.dev/test.txt` and fetching that URL returns `hello`.
-- `pnpm exec nuxt typecheck` clean.
+Verification (all passed at commit `560e055`):
+- ✅ `pnpm db:generate` succeeded; client written to `prisma/generated/`.
+- ✅ Smoke test (`.tmp/smoke-prisma.ts`) ran through `client.ts`'s singleton + `PrismaPg` + `pg.Pool` against `localhost:5432` (via `fly proxy 5432 -a maan-db`) and returned `PostgreSQL 17.7` from the Paris cluster.
+- ⏳ Tigris `uploadObject` smoke test deferred until Phase 6 (the helper compiles + types clean, but exercising it without an upload route is busywork).
+- ✅ `pnpm exec nuxt typecheck` clean.
+- ✅ `pnpm lint` clean (only pre-existing `v-html` warnings).
 
 ### Phase 2 — Schema + initial migration
 

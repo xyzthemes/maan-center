@@ -1,0 +1,52 @@
+name: fly-deploy
+
+# Deploy to Fly.io after CI passes on main.
+#
+# Why workflow_run rather than push: ci.yml already runs lint + typecheck +
+# build on every push. Chaining off its success means a green CI is the only
+# gate for production. If you push a broken build, CI fails and this workflow
+# never runs. Bypassing CI (e.g. workflow_dispatch) is intentionally manual.
+#
+# Inputs used in this workflow are controlled values (commit SHAs from the
+# triggering workflow_run context, plus github.sha). No user-supplied text
+# (issue/PR titles, commit messages, etc.) is interpolated into run: steps.
+on:
+  workflow_run:
+    workflows: [ci]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
+
+# One deploy at a time. If a new green CI lands while we're mid-deploy, the
+# queued run replaces the in-flight one (we'd rather ship the newest tested
+# commit than wait for an older deploy to finish).
+concurrency:
+  group: fly-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: deploy to fly.io
+    runs-on: ubuntu-latest
+    # workflow_run fires on any conclusion (success/failure/cancelled). Only
+    # deploy if CI was green. workflow_dispatch has no .workflow_run context,
+    # so the inner OR keeps manual deploys working.
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          # Default ref for workflow_run is the workflow file from the default
+          # branch, not the originating commit's tree. Pin to the head_sha of
+          # the green CI run so we deploy exactly what was tested.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Setup flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy
+        run: flyctl deploy --remote-only --app maan-app
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

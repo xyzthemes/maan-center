@@ -1,0 +1,23 @@
+// Phase 5: delete a post via Prisma. Auth required.
+// (Wasn't a Directus route before; added now for parity with the pages routes.)
+
+import { createError, getRouterParam } from 'h3'
+
+export default defineEventHandler(async (event) => {
+  await requireUserSession(event)
+  const id = getRouterParam(event, 'id')
+
+  if (!id) {
+    throw createError({ statusCode: 400, statusMessage: 'Post id is required.' })
+  }
+
+  try {
+    await prisma.post.delete({ where: { id } })
+    return { success: true as const }
+  } catch (e: any) {
+    if (e?.code === 'P2025') {
+      throw createError({ statusCode: 404, statusMessage: 'Post not found.' })
+    }
+    throw e
+  }
+})

@@ -1,3 +1,5 @@
+// Phase 5: create a page via Prisma. Auth required.
+
 import { createError, readBody } from 'h3'
 
 type DashboardPageBody = {
@@ -14,68 +16,43 @@ type DashboardPageBody = {
   }
 }
 
-const normalizePermalink = (value: string) => {
-  const trimmed = value.trim()
-
-  if (!trimmed) {
-    return null
-  }
-
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-    return trimmed
-  }
-
-  const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`
-
-  return withLeadingSlash.replace(/\/+$/, '') || '/'
-}
-
-const toPagePayload = (body: DashboardPageBody) => {
+export default defineEventHandler(async (event) => {
+  await requireUserSession(event)
+  const body = await readBody<DashboardPageBody>(event)
   const title = body.title?.trim()
 
   if (!title) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Page title is required.'
-    })
+    throw createError({ statusCode: 400, statusMessage: 'Page title is required.' })
   }
 
   const permalink = body.permalink ? normalizePermalink(body.permalink) : null
-
   if (!permalink) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Page permalink is required.'
+    throw createError({ statusCode: 400, statusMessage: 'Page permalink is required.' })
+  }
+
+  const status = normalizeStatus(body.status)
+
+  try {
+    const page = await prisma.page.create({
+      data: {
+        title,
+        permalink,
+        content: body.content?.trim() || null,
+        status,
+        publishedAt: normalizePublishedAt(status, body.published_at),
+        sort: body.sort ?? null,
+        seo: {
+          title: body.seo?.title?.trim() || title,
+          meta_description: body.seo?.meta_description?.trim() || null,
+          focus_keyphrase: body.seo?.focus_keyphrase?.trim() || null
+        }
+      }
     })
-  }
-
-  const status = ['draft', 'in_review', 'published'].includes(body.status || '')
-    ? body.status
-    : 'draft'
-
-  return {
-    title,
-    permalink,
-    content: body.content?.trim() || null,
-    status,
-    published_at: status === 'published'
-      ? body.published_at || new Date().toISOString()
-      : body.published_at || null,
-    sort: body.sort ?? null,
-    seo: {
-      title: body.seo?.title?.trim() || title,
-      meta_description: body.seo?.meta_description?.trim() || null,
-      focus_keyphrase: body.seo?.focus_keyphrase?.trim() || null
+    return { data: toDashboardPage(page) }
+  } catch (e: any) {
+    if (e?.code === 'P2002') {
+      throw createError({ statusCode: 409, statusMessage: 'A page with that permalink already exists.' })
     }
+    throw e
   }
-}
-
-export default defineEventHandler(async (event): Promise<unknown> => {
-  const body = await readBody<DashboardPageBody>(event)
-  const response: unknown = await dashboardDirectusRequest(event, '/items/pages', {
-    method: 'POST',
-    body: toPagePayload(body)
-  })
-
-  return response
 })

@@ -20,6 +20,7 @@ export type {
   Page,
   Form,
   FormField,
+  FormBlock,
   FormSubmission,
   FormSubmissionValue
 } from '~~/prisma/generated/client'

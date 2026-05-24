@@ -21,35 +21,28 @@ export type MaanSeo = {
   focusKeyphrase?: string
 }
 
-type DirectusPost = {
-  id: string
-  slug?: string
-  title?: string
-  description?: string
-  content?: string
-  image?: string | { id?: string }
-  published_at?: string
-  date_created?: string
-  status?: string
-  seo?: DirectusSeo
-}
-
-type DirectusPage = {
-  id: string
-  title?: string
-  permalink?: string
-  status?: string
-  seo?: DirectusSeo
-}
-
-type DirectusSeo = {
+// Stored SEO shape on Post/Page (matches the JSON column written by the
+// dashboard editors). Names are snake_case for parity with the Directus era.
+type StoredSeo = {
   title?: string
   meta_description?: string
-  og_image?: string | { id?: string }
+  og_image?: string
   no_index?: boolean
   no_follow?: boolean
   canonical_url?: string
   focus_keyphrase?: string
+}
+
+type ApiPost = {
+  id: string
+  slug: string
+  title: string
+  description: string | null
+  image: string | null
+  content: string | null
+  publishedAt: string | null
+  createdAt: string
+  seo: StoredSeo | null
 }
 
 const fallbackPostsEn: MaanPost[] = [
@@ -166,108 +159,45 @@ const fallbackPostsAr: MaanPost[] = [
   }
 ]
 
+const normalizeSeo = (seo: StoredSeo | null | undefined, fallback: Partial<MaanSeo> = {}): MaanSeo => ({
+  title: seo?.title || fallback.title,
+  description: seo?.meta_description || fallback.description,
+  // `og_image` is a full URL now (Tigris CDN). Passes through verbatim.
+  ogImage: seo?.og_image || fallback.ogImage,
+  noIndex: seo?.no_index ?? fallback.noIndex ?? false,
+  noFollow: seo?.no_follow ?? fallback.noFollow ?? false,
+  canonicalUrl: seo?.canonical_url || fallback.canonicalUrl,
+  focusKeyphrase: seo?.focus_keyphrase || fallback.focusKeyphrase
+})
+
+const toMaanPost = (p: ApiPost, locale: 'en' | 'ar'): MaanPost => {
+  const description = p.description || 'Insights and updates from Maan Special Education Center.'
+  return {
+    slug: p.slug,
+    locale,
+    title: p.title,
+    description,
+    category: locale === 'ar' ? 'مدونة المركز' : 'Center Blog',
+    publishedAt: p.publishedAt || p.createdAt || new Date().toISOString(),
+    readTime: locale === 'ar' ? '٤ دقائق' : '4 min read',
+    image: p.image ?? undefined,
+    content: p.content || '<p>More details will be available soon.</p>',
+    seo: normalizeSeo(p.seo, {
+      title: p.title,
+      description,
+      ogImage: p.image ?? undefined
+    })
+  }
+}
+
 export const useMaanContent = () => {
-  const config = useRuntimeConfig()
-  const directusUrl = computed(() => String(config.public.directus.url || '').replace(/\/$/, ''))
-
-  const getAssetUrl = (asset?: string | { id?: string }) => {
-    const id = typeof asset === 'string' ? asset : asset?.id
-
-    return id && directusUrl.value ? `${directusUrl.value}/assets/${id}` : undefined
-  }
-
-  const normalizeSeo = (seo?: DirectusSeo, fallback: Partial<MaanSeo> = {}): MaanSeo => ({
-    title: seo?.title || fallback.title,
-    description: seo?.meta_description || fallback.description,
-    ogImage: getAssetUrl(seo?.og_image) || fallback.ogImage,
-    noIndex: seo?.no_index ?? fallback.noIndex ?? false,
-    noFollow: seo?.no_follow ?? fallback.noFollow ?? false,
-    canonicalUrl: seo?.canonical_url || fallback.canonicalUrl,
-    focusKeyphrase: seo?.focus_keyphrase || fallback.focusKeyphrase
-  })
-
-  const normalizePosts = (posts: DirectusPost[] = [], locale: 'en' | 'ar' = 'en') => {
-    const relevantTerms = [
-      'maan',
-      'education',
-      'therapy',
-      'parent',
-      'family',
-      'special',
-      'inclusive',
-      'autism',
-      'speech',
-      'occupational',
-      'behavior',
-      'sensory',
-      'student',
-      'school',
-      'center',
-      'routine',
-      'routines',
-      'families',
-      'communication',
-      'play',
-      'language',
-      'confidence'
-    ]
-    const arabicRelevantTerms = ['معا', 'تعليم', 'تربية', 'علاج', 'أسرة', 'الأسر', 'تواصل', 'طفل', 'الأطفال', 'مركز', 'دعم', 'توحد', 'روتين', 'اللعب', 'الثقة']
-
-    const normalized: MaanPost[] = posts
-      .filter(post => post.status === undefined || post.status === 'published')
-      .map((post) => {
-        const searchable = `${post.title ?? ''} ${post.description ?? ''}`.toLowerCase()
-        const postLocale = post.slug?.startsWith('ar-') || /[\u0600-\u06FF]/.test(searchable) ? 'ar' : 'en'
-        const isRelevant = postLocale === 'ar'
-          ? arabicRelevantTerms.some(term => searchable.includes(term))
-          : relevantTerms.some(term => searchable.includes(term))
-
-        if (!isRelevant || postLocale !== locale || !post.slug || !post.title) {
-          return undefined
-        }
-
-        const normalizedPost: MaanPost = {
-          slug: post.slug,
-          locale: postLocale,
-          title: post.title,
-          description: post.description || 'Insights and updates from Maan Special Education Center.',
-          category: postLocale === 'ar' ? 'مدونة المركز' : 'Center Blog',
-          publishedAt: post.published_at || post.date_created || new Date().toISOString(),
-          readTime: postLocale === 'ar' ? '٤ دقائق' : '4 min read',
-          image: getAssetUrl(post.image),
-          content: post.content || '<p>More details will be available soon.</p>',
-          seo: normalizeSeo(post.seo, {
-            title: post.title,
-            description: post.description || 'Insights and updates from Maan Special Education Center.',
-            ogImage: getAssetUrl(post.image)
-          })
-        }
-
-        return normalizedPost
-      })
-      .filter(Boolean) as MaanPost[]
-
-    return normalized.length ? normalized : locale === 'ar' ? fallbackPostsAr : fallbackPostsEn
-  }
-
-  const getPosts = async (locale: 'en' | 'ar' = 'en') => {
-    if (!directusUrl.value) {
-      return locale === 'ar' ? fallbackPostsAr : fallbackPostsEn
-    }
-
+  const getPosts = async (locale: 'en' | 'ar' = 'en'): Promise<MaanPost[]> => {
     try {
-      const { getItems } = useDirectusItems()
-      const posts = await getItems<DirectusPost>({
-        collection: 'posts',
-        params: {
-          filter: { status: { _eq: 'published' } },
-          sort: ['-published_at'],
-          fields: ['id', 'slug', 'title', 'description', 'content', 'image', 'published_at', 'date_created', 'status', 'seo'],
-          limit: 6
-        }
+      const res = await $fetch<{ posts: ApiPost[] }>('/api/public/posts', {
+        query: { locale, limit: 6 }
       })
-
-      return normalizePosts(posts, locale)
+      const mapped = res.posts.map(p => toMaanPost(p, locale))
+      return mapped.length ? mapped : (locale === 'ar' ? fallbackPostsAr : fallbackPostsEn)
     } catch {
       return locale === 'ar' ? fallbackPostsAr : fallbackPostsEn
     }
@@ -275,46 +205,28 @@ export const useMaanContent = () => {
 
   const getPostBySlug = async (slug: string, locale: 'en' | 'ar' = 'en') => {
     const posts = await getPosts(locale)
-
     return posts.find(post => post.slug === slug)
   }
 
-  const getPageSeo = async (permalink: string, fallback: Partial<MaanSeo> = {}) => {
-    if (!directusUrl.value) {
-      return normalizeSeo(undefined, fallback)
-    }
-
+  const getPageSeo = async (permalink: string, fallback: Partial<MaanSeo> = {}): Promise<MaanSeo> => {
     try {
-      const { getItems } = useDirectusItems()
-      const pages = await getItems<DirectusPage>({
-        collection: 'pages',
-        params: {
-          filter: {
-            status: { _eq: 'published' },
-            permalink: { _eq: permalink }
-          },
-          fields: ['id', 'title', 'permalink', 'status', 'seo'],
-          limit: 1
-        }
-      })
-      const page = pages[0]
-
-      return normalizeSeo(page?.seo, {
-        ...fallback,
-        title: page?.title || fallback.title
-      })
+      const res = await $fetch<{ page: { title?: string, seo?: { title?: string, metaDescription?: string, focusKeyphrase?: string } } | null }>('/api/pages/by-permalink', { query: { permalink } })
+      const page = res.page
+      // by-permalink emits camelCase SEO; map back to snake_case StoredSeo
+      return normalizeSeo(
+        page?.seo
+          ? {
+              title: page.seo.title,
+              meta_description: page.seo.metaDescription,
+              focus_keyphrase: page.seo.focusKeyphrase
+            }
+          : undefined,
+        { ...fallback, title: page?.title || fallback.title }
+      )
     } catch {
       return normalizeSeo(undefined, fallback)
     }
   }
 
-  return {
-    fallbackPosts: fallbackPostsEn,
-    fallbackPostsAr,
-    getAssetUrl,
-    normalizeSeo,
-    getPosts,
-    getPostBySlug,
-    getPageSeo
-  }
+  return { getPosts, getPostBySlug, getPageSeo }
 }

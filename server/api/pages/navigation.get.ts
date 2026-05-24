@@ -1,9 +1,4 @@
-type DirectusNavPage = {
-  id: string
-  title?: string
-  permalink?: string
-  sort?: number | null
-}
+// Phase 5: published page list for the public nav menu (Prisma).
 
 export type NavPage = {
   id: string
@@ -24,33 +19,16 @@ const STATIC_PERMALINKS = new Set([
   '/ar/dashboard/login'
 ])
 
-export default defineEventHandler(async (event): Promise<{ pages: NavPage[] }> => {
-  const config = useRuntimeConfig(event)
-  const directusUrl = String(config.public.directus.url || '').replace(/\/$/, '')
-
-  if (!directusUrl) {
-    return { pages: [] }
-  }
-
+export default defineEventHandler(async (): Promise<{ pages: NavPage[] }> => {
   try {
-    const response = await $fetch<{ data?: DirectusNavPage[] }>(`${directusUrl}/items/pages`, {
-      query: {
-        fields: 'id,title,permalink,sort',
-        filter: JSON.stringify({ status: { _eq: 'published' } }),
-        sort: 'sort,title',
-        limit: 50
-      }
+    const rows = await prisma.page.findMany({
+      where: { status: 'published' },
+      orderBy: [{ sort: 'asc' }, { title: 'asc' }],
+      take: 50,
+      select: { id: true, title: true, permalink: true }
     })
 
-    const pages = (response.data || [])
-      .filter(page => Boolean(page.title && page.permalink))
-      .filter(page => !STATIC_PERMALINKS.has(page.permalink as string))
-      .map(page => ({
-        id: page.id,
-        title: page.title as string,
-        permalink: page.permalink as string
-      }))
-
+    const pages = rows.filter(p => !STATIC_PERMALINKS.has(p.permalink))
     return { pages }
   } catch {
     return { pages: [] }

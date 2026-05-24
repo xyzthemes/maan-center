@@ -18,6 +18,23 @@ model Form {
 
   fields      FormField[]
   submissions FormSubmission[]
+  blocks      FormBlock[]
+}
+
+// Stored block content shown on public pages (home, contact, blog) that wraps
+// a form with a localized headline/tagline. Mirrors Directus's block_form
+// collection so editors can change copy without a code deploy.
+model FormBlock {
+  id       String  @id @default(uuid(7))
+  formId   String
+  form     Form    @relation(fields: [formId], references: [id], onDelete: Cascade)
+  headline String?
+  tagline  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([formId])
 }
 
 model FormField {

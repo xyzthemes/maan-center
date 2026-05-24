@@ -1,3 +1,6 @@
+// Phase 5: create a post via Prisma. Auth required.
+// Returns the response envelope `{ data: { ... } }` the dashboard composables expect.
+
 import { createError, readBody } from 'h3'
 
 type DashboardPostBody = {
@@ -14,50 +17,34 @@ type DashboardPostBody = {
   }
 }
 
-const normalizeSlug = (value: string) => value
-  .trim()
-  .toLowerCase()
-  .replace(/[^a-z0-9\u0600-\u06FF]+/g, '-')
-  .replace(/^-+|-+$/g, '')
-
-const toPostPayload = (body: DashboardPostBody) => {
-  const title = body.title?.trim()
-
-  if (!title) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Post title is required.'
-    })
-  }
-
-  const slug = normalizeSlug(body.slug || title)
-  const status = ['draft', 'in_review', 'published'].includes(body.status || '')
-    ? body.status
-    : 'draft'
-
-  return {
-    title,
-    slug,
-    description: body.description?.trim() || null,
-    content: body.content?.trim() || '<p></p>',
-    status,
-    published_at: status === 'published'
-      ? body.published_at || new Date().toISOString()
-      : body.published_at || null,
-    seo: {
-      title: body.seo?.title?.trim() || title,
-      meta_description: body.seo?.meta_description?.trim() || body.description?.trim() || null,
-      focus_keyphrase: body.seo?.focus_keyphrase?.trim() || null
-    }
-  }
-}
-
-export default defineEventHandler(async (event): Promise<unknown> => {
+export default defineEventHandler(async (event) => {
+  await requireUserSession(event)
   const body = await readBody<DashboardPostBody>(event)
-  const response: unknown = await dashboardDirectusRequest(event, '/items/posts', {
-    method: 'POST',
-    body: toPostPayload(body)
+
+  const title = body.title?.trim()
+  if (!title) {
+    throw createError({ statusCode: 400, statusMessage: 'Post title is required.' })
+  }
+
+  const status = normalizeStatus(body.status)
+  const slug = normalizeSlug(body.slug || title)
+  const description = body.description?.trim() || null
+
+  const post = await prisma.post.create({
+    data: {
+      title,
+      slug,
+      description,
+      content: body.content?.trim() || '<p></p>',
+      status,
+      publishedAt: normalizePublishedAt(status, body.published_at),
+      seo: {
+        title: body.seo?.title?.trim() || title,
+        meta_description: body.seo?.meta_description?.trim() || description,
+        focus_keyphrase: body.seo?.focus_keyphrase?.trim() || null
+      }
+    }
   })
 
-  return response
+  return { data: toDashboardPost(post) }
 })

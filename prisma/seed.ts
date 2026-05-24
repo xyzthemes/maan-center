@@ -348,6 +348,44 @@ async function seedFormSubmissions() {
   console.log(`  form_submissions: ${total} (${skipped} skipped)`)
 }
 
+async function seedFormBlocks() {
+  let total = 0, skipped = 0
+  try {
+    for await (const rows of paginate<any>('block_form', { fields: '*' })) {
+      for (const b of rows) {
+        const id = ensureUuid(b.id)
+        const formId = typeof b.form === 'object' ? b.form?.id : b.form
+        if (!formId) { skipped++; continue }
+        const data = {
+          formId,
+          headline: b.headline ?? null,
+          tagline: b.tagline ?? null,
+          createdAt: parseDate(b.date_created) ?? new Date(),
+          updatedAt: parseDate(b.date_updated) ?? new Date()
+        }
+        try {
+          await prisma.formBlock.upsert({
+            where: { id },
+            update: data,
+            create: { id, ...data }
+          })
+          total++
+        } catch (e: any) {
+          console.warn(`  ⚠ form_block ${id} skipped: ${e.message?.split('\n')[0]}`)
+          skipped++
+        }
+      }
+    }
+  } catch (e: any) {
+    if (e.status === 403 || e.status === 404) {
+      console.warn(`  collection block_form not exposed (${e.status}); skipping`)
+      return
+    }
+    throw e
+  }
+  console.log(`  form_blocks: ${total} (${skipped} skipped)`)
+}
+
 async function seedFormSubmissionValues() {
   // The Directus row has `form_submission` + `field` FKs but no `name`/`label`
   // snapshots — our Prisma model stores name/label denormalized so historical
@@ -418,6 +456,7 @@ async function main() {
   await phase('pages', seedPages)
   await phase('forms', seedForms)
   await phase('form_fields', seedFormFields)
+  await phase('form_blocks', seedFormBlocks)
   await phase('form_submissions', seedFormSubmissions)
   await phase('form_submission_values', seedFormSubmissionValues)
 

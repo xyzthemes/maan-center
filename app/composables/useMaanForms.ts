@@ -117,131 +117,105 @@ export const createMaanContactFormFallback = (locale: 'en' | 'ar' = 'en'): MaanF
   }
 })
 
-type DirectusForm = {
+// Phase 5: internal API shapes returned by /api/public/forms/[id] and
+// /api/public/form-blocks/[id]. JSON serialization turns Prisma's `null`s into
+// nulls (not undefined), so the optional fields are `T | null` not `T | undefined`.
+
+type ApiFormField = {
   id: string
-  title?: string
-  is_active?: boolean
-  submit_label?: string
-  on_success?: 'message' | 'redirect'
-  success_message?: string
-  success_redirect_url?: string
+  name: string
+  type: string
+  label: string | null
+  placeholder: string | null
+  help: string | null
+  validation: string | null
+  width: string | null
+  choices: MaanFormChoice[] | null
+  required: boolean
+  sort: number | null
 }
 
-type DirectusFormField = {
+type ApiForm = {
   id: string
-  form?: string
-  name?: string
-  type?: MaanFormField['type']
-  label?: string
-  placeholder?: string
-  help?: string
-  validation?: string
-  width?: MaanFormField['width']
-  choices?: MaanFormChoice[]
-  required?: boolean
-  sort?: number
+  title: string
+  isActive: boolean
+  submitLabel: string | null
+  onSuccess: string
+  successMessage: string | null
+  successRedirectUrl: string | null
+  fields: ApiFormField[]
 }
 
-type DirectusFormBlock = {
-  id: string
-  form?: string
-  headline?: string
-  tagline?: string
+const VALID_FIELD_TYPES: ReadonlySet<MaanFormField['type']> = new Set([
+  'text', 'textarea', 'checkbox', 'checkbox_group', 'radio', 'select', 'hidden', 'file'
+])
+const VALID_WIDTHS: ReadonlySet<MaanFormField['width']> = new Set(['100', '67', '50', '33'])
+
+const toMaanField = (field: ApiFormField): MaanFormField | undefined => {
+  if (!field.id || !field.name) return undefined
+  const type = VALID_FIELD_TYPES.has(field.type as MaanFormField['type'])
+    ? field.type as MaanFormField['type']
+    : 'text'
+  const width = VALID_WIDTHS.has(field.width as MaanFormField['width'])
+    ? field.width as MaanFormField['width']
+    : '100'
+  return {
+    id: field.id,
+    name: field.name,
+    type,
+    label: field.label || field.name,
+    placeholder: field.placeholder || undefined,
+    help: field.help || undefined,
+    validation: field.validation || undefined,
+    width,
+    choices: field.choices || [],
+    required: Boolean(field.required),
+    sort: field.sort ?? undefined
+  }
+}
+
+const toMaanForm = (form: ApiForm): MaanForm | undefined => {
+  if (!form.id || !form.isActive) return undefined
+  return {
+    id: form.id,
+    title: form.title || 'Form',
+    isActive: true,
+    submitLabel: form.submitLabel || 'Submit',
+    onSuccess: form.onSuccess === 'redirect' ? 'redirect' : 'message',
+    successMessage: form.successMessage || 'Thank you. Your submission has been received.',
+    successRedirectUrl: form.successRedirectUrl || undefined,
+    fields: (form.fields
+      .map(toMaanField)
+      .filter(Boolean) as MaanFormField[])
+      .sort((a, b) => (a.sort || 0) - (b.sort || 0))
+  }
 }
 
 export const useMaanForms = () => {
-  const config = useRuntimeConfig()
-  const directusUrl = computed(() => String(config.public.directus.url || '').replace(/\/$/, ''))
-
-  const normalizeField = (field: DirectusFormField): MaanFormField | undefined => {
-    if (!field.id || !field.name || !field.type) {
-      return undefined
-    }
-
-    return {
-      id: field.id,
-      name: field.name,
-      type: field.type,
-      label: field.label || field.name,
-      placeholder: field.placeholder || undefined,
-      help: field.help || undefined,
-      validation: field.validation || undefined,
-      width: field.width || '100',
-      choices: field.choices || [],
-      required: Boolean(field.required),
-      sort: field.sort
-    }
-  }
-
-  const normalizeForm = (form: DirectusForm, fields: DirectusFormField[] = []): MaanForm | undefined => {
-    if (!form.id || form.is_active === false) {
-      return undefined
-    }
-
-    return {
-      id: form.id,
-      title: form.title || 'Form',
-      isActive: true,
-      submitLabel: form.submit_label || 'Submit',
-      onSuccess: form.on_success || 'message',
-      successMessage: form.success_message || 'Thank you. Your submission has been received.',
-      successRedirectUrl: form.success_redirect_url || undefined,
-      fields: (fields
-        .map(normalizeField)
-        .filter(Boolean) as MaanFormField[])
-        .sort((a, b) => (a.sort || 0) - (b.sort || 0))
-    }
-  }
-
-  const getFormById = async (formId: string) => {
-    if (!directusUrl.value || !formId) {
-      return undefined
-    }
-
+  const getFormById = async (formId: string): Promise<MaanForm | undefined> => {
+    if (!formId) return undefined
     try {
-      const [formResponse, fieldsResponse] = await Promise.all([
-        $fetch<{ data?: DirectusForm }>(`${directusUrl.value}/items/forms/${formId}`, {
-          query: {
-            fields: 'id,title,is_active,submit_label,on_success,success_message,success_redirect_url'
-          }
-        }),
-        $fetch<{ data?: DirectusFormField[] }>(`${directusUrl.value}/items/form_fields`, {
-          query: {
-            fields: 'id,form,name,type,label,placeholder,help,validation,width,choices,required,sort',
-            filter: { form: { _eq: formId } },
-            sort: 'sort',
-            limit: -1
-          }
-        })
-      ])
-
-      return formResponse.data
-        ? normalizeForm(formResponse.data, fieldsResponse.data || [])
-        : undefined
+      const res = await $fetch<{ form: ApiForm | null }>(`/api/public/forms/${formId}`)
+      return res.form ? toMaanForm(res.form) : undefined
     } catch {
       return undefined
     }
   }
 
-  const getFormBlockById = async (blockId: string) => {
-    if (!directusUrl.value || !blockId) {
-      return undefined
-    }
-
+  const getFormBlockById = async (blockId: string): Promise<MaanFormBlock | undefined> => {
+    if (!blockId) return undefined
     try {
-      const blockResponse = await $fetch<{ data?: DirectusFormBlock }>(`${directusUrl.value}/items/block_form/${blockId}`, {
-        query: {
-          fields: 'id,form,headline,tagline'
-        }
-      })
-      const block = blockResponse.data
-
-      if (!block?.form) {
-        return undefined
-      }
-
-      const form = await getFormById(block.form)
-
+      const res = await $fetch<{
+        block: {
+          id: string
+          headline: string | null
+          tagline: string | null
+          form: ApiForm
+        } | null
+      }>(`/api/public/form-blocks/${blockId}`)
+      const block = res.block
+      if (!block) return undefined
+      const form = toMaanForm(block.form)
       return form
         ? {
             id: block.id,

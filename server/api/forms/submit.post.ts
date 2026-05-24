@@ -1,18 +1,8 @@
-type DirectusForm = {
-  id: string
-  is_active?: boolean
-  on_success?: 'message' | 'redirect'
-  success_message?: string
-  success_redirect_url?: string
-}
+// Phase 5: public form submission via Prisma.
+// Captures the field name + label snapshot on each value row so historical
+// submissions survive later field renames/deletions.
 
-type DirectusFormField = {
-  id: string
-  name?: string
-  type?: string
-  required?: boolean
-  validation?: string
-}
+import { createError, getHeader, readBody, setResponseStatus, getRequestIP } from 'h3'
 
 type SubmitBody = {
   formId?: string
@@ -20,134 +10,77 @@ type SubmitBody = {
   website?: string
 }
 
-const isPlainObject = (value: unknown): value is Record<string, unknown> => Boolean(value && typeof value === 'object' && !Array.isArray(value))
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value && typeof value === 'object' && !Array.isArray(value))
 
-const normalizeValue = (value: unknown) => {
-  if (Array.isArray(value)) {
-    return value.map(item => String(item)).filter(Boolean).join(', ')
-  }
-
-  if (typeof value === 'boolean') {
-    return value ? 'Yes' : 'No'
-  }
-
+const normalizeValue = (value: unknown): string => {
+  if (Array.isArray(value)) return value.map(item => String(item)).filter(Boolean).join(', ')
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No'
   return typeof value === 'string' ? value.trim() : String(value ?? '').trim()
 }
 
-const validateField = (field: DirectusFormField, value: string) => {
+const validateField = (
+  field: { name: string, required: boolean, validation: string | null, label: string | null },
+  value: string
+): string | undefined => {
   if (field.required && !value) {
-    return `${field.name || 'Field'} is required.`
+    return `${field.label || field.name} is required.`
   }
-
   const rules = String(field.validation || '').split('|').filter(Boolean)
-
   for (const rule of rules) {
-    if (!value) {
-      continue
-    }
-
+    if (!value) continue
     if (rule === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-      return `${field.name || 'Email'} must be a valid email address.`
+      return `${field.label || field.name} must be a valid email address.`
     }
-
     if (rule === 'url') {
-      try {
-        new URL(value)
-      } catch {
-        return `${field.name || 'URL'} must be a valid URL.`
-      }
+      try { new URL(value) } catch { return `${field.label || field.name} must be a valid URL.` }
     }
-
     if (rule.startsWith('min:') && value.length < Number(rule.split(':')[1])) {
-      return `${field.name || 'Field'} is too short.`
+      return `${field.label || field.name} is too short.`
     }
-
     if (rule.startsWith('max:') && value.length > Number(rule.split(':')[1])) {
-      return `${field.name || 'Field'} is too long.`
+      return `${field.label || field.name} is too long.`
     }
-
     if (rule.startsWith('length:') && value.length !== Number(rule.split(':')[1])) {
-      return `${field.name || 'Field'} has the wrong length.`
+      return `${field.label || field.name} has the wrong length.`
     }
   }
-
   return undefined
 }
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig()
-  const directusUrl = String(config.public.directus.url || '').replace(/\/$/, '')
-  const directusToken = process.env.DIRECTUS_SERVER_TOKEN
-    || process.env.DIRECTUS_TOKEN
-    || String(config.directusToken || '')
-
-  if (!directusUrl || !directusToken) {
-    throw createError({
-      statusCode: 503,
-      statusMessage: 'Form submissions are not configured.'
-    })
-  }
-
   const body = await readBody<SubmitBody>(event)
 
-  if (body.website) {
-    return { ok: true }
-  }
+  // Honeypot — bots fill the hidden `website` field; humans don't.
+  if (body.website) return { ok: true }
 
   if (!body.formId || !isPlainObject(body.values)) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Invalid form submission.'
-    })
+    throw createError({ statusCode: 400, statusMessage: 'Invalid form submission.' })
   }
 
-  const headers = {
-    Authorization: `Bearer ${directusToken}`
-  }
-  const [formResponse, fieldsResponse] = await Promise.all([
-    $fetch<{ data?: DirectusForm }>(`${directusUrl}/items/forms/${body.formId}`, {
-      headers,
-      query: {
-        fields: 'id,is_active,on_success,success_message,success_redirect_url'
-      }
-    }),
-    $fetch<{ data?: DirectusFormField[] }>(`${directusUrl}/items/form_fields`, {
-      headers,
-      query: {
-        fields: 'id,name,type,required,validation,sort',
-        filter: { form: { _eq: body.formId } },
-        sort: 'sort',
-        limit: -1
-      }
-    })
-  ])
-  const form = formResponse.data
-  const fields = fieldsResponse.data || []
+  const form = await prisma.form.findUnique({
+    where: { id: body.formId },
+    include: { fields: { orderBy: { sort: 'asc' } } }
+  })
 
-  if (!form?.id || form.is_active === false) {
-    throw createError({
-      statusCode: 404,
-      statusMessage: 'Form not found.'
-    })
+  if (!form || !form.isActive) {
+    throw createError({ statusCode: 404, statusMessage: 'Form not found.' })
   }
 
   const errors: Record<string, string> = {}
-  const values = fields
-    .filter(field => field.type !== 'hidden' && field.type !== 'file')
-    .map((field, index) => {
-      const value = normalizeValue(field.name ? body.values?.[field.name] : '')
-      const error = validateField(field, value)
+  const submittableFields = form.fields.filter(f => f.type !== 'hidden' && f.type !== 'file')
 
-      if (error && field.name) {
-        errors[field.name] = error
-      }
-
-      return {
-        field: field.id,
-        value,
-        sort: index + 1
-      }
-    })
+  const valueRows = submittableFields.map((field) => {
+    const value = normalizeValue(body.values?.[field.name])
+    const error = validateField(field, value)
+    if (error) errors[field.name] = error
+    return {
+      fieldId: field.id,
+      name: field.name,
+      label: field.label || field.name,
+      value: value || null
+    }
+  })
 
   if (Object.keys(errors).length) {
     throw createError({
@@ -157,21 +90,20 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  await $fetch(`${directusUrl}/items/form_submissions`, {
-    method: 'POST',
-    headers,
-    body: {
-      form: form.id,
-      values
+  await prisma.formSubmission.create({
+    data: {
+      formId: form.id,
+      ipAddress: getRequestIP(event, { xForwardedFor: true }) ?? null,
+      userAgent: getHeader(event, 'user-agent') ?? null,
+      values: { create: valueRows }
     }
   })
 
   setResponseStatus(event, 201)
-
   return {
     ok: true,
-    onSuccess: form.on_success || 'message',
-    successMessage: form.success_message,
-    successRedirectUrl: form.success_redirect_url
+    onSuccess: form.onSuccess || 'message',
+    successMessage: form.successMessage,
+    successRedirectUrl: form.successRedirectUrl
   }
 })

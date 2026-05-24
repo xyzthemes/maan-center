@@ -1,3 +1,5 @@
+// Phase 5: update a post via Prisma. Auth required.
+
 import { createError, getRouterParam, readBody } from 'h3'
 
 type DashboardPostBody = {
@@ -14,58 +16,46 @@ type DashboardPostBody = {
   }
 }
 
-const normalizeSlug = (value: string) => value
-  .trim()
-  .toLowerCase()
-  .replace(/[^a-z0-9\u0600-\u06FF]+/g, '-')
-  .replace(/^-+|-+$/g, '')
-
-const toPatchPayload = (body: DashboardPostBody) => {
-  const title = body.title?.trim()
-
-  if (!title) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Post title is required.'
-    })
-  }
-
-  const status = ['draft', 'in_review', 'published'].includes(body.status || '')
-    ? body.status
-    : 'draft'
-
-  return {
-    title,
-    slug: normalizeSlug(body.slug || title),
-    description: body.description?.trim() || null,
-    content: body.content?.trim() || '<p></p>',
-    status,
-    published_at: status === 'published'
-      ? body.published_at || new Date().toISOString()
-      : body.published_at || null,
-    seo: {
-      title: body.seo?.title?.trim() || title,
-      meta_description: body.seo?.meta_description?.trim() || body.description?.trim() || null,
-      focus_keyphrase: body.seo?.focus_keyphrase?.trim() || null
-    }
-  }
-}
-
-export default defineEventHandler(async (event): Promise<unknown> => {
+export default defineEventHandler(async (event) => {
+  await requireUserSession(event)
   const id = getRouterParam(event, 'id')
 
   if (!id) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Post id is required.'
-    })
+    throw createError({ statusCode: 400, statusMessage: 'Post id is required.' })
   }
 
   const body = await readBody<DashboardPostBody>(event)
-  const response: unknown = await dashboardDirectusRequest(event, `/items/posts/${id}`, {
-    method: 'PATCH',
-    body: toPatchPayload(body)
-  })
+  const title = body.title?.trim()
 
-  return response
+  if (!title) {
+    throw createError({ statusCode: 400, statusMessage: 'Post title is required.' })
+  }
+
+  const status = normalizeStatus(body.status)
+  const description = body.description?.trim() || null
+
+  try {
+    const post = await prisma.post.update({
+      where: { id },
+      data: {
+        title,
+        slug: normalizeSlug(body.slug || title),
+        description,
+        content: body.content?.trim() || '<p></p>',
+        status,
+        publishedAt: normalizePublishedAt(status, body.published_at),
+        seo: {
+          title: body.seo?.title?.trim() || title,
+          meta_description: body.seo?.meta_description?.trim() || description,
+          focus_keyphrase: body.seo?.focus_keyphrase?.trim() || null
+        }
+      }
+    })
+    return { data: toDashboardPost(post) }
+  } catch (e: any) {
+    if (e?.code === 'P2025') {
+      throw createError({ statusCode: 404, statusMessage: 'Post not found.' })
+    }
+    throw e
+  }
 })

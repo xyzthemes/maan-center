@@ -1,17 +1,7 @@
-import { getQuery } from 'h3'
+// Phase 5: fetch a published page by permalink (Prisma).
+// Used by `useMaanContent.getPageSeo` and the catch-all `/[...slug].vue` route.
 
-type DirectusPublicPage = {
-  id: string
-  title?: string
-  permalink?: string
-  content?: string
-  published_at?: string
-  seo?: {
-    title?: string
-    meta_description?: string
-    focus_keyphrase?: string
-  }
-}
+import { getQuery } from 'h3'
 
 export type PublicPage = {
   id: string
@@ -26,44 +16,34 @@ export type PublicPage = {
   }
 }
 
-export default defineEventHandler(async (event): Promise<{ page: PublicPage | null }> => {
-  const config = useRuntimeConfig(event)
-  const directusUrl = String(config.public.directus.url || '').replace(/\/$/, '')
-  const { permalink } = getQuery(event) as { permalink?: string }
+type StoredSeo = {
+  title?: string
+  meta_description?: string
+  focus_keyphrase?: string
+}
 
-  if (!directusUrl || !permalink) {
-    return { page: null }
-  }
+export default defineEventHandler(async (event): Promise<{ page: PublicPage | null }> => {
+  const { permalink } = getQuery(event) as { permalink?: string }
+  if (!permalink) return { page: null }
 
   try {
-    const response = await $fetch<{ data?: DirectusPublicPage[] }>(`${directusUrl}/items/pages`, {
-      query: {
-        fields: 'id,title,permalink,content,published_at,seo',
-        filter: JSON.stringify({
-          status: { _eq: 'published' },
-          permalink: { _eq: permalink }
-        }),
-        limit: 1
-      }
+    const page = await prisma.page.findFirst({
+      where: { status: 'published', permalink }
     })
+    if (!page) return { page: null }
 
-    const page = response.data?.[0]
-
-    if (!page?.title || !page?.permalink) {
-      return { page: null }
-    }
-
+    const seo = (page.seo ?? {}) as StoredSeo
     return {
       page: {
         id: page.id,
         title: page.title,
         permalink: page.permalink,
-        content: page.content || '',
-        publishedAt: page.published_at || null,
+        content: page.content ?? '',
+        publishedAt: page.publishedAt?.toISOString() ?? null,
         seo: {
-          title: page.seo?.title,
-          metaDescription: page.seo?.meta_description,
-          focusKeyphrase: page.seo?.focus_keyphrase
+          title: seo.title,
+          metaDescription: seo.meta_description,
+          focusKeyphrase: seo.focus_keyphrase
         }
       }
     }

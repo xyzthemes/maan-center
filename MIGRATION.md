@@ -175,31 +175,43 @@ Bridge state until Phase 5:
 - The dashboard data routes (`/api/dashboard/posts/*`, `pages/*`, `submissions.get.ts`) still call `dashboardDirectusRequest`, now using the static `DIRECTUS_SERVER_TOKEN` (Frontend Bot) instead of a per-user cookie that no longer exists. Reads will succeed only for items the bot has read permission for; writes will 403. Phase 5 replaces these with `prisma.*` calls and adds `requireUserSession(event)` to each route.
 - Existing seeded users still have `Account.password = NULL`. No sign-in is possible until either (a) Phase 5+ ships a "Set your password" flow backed by Better Auth's `passwordReset`, or (b) the operator uses the throwaway `.tmp/set-password.ts` helper to bootstrap a test user.
 
-### Phase 5 — Server endpoint swap
+### Phase 5 — Server endpoint swap ✅
 
-This is mechanical but touches every API route. One PR-able commit per collection keeps reviews tight.
+Every API route that touched Directus now talks to Prisma. The public composables fetch from internal Nitro routes instead of `useDirectusItems()`.
 
-| Today | After |
-|---|---|
-| `dashboardDirectusRequest(event, '/items/posts', { ... })` | `prisma.post.findMany({ where: { ... } })` |
-| `dashboardDirectusRequest(event, '/items/posts', { method: 'POST', body: ... })` | `prisma.post.create({ data: ... })` |
-| `dashboardDirectusRequest(event, '/items/posts/{id}', { method: 'PATCH', body: ... })` | `prisma.post.update({ where: { id }, data: ... })` |
-| `dashboardDirectusRequest(event, '/items/posts/{id}', { method: 'DELETE' })` | `prisma.post.delete({ where: { id } })` |
+What landed:
+- [x] **Schema extension**: added `FormBlock` model + `add_form_block` migration so Directus's `block_form` content (5 rows of editor-controlled headline/tagline for home/contact/blog surfaces, EN+AR) carries over. Extended `prisma/seed.ts` and re-seeded.
+- [x] `server/utils/dashboard-shapes.ts` — serialization helpers that map Prisma rows back to the snake_case wire shape the existing dashboard composables consume (`published_at`, `date_updated`, `seo.meta_description`, …). Keeps Phase 5 a backend-only change; Phase 7 cleanup can rename to camelCase.
+- [x] **Dashboard data routes** (all gated by `requireUserSession`):
+  - `posts/index.get.ts`, `posts/index.post.ts`, `posts/[id].patch.ts`, `posts/[id].delete.ts` (new — parity with pages)
+  - `pages/index.get.ts`, `pages/index.post.ts`, `pages/[id].patch.ts`, `pages/[id].delete.ts`
+  - `submissions.get.ts` — joins `Form` + `FormSubmissionValue`
+- [x] **Public data routes**:
+  - `/api/pages/navigation` → `prisma.page.findMany({ status: 'published' })`
+  - `/api/pages/by-permalink` → `prisma.page.findFirst(...)`
+  - `/api/public/posts?locale=en|ar&limit=N` (new — used by `useMaanContent.getPosts`)
+  - `/api/public/forms/[id]` (new) + `/api/public/form-blocks/[id]` (new)
+  - `/api/forms/submit` — writes `FormSubmission` + nested `FormSubmissionValue[]` with denormalized name/label snapshots, validates via the form's `FormField[]`
+  - `/api/__sitemap__/urls` — published posts from Prisma
+- [x] **Composables**: `useMaanContent` + `useMaanForms` now `$fetch` from the internal API. Same `MaanPost` / `MaanSeo` / `MaanForm` / `MaanFormBlock` types — pages don't need changes.
+- [x] **Deleted** `server/utils/dashboard-directus.ts` — every caller is gone. `nuxt-directus` module + `DIRECTUS_SERVER_TOKEN` config remain until Phase 7's cleanup.
 
-Files to migrate, in order:
-1. `server/api/dashboard/posts/*.ts` (5 files)
-2. `server/api/dashboard/pages/*.ts` (4 files)
-3. `server/api/dashboard/submissions.get.ts`
-4. `server/api/pages/navigation.get.ts` + `server/api/pages/by-permalink.get.ts` (public)
-5. `server/api/forms/submit.post.ts` (writes a public submission)
-6. `server/api/__sitemap__/urls.ts` (reads posts for sitemap)
-7. `app/composables/useMaanContent.ts` — switch from `useDirectusItems()` to `$fetch('/api/pages/...')` or use Nitro's `useRequestFetch` to call our own routes during SSR.
-8. `app/composables/useMaanForms.ts` — same swap.
+Verification (`pnpm dev` against `localhost:3000`, all passed):
+- ✅ `pnpm exec nuxt typecheck` clean.
+- ✅ `GET /api/public/posts?locale=en&limit=2` → 2 posts; `?locale=ar` → 2 AR posts.
+- ✅ `GET /api/pages/navigation` → 3 published pages (excludes static permalinks).
+- ✅ `GET /api/pages/by-permalink?permalink=/about-us` → full page payload with normalized SEO.
+- ✅ `GET /api/public/form-blocks/185eca12-…` → block with headline + nested form + 5 fields.
+- ✅ `GET /api/__sitemap__/urls` → 4 static URLs + post URLs.
+- ✅ `GET /api/dashboard/posts` unauth → `401`.
+- ✅ `GET /api/dashboard/posts` authed → 28 posts; `/api/dashboard/pages` → 10; `/api/dashboard/submissions` → 2 with form/values joined.
+- ✅ POST `/api/dashboard/posts` → 200 (created); PATCH `/{id}` → 200 (edited); DELETE `/{id}` → `{ success: true }`.
+- ✅ POST `/api/forms/submit` for the Family Enquiry form (id `36493b64-…`) wrote a real `FormSubmission` + 5 values; cleaned up after.
 
-Verification per file:
-- `pnpm exec nuxt typecheck` clean.
-- The corresponding dashboard/public route loads and shows the right data.
-- For mutating endpoints (POST/PATCH/DELETE), end-to-end test the dashboard flow: create a page, edit it, delete it.
+Out of scope, deferred to Phase 7:
+- Removing `nuxt-directus`, `NUXT_PUBLIC_DIRECTUS_URL`, `DIRECTUS_SERVER_TOKEN`.
+- Renaming `DashboardPost`/`DashboardPage` to `Post`/`Page` and flipping the response wire shape from snake_case to camelCase.
+- Tightening `requireUserSession(event, { user: { role: 'admin' } })` per route now that we know which writer/admin roles correspond to which actions.
 
 ### Phase 6 — Image uploads via Tigris (rich-text editor wiring)
 

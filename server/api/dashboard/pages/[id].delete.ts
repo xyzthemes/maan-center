@@ -1,18 +1,22 @@
+// Phase 5: delete a page via Prisma. Auth required.
+
 import { createError, getRouterParam } from 'h3'
 
-export default defineEventHandler(async (event): Promise<{ success: true }> => {
+export default defineEventHandler(async (event) => {
+  await requireUserSession(event)
   const id = getRouterParam(event, 'id')
 
   if (!id) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Page id is required.'
-    })
+    throw createError({ statusCode: 400, statusMessage: 'Page id is required.' })
   }
 
-  await dashboardDirectusRequest(event, `/items/pages/${id}`, {
-    method: 'DELETE'
-  })
-
-  return { success: true }
+  try {
+    await prisma.page.delete({ where: { id } })
+    return { success: true as const }
+  } catch (e: any) {
+    if (e?.code === 'P2025') {
+      throw createError({ statusCode: 404, statusMessage: 'Page not found.' })
+    }
+    throw e
+  }
 })

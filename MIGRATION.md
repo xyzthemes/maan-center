@@ -47,8 +47,14 @@ Each phase ships independently. After every phase, the app still builds, lints, 
 ### Phase 1 — Prisma + Postgres scaffold
 
 Owner-action items:
-- [ ] Provision a **Fly.io Legacy Postgres** cluster: `fly postgres create --name maan-db --region <region>`. Capture the `DATABASE_URL` from `fly postgres attach` or `fly secrets list`.
-- [ ] Add the `DATABASE_URL` to local `.env` (for migrations + seed) and to Railway env vars (for production runtime). The connection string typically looks like `postgres://<user>:<pass>@<app>.internal:5432/<db>?sslmode=disable` when the Nuxt app also runs on Fly, or the public proxy URL otherwise.
+- [ ] Provision a **Fly.io Legacy Postgres** cluster in the `maan` org:
+
+  ```bash
+  fly postgres create --org maan --name maan-db --region <region>
+  ```
+
+  Capture the `DATABASE_URL` from the post-create output (it's only shown once — save it). Alternatively, retrieve it later with `fly secrets list -a <app-name>` after attaching to a Fly app.
+- [ ] Add the `DATABASE_URL` to local `.env` (for migrations + seed) and to Railway env vars (for production runtime). When the Nuxt app eventually runs on Fly too, switch to the internal address (`postgres://...@maan-db.internal:5432/...`); until then, use the public proxy URL Fly provides.
 
 Code-side:
 - Install deps: `prisma@^7`, `@prisma/client@^7`, `@prisma/adapter-pg@^7`, `pg`.
@@ -185,7 +191,7 @@ Verification:
 
 ## Decisions made (locked in for this migration)
 
-1. **Postgres host: Fly.io Legacy Postgres.** Provisioned via `fly postgres create`. Single instance for now; we can clone for staging/PR-preview environments later if needed.
+1. **Postgres host: Fly.io Legacy Postgres** in the `maan` org. Provisioned via `fly postgres create --org maan`. Single instance for now; we can fork for staging/PR-preview environments later via `fly postgres fork`.
 2. **Auth: Better Auth with the `admin` plugin.** Code-defined roles, no Directus-style permission rule tables.
 3. **Existing user passwords: temporary seeded passwords + email reset.** Phase 3 seeds users with random temporary passwords; Phase 4 ships with a "Set your password" flow triggered on first sign-in (Better Auth's `passwordReset` flow with an emailed token). The Directus accounts (`writer@example.com`, `example@email.com`, etc.) receive an email at cutover.
 4. **Cutover window: approved.** Phase 4 (auth swap) and Phase 6 (drop Directus) ship together at the end of the migration window. Brief team notice ("you'll be prompted to set a new password on next sign-in") before deployment.

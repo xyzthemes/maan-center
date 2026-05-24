@@ -17,7 +17,7 @@ type DashboardPostBody = {
 }
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event)
+  await requireUserSession(event, { user: { role: 'admin' } })
   const id = getRouterParam(event, 'id')
 
   if (!id) {

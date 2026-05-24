@@ -32,16 +32,23 @@ export default defineNuxtConfig({
   },
 
   routeRules: {
-    '/dashboard': { auth: 'user' },
-    '/dashboard/posts/**': { auth: 'user' },
-    '/dashboard/pages/**': { auth: 'user' },
-    '/dashboard/submissions/**': { auth: 'user' },
+    // Dashboard pages — admins only. Non-admin signed-in users hit 403.
+    '/dashboard': { auth: { user: { role: 'admin' } } },
+    '/dashboard/posts/**': { auth: { user: { role: 'admin' } } },
+    '/dashboard/pages/**': { auth: { user: { role: 'admin' } } },
+    '/dashboard/submissions/**': { auth: { user: { role: 'admin' } } },
+    '/ar/dashboard': { auth: { user: { role: 'admin' } } },
+    '/ar/dashboard/posts/**': { auth: { user: { role: 'admin' } } },
+    '/ar/dashboard/pages/**': { auth: { user: { role: 'admin' } } },
+    '/ar/dashboard/submissions/**': { auth: { user: { role: 'admin' } } },
+
+    // Guest-only flows — already-signed-in users get bounced to the dashboard.
     '/dashboard/login': { auth: 'guest' },
-    '/ar/dashboard': { auth: 'user' },
-    '/ar/dashboard/posts/**': { auth: 'user' },
-    '/ar/dashboard/pages/**': { auth: 'user' },
-    '/ar/dashboard/submissions/**': { auth: 'user' },
-    '/ar/dashboard/login': { auth: 'guest' }
+    '/dashboard/forgot-password': { auth: 'guest' },
+    '/dashboard/reset-password': { auth: 'guest' },
+    '/ar/dashboard/login': { auth: 'guest' },
+    '/ar/dashboard/forgot-password': { auth: 'guest' },
+    '/ar/dashboard/reset-password': { auth: 'guest' }
   },
 
   compatibilityDate: '2025-01-15',

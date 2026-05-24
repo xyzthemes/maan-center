@@ -34,7 +34,7 @@ const slugifyStem = (stem: string) => stem
 export default defineEventHandler(async (event) => {
   // Phase 7 cleanup will tighten this to `{ user: { role: ['admin', 'writer'] } }`
   // once the seed elevates the appropriate users via Better Auth's admin plugin.
-  await requireUserSession(event)
+  await requireUserSession(event, { user: { role: 'admin' } })
 
   const parts = await readMultipartFormData(event)
   const file = parts?.find(p => p.name === 'file' && p.filename && p.data)

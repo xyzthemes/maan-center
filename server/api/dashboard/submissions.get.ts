@@ -1,7 +1,7 @@
 // Phase 5: list form submissions from Prisma. Auth required.
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event)
+  await requireUserSession(event, { user: { role: 'admin' } })
 
   const rows = await prisma.formSubmission.findMany({
     orderBy: { timestamp: 'desc' },

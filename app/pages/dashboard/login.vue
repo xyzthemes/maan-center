@@ -27,7 +27,8 @@ const loginT = computed(() => isArabic.value
       email: 'البريد الإلكتروني',
       password: 'كلمة المرور',
       submit: 'تسجيل الدخول',
-      fallbackError: 'تعذر تسجيل الدخول.'
+      fallbackError: 'تعذر تسجيل الدخول.',
+      forgot: 'هل نسيت كلمة المرور؟'
     }
   : {
       title: 'Manager Login | Maan Dashboard',
@@ -37,8 +38,13 @@ const loginT = computed(() => isArabic.value
       email: 'Email',
       password: 'Password',
       submit: 'Sign in',
-      fallbackError: 'Could not sign in.'
+      fallbackError: 'Could not sign in.',
+      forgot: 'Forgot your password?'
     })
+
+const forgotPasswordPath = computed(() => isArabic.value
+  ? '/ar/dashboard/forgot-password'
+  : '/dashboard/forgot-password')
 
 useSeoMeta({
   title: () => loginT.value.title,
@@ -134,6 +140,13 @@ const login = async () => {
       >
         {{ loginT.submit }}
       </UButton>
+
+      <NuxtLink
+        :to="forgotPasswordPath"
+        class="mt-4 block text-center text-sm text-muted underline-offset-4 hover:text-highlighted hover:underline"
+      >
+        {{ loginT.forgot }}
+      </NuxtLink>
     </form>
   </main>
 </template>

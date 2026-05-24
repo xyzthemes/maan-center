@@ -114,15 +114,33 @@ onMounted(loadPosts)
           v-for="post in filteredPosts"
           :key="post.id"
           :to="editHref(post)"
-          class="maan-form-card block p-4 text-start transition hover:-translate-y-0.5 hover:no-underline"
+          class="maan-card block p-5 text-start hover:no-underline"
+          :style="post.status === 'published'
+            ? 'border-top: 4px solid var(--maan-down);'
+            : post.status === 'in_review'
+              ? 'border-top: 4px solid var(--maan-autism);'
+              : 'border-top: 4px solid var(--maan-cta);'"
         >
-          <span class="mb-2 inline-flex rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+          <span
+            class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+            :style="post.status === 'published'
+              ? 'background: color-mix(in srgb, var(--maan-down) 16%, transparent); color: var(--maan-down);'
+              : post.status === 'in_review'
+                ? 'background: color-mix(in srgb, var(--maan-autism) 16%, transparent); color: var(--maan-autism);'
+                : 'background: color-mix(in srgb, var(--maan-cta) 16%, transparent); color: var(--maan-cta);'"
+          >
             {{ statusLabel(post.status) }}
           </span>
-          <h3 class="text-base font-semibold text-highlighted">
+          <h3
+            class="mt-3 text-base font-semibold"
+            style="color: var(--maan-ink);"
+          >
             {{ post.title || t.untitledPost }}
           </h3>
-          <p class="mt-1 line-clamp-2 text-sm leading-6 text-muted">
+          <p
+            class="mt-1 line-clamp-2 text-sm"
+            style="color: var(--maan-ink-muted);"
+          >
             {{ post.description || post.slug }}
           </p>
         </NuxtLink>

@@ -5,20 +5,20 @@ const { data: posts } = await useAsyncData<MaanPost[]>('maan-blog-posts-ar', () 
   default: () => []
 })
 const { data: pageSeo } = await useAsyncData<MaanSeo>('maan-page-seo-blog-ar', () => getPageSeo('/ar/blog', {
-  title: 'المدونة',
-  description: 'إرشادات أسرية وتحديثات وموارد عملية من مركز معا للتعليم الخاص.'
+  title: 'المرجع العلمي الشامل: دليل معاً للتمكين',
+  description: 'مقالات وأدلة من مركز معاً للتربية الخاصة حول طيف التوحد ومتلازمة داون وصعوبات التعلم ودعم الأسرة.'
 }))
 
 const resolvedSeo = useMaanSeo({
   seo: pageSeo.value || undefined,
   fallback: {
-    title: 'المدونة',
-    description: 'إرشادات أسرية وتحديثات وموارد عملية من مركز معا للتعليم الخاص.'
+    title: 'المرجع العلمي الشامل: دليل معاً للتمكين',
+    description: 'مقالات وأدلة من مركز معاً للتربية الخاصة حول طيف التوحد ومتلازمة داون وصعوبات التعلم ودعم الأسرة.'
   },
   ogFallback: {
-    title: 'إرشادات عملية للأسر والمعلمين.',
-    description: 'مقالات حول خطط التعلم والدعم العلاجي والروتين المنزلي والتعليم الدامج.',
-    eyebrow: 'مدونة معا',
+    title: 'دليل معاً للتمكين.',
+    description: 'مقالات وأدلة وموارد للأسر والمعلمين.',
+    eyebrow: 'المرجع العلمي الشامل',
     locale: 'ar'
   }
 })
@@ -32,7 +32,7 @@ useSchemaOrg([
   defineBreadcrumb({
     itemListElement: [
       { name: 'الرئيسية', item: '/ar' },
-      { name: 'المدونة', item: '/ar/blog' }
+      { name: 'المرجع العلمي', item: '/ar/blog' }
     ]
   })
 ])
@@ -40,21 +40,18 @@ useSchemaOrg([
 
 <template>
   <div class="maan-page">
-    <section class="maan-blog-hero border-b border-default">
+    <section class="maan-blog-hero border-b">
       <UContainer class="py-16 sm:py-20">
-        <div class="max-w-3xl">
-          <UBadge
-            color="primary"
-            variant="subtle"
-            class="mb-5"
-          >
-            مدونة معا
-          </UBadge>
-          <h1 class="maan-hero-title text-4xl font-semibold text-highlighted sm:text-5xl">
-            إرشادات عملية للأسر والمعلمين.
+        <div class="mx-auto max-w-3xl text-center">
+          <span class="maan-eyebrow">
+            المرجع العلمي الشامل
+          </span>
+          <h1 class="maan-hero-title mt-5 text-4xl font-bold sm:text-5xl">
+            دليل معاً للتمكين.
           </h1>
-          <p class="maan-hero-copy mt-5 text-lg leading-8 text-muted">
-            مقالات من فريق المركز حول خطط التعلم والدعم العلاجي والروتين المنزلي والتعليم الدامج.
+          <p class="maan-hero-copy mx-auto mt-5 max-w-2xl text-lg">
+            مقالات وأدلة من فريق مركز معاً حول طيف التوحد ومتلازمة داون وصعوبات التعلم
+            والروتين المنزلي والتعليم الدامج.
           </p>
         </div>
       </UContainer>

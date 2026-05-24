@@ -13,6 +13,17 @@ import { sendEmail } from './utils/email'
 export default defineServerAuth(() => ({
   database: prismaAdapter(prisma, { provider: 'postgresql' }),
 
+  // Local dev convenience: accept either `localhost:3000` or `127.0.0.1:3000`
+  // regardless of which one `BETTER_AUTH_URL` is set to. Better Auth's
+  // origin/CSRF check rejects requests from any origin not in this list and
+  // not equal to BETTER_AUTH_URL; without both entries, hitting the "wrong"
+  // host (or the dev server being bound to only one loopback family) surfaces
+  // in the browser as "Failed to fetch".
+  trustedOrigins: [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000'
+  ],
+
   // Phase 4 ships email/password only. OAuth providers can land in a later phase.
   emailAndPassword: {
     enabled: true,

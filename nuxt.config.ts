@@ -25,19 +25,35 @@ export default defineNuxtConfig({
     indexable
   },
 
+  // Light mode is the brand default — Arabic-first sites perform better in
+  // light surfaces for body-text legibility, and the calm palette is built
+  // around it. Users who prefer dark can still toggle.
+  colorMode: {
+    preference: 'light',
+    fallback: 'light',
+    classSuffix: ''
+  },
+
   runtimeConfig: {
     public: {
-      siteUrl
+      siteUrl,
+      // TODO_IMPLEMENTATION_REFERENCES: GA4 measurement ID + Google Search
+      // Console verification token — leave empty until the client provides
+      // them. The values are read in app.vue and only emit tags when set.
+      gaMeasurementId: process.env.NUXT_PUBLIC_GA_MEASUREMENT_ID || '',
+      gscVerification: process.env.NUXT_PUBLIC_GSC_VERIFICATION || ''
     }
   },
 
   routeRules: {
     // Dashboard pages — admins only. Non-admin signed-in users hit 403.
     '/dashboard': { auth: { user: { role: 'admin' } } },
+    '/dashboard/overview': { auth: { user: { role: 'admin' } } },
     '/dashboard/posts/**': { auth: { user: { role: 'admin' } } },
     '/dashboard/pages/**': { auth: { user: { role: 'admin' } } },
     '/dashboard/submissions/**': { auth: { user: { role: 'admin' } } },
     '/ar/dashboard': { auth: { user: { role: 'admin' } } },
+    '/ar/dashboard/overview': { auth: { user: { role: 'admin' } } },
     '/ar/dashboard/posts/**': { auth: { user: { role: 'admin' } } },
     '/ar/dashboard/pages/**': { auth: { user: { role: 'admin' } } },
     '/ar/dashboard/submissions/**': { auth: { user: { role: 'admin' } } },

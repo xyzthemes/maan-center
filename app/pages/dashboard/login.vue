@@ -5,6 +5,18 @@ definePageMeta({
 })
 
 const { isArabic, dashboardHome, t } = useDashboardI18n()
+const signInEmail = useSignIn('email')
+const route = useRoute()
+
+// Safe redirect (must start with `/`, not `//`) — prevents open redirects
+// via protocol-relative URLs in the ?redirect= query param.
+const safeRedirect = () => {
+  const target = route.query.redirect
+  if (typeof target === 'string' && target.startsWith('/') && !target.startsWith('//')) {
+    return target
+  }
+  return dashboardHome.value
+}
 
 const loginT = computed(() => isArabic.value
   ? {
@@ -35,28 +47,18 @@ useSeoMeta({
 
 const email = ref('')
 const password = ref('')
-const isLoading = ref(false)
-const errorMessage = ref('')
+
+const isLoading = computed(() => signInEmail.status.value === 'pending')
+const errorMessage = computed(() => signInEmail.error.value?.message || '')
 
 const login = async () => {
-  errorMessage.value = ''
-  isLoading.value = true
+  await signInEmail.execute({
+    email: email.value,
+    password: password.value
+  })
 
-  try {
-    await $fetch('/api/dashboard/login', {
-      method: 'POST',
-      body: {
-        email: email.value,
-        password: password.value
-      }
-    })
-    await navigateTo(dashboardHome.value)
-  } catch (error) {
-    const fetchError = error as { data?: { message?: string }, statusMessage?: string }
-
-    errorMessage.value = fetchError.data?.message || fetchError.statusMessage || loginT.value.fallbackError
-  } finally {
-    isLoading.value = false
+  if (signInEmail.status.value === 'success') {
+    await navigateTo(safeRedirect())
   }
 }
 </script>

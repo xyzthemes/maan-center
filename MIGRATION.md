@@ -146,23 +146,34 @@ Notes:
 - `FormSubmissionValue` denormalizes `name`/`label` from the related field at seed time so historical submissions survive later field deletions — Directus stores the FK only, so the seed reads each field once (cached) to populate the snapshot columns.
 - The seed had to be run twice during this phase: the first run discovered that Directus's column is `form_submission` (not `submission`), so the second pass picked up the 7 submission values that the first skipped. The upsert-by-id design made this safe.
 
-### Phase 4 — Auth swap
+### Phase 4 — Auth swap ✅
 
-Replace Directus session cookies with Better Auth. This is the highest-risk phase — the team will need to re-authenticate.
+Replaced Directus session cookies with Better Auth. The team will need to re-authenticate at cutover (Phase 7 deploy).
 
-- Install `@onmax/nuxt-better-auth` and the Better Auth core.
-- Configure Better Auth in `server/utils/auth.ts` with the Prisma adapter pointing at our new `prisma` client.
-- Replace `server/api/dashboard/login.post.ts` with Better Auth's `signIn` flow (or use Better Auth's prebuilt `/api/auth/*` handler).
-- Replace `server/api/dashboard/logout.post.ts` with Better Auth's `signOut`.
-- Replace `server/api/dashboard/me.get.ts` with Better Auth's `getSession`.
-- Replace the `getDashboardAccessToken` / `dashboardDirectusRequest` plumbing in `server/utils/dashboard-directus.ts` with a `requireAuth(event)` helper that returns the current session.
-- Replace `loadMe` in `useDashboardUser.ts` with Better Auth's `useUserSession()` composable (provided by `@onmax/nuxt-better-auth`).
-- Use Better Auth's **`admin` plugin** for role gating. The plugin provides built-in `Admin`, `Manager`, `Writer` roles with permission helpers and a `requireRole(...)` server utility — no custom middleware needed. We'll map the existing Directus role names (`Content Admin` → `admin`, `Writer` → `user` with elevated permissions, etc.) during the seed.
+What landed:
+- [x] Installed `better-auth@1.6.11` and `@onmax/nuxt-better-auth@0.0.2-alpha.32`.
+- [x] `server/auth.config.ts` wires the Prisma adapter to our singleton client and enables the `admin` plugin for role gating.
+- [x] `app/auth.config.ts` mirrors the admin plugin client-side so `user.role` reads through `useUserSession()`.
+- [x] Deleted `server/api/dashboard/{login.post,logout.post,me.get}.ts` — Better Auth's `/api/auth/*` handler now owns sign-in, sign-out, session reads.
+- [x] `nuxt.config.ts` registers the module + redirect config + `routeRules` for `/dashboard/**` (and `/ar/dashboard/**`) — including `guest` mode on `/dashboard/login` so authed users skip the form.
+- [x] `useDashboardUser.ts` now wraps `useUserSession()`; layout consumers (`userName`, `userRole`, `ensureUser`, `logout`) keep the same shape.
+- [x] `app/pages/dashboard/login.vue` uses `useSignIn('email')` with safe `?redirect=` handling.
+- [x] `server/utils/dashboard-directus.ts` slimmed to just `dashboardDirectusRequest` (now using the static `DIRECTUS_SERVER_TOKEN`) — Phase 5 will replace each call site with Prisma; this file is deleted in Phase 7.
+- [x] `.env` + `.env.example` add `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL`.
 
-Verification:
-- Sign in at `/dashboard/login` with the seeded `writer@example.com` account.
-- Reach `/dashboard/posts` and see the post list (now coming from Prisma).
-- Sign out, then verify protected routes 302 to `/dashboard/login`.
+Verification (all passed against `http://localhost:3000` with a throwaway `phase4-test@local.test` user, cleaned up after):
+- ✅ `GET /api/auth/ok` → `{ ok: true }` (module wired).
+- ✅ Sign-in with correct password → 200, sets `better-auth.session_token` + `better-auth.session_data` cookies, returns the user with `role: "user"`.
+- ✅ Sign-in with wrong password → `INVALID_EMAIL_OR_PASSWORD`.
+- ✅ `GET /api/auth/get-session` with cookie → full session + user payload; without cookie → `null`.
+- ✅ `GET /dashboard/posts` unauthenticated → `302 → /dashboard/login?redirect=%2Fdashboard%2Fposts` (preserveRedirect works).
+- ✅ `GET /dashboard/login` while authed → `302 → /dashboard` (guest-only route works).
+- ✅ `POST /api/auth/sign-out` (with `Content-Type` + `Origin` headers) → clears cookies → `get-session` returns `null` → `/dashboard/posts` redirects back to login.
+- ✅ `pnpm exec nuxt typecheck` clean.
+
+Bridge state until Phase 5:
+- The dashboard data routes (`/api/dashboard/posts/*`, `pages/*`, `submissions.get.ts`) still call `dashboardDirectusRequest`, now using the static `DIRECTUS_SERVER_TOKEN` (Frontend Bot) instead of a per-user cookie that no longer exists. Reads will succeed only for items the bot has read permission for; writes will 403. Phase 5 replaces these with `prisma.*` calls and adds `requireUserSession(event)` to each route.
+- Existing seeded users still have `Account.password = NULL`. No sign-in is possible until either (a) Phase 5+ ships a "Set your password" flow backed by Better Auth's `passwordReset`, or (b) the operator uses the throwaway `.tmp/set-password.ts` helper to bootstrap a test user.
 
 ### Phase 5 — Server endpoint swap
 

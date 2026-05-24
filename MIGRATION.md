@@ -47,21 +47,29 @@ Each phase ships independently. After every phase, the app still builds, lints, 
 ### Phase 1 — Prisma + Postgres + Tigris scaffold
 
 Owner-action items:
-- [ ] Provision a **Fly.io Legacy Postgres** cluster in the `maan` org:
+- [x] Provisioned a **Fly.io Legacy Postgres** cluster in the `maan` org (`maan-db`, region `cdg`, single instance, shared-cpu-1x, 1 GB volume).
 
   ```bash
-  fly postgres create --org maan --name maan-db --region <region>
+  fly postgres create --org maan --name maan-db --region cdg \
+    --initial-cluster-size 1 --vm-size shared-cpu-1x --volume-size 1
   ```
 
-  Capture the `DATABASE_URL` from the post-create output (it's only shown once — save it). Alternatively, retrieve it later with `fly secrets list -a <app-name>` after attaching to a Fly app.
-- [ ] Provision a **Tigris** object-storage bucket in the same org:
+  Connection string is in `.env` as `DATABASE_URL` (proxy-friendly) and `DATABASE_URL_FLYCAST` (Fly-internal).
+
+  **Important — connectivity model.** Fly Postgres only exposes a flycast address (`maan-db.flycast:5432`) by default — reachable only inside Fly's WireGuard mesh. Apps on Railway, Vercel, your local dev can't connect without help.
+
+  - **Local dev / migrations**: run `fly proxy 5432 -a maan-db` in a background terminal. The proxy tunnels `localhost:5432` to the cluster; `DATABASE_URL` in `.env` already points at `localhost`.
+  - **Production reachability** (Phase 3.5, decision deferred): either (a) `fly ips allocate-v4 -a maan-db` to expose 5432 publicly (relies on password auth + Fly network ACLs), or (b) move the Nuxt deployment from Railway to Fly so it can use the flycast address natively. (b) is the cleaner long-term answer; (a) ships faster.
+
+- [x] Provisioned a **Tigris** bucket in the same org (`maan-media`, public read).
 
   ```bash
-  fly storage create --org maan --name maan-media
+  fly storage create --org maan --name maan-media --public --yes
   ```
 
-  This auto-injects `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `AWS_ENDPOINT_URL_S3`, and `BUCKET_NAME` into any Fly app it's attached to. The bucket's public read URL is `https://pub-maan-media.fly.storage.tigris.dev/<key>` — served from Fly's anycast network, so it doubles as a CDN.
-- [ ] Add `DATABASE_URL`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION`, `S3_ENDPOINT_URL`, `S3_BUCKET_NAME` to local `.env` (for migrations, seed, and dev uploads) and to Railway env vars (for production runtime). When the Nuxt app eventually runs on Fly too, the secrets are already attached — no manual sync.
+  Auto-injected env vars are in `.env`: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION=auto`, `AWS_ENDPOINT_URL_S3=https://fly.storage.tigris.dev`, `BUCKET_NAME=maan-media`. Public CDN URL pattern: `https://pub-maan-media.fly.storage.tigris.dev/<key>`.
+
+- [ ] Sync `DATABASE_URL` + the five Tigris env vars to the Railway production environment (deferred until Phase 5 / deploy time — Phase 1's code-side scaffolding doesn't need production runtime).
 
 Code-side:
 - Install deps: `prisma@^7`, `@prisma/client@^7`, `@prisma/adapter-pg@^7`, `pg`, `@aws-sdk/client-s3` (Tigris-compatible).
@@ -213,6 +221,7 @@ Verification:
 | **Image references in post `content`** | Directus assets URLs point at `/assets/{file-id}`. If any post body contains such URLs, they break when Directus is shut down. Audit `Post.content` in Phase 5 — likely zero hits because posts were imported as HTML from the Blogger site. |
 | **Bilingual content (`/ar/*` pages)** | The current schema mixes EN + AR rows differentiated by `permalink` prefix. Prisma schema preserves this verbatim. No code change needed. |
 | **Form submissions during cutover** | Phase 4 + 5 ship together for forms — Better Auth and Prisma must both be live before `/api/forms/submit.post.ts` switches over. Otherwise, a submission could be lost. |
+| **Fly Postgres only reachable via flycast or proxy** | Local dev uses `fly proxy 5432 -a maan-db`. Production reachability from Railway needs a Phase-3.5 decision: allocate a public IP (`fly ips allocate-v4`) or move the deploy to Fly. Blocks Phase 5 going to production; doesn't block any earlier phase. |
 
 ## Decisions made (locked in for this migration)
 

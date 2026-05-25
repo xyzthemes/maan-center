@@ -14,15 +14,14 @@ const emit = defineEmits<{
   'clear': []
 }>()
 
-const { t, isArabic } = useDashboardI18n()
-const { placements: taxonomyPlacements } = useMaanTaxonomy()
+const { t } = useDashboardI18n()
+// Placement options no longer flat-selected — MaanPlacementPicker reads
+// the taxonomy directly from useMaanTaxonomy.
 
 const form = computed({
   get: () => props.modelValue,
   set: (value: BlockForm) => emit('update:modelValue', value)
 })
-
-const lang = computed<'en' | 'ar'>(() => isArabic.value ? 'ar' : 'en')
 
 // One option list per block type so the editor can render a friendly
 // dropdown when creating a new block. Each entry maps to a value the
@@ -40,10 +39,6 @@ const localeOptions = computed(() => [
   { value: 'ar', label: 'العربية' },
   { value: '*', label: t.value.blockLocaleAny }
 ])
-
-const placementOptions = computed<Array<{ value: string, label: string }>>(() =>
-  taxonomyPlacements.map(p => ({ value: p.id, label: p.label[lang.value] }))
-)
 
 // Comma-separated edit binding for tags (team_member). Keeps the form
 // payload as a string[] while admins type a single line.
@@ -263,18 +258,13 @@ const tagsCsv = computed({
     <!-- ───── Placement + ordering + publishedAt ───── -->
 
     <div>
-      <label class="mb-2 block text-sm font-semibold text-highlighted">{{ t.placements }}</label>
-      <USelectMenu
-        v-model="form.placements"
-        :items="placementOptions"
-        value-key="value"
-        multiple
-        :placeholder="t.pickPlacements"
-        class="w-full"
-      />
-      <p class="mt-1 text-xs leading-5 text-muted">
+      <p class="mb-2 block text-sm font-semibold text-highlighted">
+        {{ t.placements }}
+      </p>
+      <p class="mb-3 text-xs leading-5 text-muted">
         {{ t.placementsHint }}
       </p>
+      <MaanPlacementPicker v-model="form.placements" />
     </div>
 
     <div class="grid gap-5 md:grid-cols-2">

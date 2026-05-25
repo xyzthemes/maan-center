@@ -135,20 +135,30 @@ const { data: statBlocks } = await useAsyncData(
   () => getBlocks<{ value: string, label: string }>('stat_tile', 'en', { placement: 'homepage-featured', limit: 8 }),
   { default: () => [] }
 )
-const resolvedStats = computed(() =>
-  statBlocks.value.length
-    ? statBlocks.value.map(b => ({ value: b.payload.value, label: b.payload.label }))
-    : stats
-)
+// Precedence: SiteSetting `stats` (singleton) → Layer-2 stat_tile blocks
+// → hardcoded fallback array. The singleton wins because it's the
+// canonical "four numbers" surface; the block path is here for future
+// flexibility.
+const resolvedStats = computed(() => {
+  if (statsFromSettings.value) return statsFromSettings.value
+  if (statBlocks.value.length) return statBlocks.value.map(b => ({ value: b.payload.value, label: b.payload.label }))
+  return stats
+})
 
-// Layer 3 — Mission + Vision (and any other admin-editable singletons
-// the homepage cares about) come from SiteSettings. Empty strings make
-// MaanMissionVision fall back to the structural copy it ships with.
+// Layer 3 — All admin-editable singletons the EN homepage needs:
+// mission/vision, Dr Osama bio, stats list. One batched fetch keeps the
+// SSR cache to a single key per locale. Empty values let downstream
+// components fall back to their structural copy.
+type HomeSettings = {
+  'mission-vision'?: { value: { mission?: string, vision?: string } } | null
+  'dr-osama-bio'?: { value: { name?: string, headline?: string, bio?: string, tags?: string[] } } | null
+  'stats'?: { value: { items?: Array<{ value: string, label: string }> } } | null
+}
 const { getMany: getSettings } = useMaanSettings()
-const { data: homeSettings } = await useAsyncData(
+const { data: homeSettings } = await useAsyncData<HomeSettings>(
   'home-settings-en',
-  () => getSettings<{ mission?: string, vision?: string }>(['mission-vision'], 'en'),
-  { default: () => ({} as Record<string, { value: { mission?: string, vision?: string } } | null>) }
+  () => getSettings(['mission-vision', 'dr-osama-bio', 'stats'], 'en') as Promise<HomeSettings>,
+  { default: (): HomeSettings => ({}) }
 )
 const missionVision = computed(() => {
   const v = homeSettings.value['mission-vision']?.value
@@ -156,6 +166,23 @@ const missionVision = computed(() => {
     mission: v?.mission || '',
     vision: v?.vision || ''
   }
+})
+const drOsamaBio = computed(() => {
+  const v = homeSettings.value['dr-osama-bio']?.value
+  return {
+    name: v?.name || '',
+    headline: v?.headline || '',
+    bio: v?.bio || '',
+    tags: Array.isArray(v?.tags) ? v.tags : []
+  }
+})
+// Stats singleton — takes precedence over Layer-2 stat_tile blocks. A
+// single setting row is the right shape for "the four numbers at the
+// top of the homepage"; blocks remain useful if admins want a more
+// modular structure later.
+const statsFromSettings = computed(() => {
+  const items = homeSettings.value.stats?.value?.items
+  return Array.isArray(items) && items.length ? items : null
 })
 
 const resolvedSeo = useMaanSeo({
@@ -532,7 +559,13 @@ useSchemaOrg([
       class="maan-section maan-band"
     >
       <UContainer>
-        <MaanDrOsamaCard locale="en" />
+        <MaanDrOsamaCard
+          locale="en"
+          :name="drOsamaBio.name"
+          :headline="drOsamaBio.headline"
+          :bio="drOsamaBio.bio"
+          :tags="drOsamaBio.tags"
+        />
       </UContainer>
     </section>
 

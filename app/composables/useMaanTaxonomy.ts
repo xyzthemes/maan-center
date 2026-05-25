@@ -17,6 +17,23 @@ export type TaxonomyEntry<TId extends string = string> = {
   label: LocalizedLabel
 }
 
+/**
+ * Extended metadata for the visual placement picker. Optional fields:
+ *   • `icon`  — Lucide icon name shown in the card header
+ *   • `accent` — palette colour: autism|down|ld|cta (drives the top-border tint)
+ *   • `page`  — short description of which page the placement lands on
+ *   • `hint`  — one-line scope description (e.g. "Latest articles section")
+ *
+ * The `id` + `label` fields still come from the base TaxonomyEntry so
+ * legacy `sanitizePlacements` and storage code keep working unchanged.
+ */
+export type PlacementEntry<TId extends string = string> = TaxonomyEntry<TId> & {
+  icon: string
+  accent: 'autism' | 'down' | 'ld' | 'cta'
+  page: LocalizedLabel
+  hint: LocalizedLabel
+}
+
 // ── Categories ──────────────────────────────────────────────────────────────
 // Subject-matter tags. A post can have multiple. These describe what the
 // post is ABOUT, not where it appears.
@@ -40,40 +57,45 @@ export type PostCategoryId = typeof POST_CATEGORIES[number]['id']
 export const POST_PLACEMENTS = [
   {
     id: 'homepage-featured',
-    label: {
-      en: 'Homepage — Latest articles',
-      ar: 'الصفحة الرئيسية — أحدث المقالات'
-    }
+    icon: 'i-lucide-home',
+    accent: 'autism',
+    label: { en: 'Homepage — Latest articles', ar: 'الصفحة الرئيسية — أحدث المقالات' },
+    page: { en: 'Homepage', ar: 'الصفحة الرئيسية' },
+    hint: { en: '“Latest articles” section near the bottom', ar: 'قسم «أحدث المقالات» في الأسفل' }
   },
   {
     id: 'autism-program-related',
-    label: {
-      en: 'Autism program — Related articles',
-      ar: 'برنامج التوحد — مقالات ذات صلة'
-    }
+    icon: 'i-lucide-puzzle',
+    accent: 'autism',
+    label: { en: 'Autism program — Related articles', ar: 'برنامج التوحد — مقالات ذات صلة' },
+    page: { en: '/programs/autism', ar: '/ar/programs/autism' },
+    hint: { en: 'Related articles row on the autism program page', ar: 'صف المقالات ذات الصلة في صفحة برنامج التوحد' }
   },
   {
     id: 'down-syndrome-program-related',
-    label: {
-      en: 'Down Syndrome program — Related',
-      ar: 'برنامج متلازمة داون — مقالات ذات صلة'
-    }
+    icon: 'i-lucide-heart-handshake',
+    accent: 'down',
+    label: { en: 'Down Syndrome program — Related', ar: 'برنامج متلازمة داون — مقالات ذات صلة' },
+    page: { en: '/programs/down-syndrome', ar: '/ar/programs/down-syndrome' },
+    hint: { en: 'Related articles row on the Down Syndrome page', ar: 'صف المقالات ذات الصلة في صفحة متلازمة داون' }
   },
   {
     id: 'learning-difficulties-program-related',
-    label: {
-      en: 'LD program — Related articles',
-      ar: 'برنامج صعوبات التعلم — مقالات ذات صلة'
-    }
+    icon: 'i-lucide-book-open-check',
+    accent: 'ld',
+    label: { en: 'LD program — Related articles', ar: 'برنامج صعوبات التعلم — مقالات ذات صلة' },
+    page: { en: '/programs/learning-difficulties', ar: '/ar/programs/learning-difficulties' },
+    hint: { en: 'Related articles row on the LD program page', ar: 'صف المقالات ذات الصلة في صفحة صعوبات التعلم' }
   },
   {
     id: 'blog-pinned',
-    label: {
-      en: 'Blog index — Pinned at top',
-      ar: 'المرجع العلمي — مثبّت في الأعلى'
-    }
+    icon: 'i-lucide-pin',
+    accent: 'cta',
+    label: { en: 'Blog index — Pinned at top', ar: 'المرجع العلمي — مثبّت في الأعلى' },
+    page: { en: '/blog', ar: '/ar/blog' },
+    hint: { en: 'Pinned at the top of the Scientific Reference list', ar: 'مثبّت أعلى قائمة المرجع العلمي' }
   }
-] as const satisfies ReadonlyArray<TaxonomyEntry>
+] as const satisfies ReadonlyArray<PlacementEntry>
 
 export type PostPlacementId = typeof POST_PLACEMENTS[number]['id']
 

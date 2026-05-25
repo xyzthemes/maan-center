@@ -154,18 +154,24 @@ const { data: statBlocks } = await useAsyncData(
   () => getBlocks<{ value: string, label: string }>('stat_tile', 'ar', { placement: 'homepage-featured', limit: 8 }),
   { default: () => [] }
 )
-const resolvedStats = computed(() =>
-  statBlocks.value.length
-    ? statBlocks.value.map(b => ({ value: b.payload.value, label: b.payload.label }))
-    : stats
-)
+// Precedence: SiteSetting `stats` → stat_tile blocks → hardcoded fallback.
+const resolvedStats = computed(() => {
+  if (statsFromSettings.value) return statsFromSettings.value
+  if (statBlocks.value.length) return statBlocks.value.map(b => ({ value: b.payload.value, label: b.payload.label }))
+  return stats
+})
 
-// Layer 3 — Mission + Vision from SiteSettings (Arabic locale).
+// Layer 3 — All admin-editable singletons the AR homepage needs.
+type HomeSettings = {
+  'mission-vision'?: { value: { mission?: string, vision?: string } } | null
+  'dr-osama-bio'?: { value: { name?: string, headline?: string, bio?: string, tags?: string[] } } | null
+  'stats'?: { value: { items?: Array<{ value: string, label: string }> } } | null
+}
 const { getMany: getSettings } = useMaanSettings()
-const { data: homeSettings } = await useAsyncData(
+const { data: homeSettings } = await useAsyncData<HomeSettings>(
   'home-settings-ar',
-  () => getSettings<{ mission?: string, vision?: string }>(['mission-vision'], 'ar'),
-  { default: () => ({} as Record<string, { value: { mission?: string, vision?: string } } | null>) }
+  () => getSettings(['mission-vision', 'dr-osama-bio', 'stats'], 'ar') as Promise<HomeSettings>,
+  { default: (): HomeSettings => ({}) }
 )
 const missionVision = computed(() => {
   const v = homeSettings.value['mission-vision']?.value
@@ -173,6 +179,19 @@ const missionVision = computed(() => {
     mission: v?.mission || '',
     vision: v?.vision || ''
   }
+})
+const drOsamaBio = computed(() => {
+  const v = homeSettings.value['dr-osama-bio']?.value
+  return {
+    name: v?.name || '',
+    headline: v?.headline || '',
+    bio: v?.bio || '',
+    tags: Array.isArray(v?.tags) ? v.tags : []
+  }
+})
+const statsFromSettings = computed(() => {
+  const items = homeSettings.value.stats?.value?.items
+  return Array.isArray(items) && items.length ? items : null
 })
 
 const resolvedSeo = useMaanSeo({
@@ -549,7 +568,13 @@ useSchemaOrg([
       class="maan-section maan-band"
     >
       <UContainer>
-        <MaanDrOsamaCard locale="ar" />
+        <MaanDrOsamaCard
+          locale="ar"
+          :name="drOsamaBio.name"
+          :headline="drOsamaBio.headline"
+          :bio="drOsamaBio.bio"
+          :tags="drOsamaBio.tags"
+        />
       </UContainer>
     </section>
 

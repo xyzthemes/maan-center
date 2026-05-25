@@ -15,7 +15,7 @@ const emit = defineEmits<{
 }>()
 
 const { t, isArabic } = useDashboardI18n()
-const { categories: taxonomyCategories, placements: taxonomyPlacements } = useMaanTaxonomy()
+const { categories: taxonomyCategories } = useMaanTaxonomy()
 
 const form = computed({
   get: () => props.modelValue,
@@ -35,9 +35,8 @@ const lang = computed<'en' | 'ar'>(() => isArabic.value ? 'ar' : 'en')
 const categoryOptions = computed<Array<{ value: string, label: string }>>(() =>
   taxonomyCategories.map(c => ({ value: c.id, label: c.label[lang.value] }))
 )
-const placementOptions = computed<Array<{ value: string, label: string }>>(() =>
-  taxonomyPlacements.map(p => ({ value: p.id, label: p.label[lang.value] }))
-)
+// Placement options are no longer rendered as a flat select — the
+// visual picker (MaanPlacementPicker) reads the taxonomy directly.
 </script>
 
 <template>
@@ -109,44 +108,39 @@ const placementOptions = computed<Array<{ value: string, label: string }>>(() =>
       placements describe WHERE on the site it surfaces. Both validate
       server-side against useMaanTaxonomy, so admins can only pick from
       the canonical list — typos can't silently disable a placement.
+
+      Categories remain a chip multi-select (subject tags benefit from
+      density); placements get the visual MaanPlacementPicker so admins
+      see "Homepage — Latest articles" as a real destination rather
+      than a slug string.
     -->
-    <div class="grid gap-5 md:grid-cols-2">
-      <div>
-        <label
-          for="post-categories"
-          class="mb-2 block text-sm font-semibold text-highlighted"
-        >{{ t.categories }}</label>
-        <USelectMenu
-          id="post-categories"
-          v-model="form.categories"
-          :items="categoryOptions"
-          value-key="value"
-          multiple
-          :placeholder="t.pickCategories"
-          class="w-full"
-        />
-        <p class="mt-1 text-xs leading-5 text-muted">
-          {{ t.categoriesHint }}
-        </p>
-      </div>
-      <div>
-        <label
-          for="post-placements"
-          class="mb-2 block text-sm font-semibold text-highlighted"
-        >{{ t.placements }}</label>
-        <USelectMenu
-          id="post-placements"
-          v-model="form.placements"
-          :items="placementOptions"
-          value-key="value"
-          multiple
-          :placeholder="t.pickPlacements"
-          class="w-full"
-        />
-        <p class="mt-1 text-xs leading-5 text-muted">
-          {{ t.placementsHint }}
-        </p>
-      </div>
+    <div>
+      <label
+        for="post-categories"
+        class="mb-2 block text-sm font-semibold text-highlighted"
+      >{{ t.categories }}</label>
+      <USelectMenu
+        id="post-categories"
+        v-model="form.categories"
+        :items="categoryOptions"
+        value-key="value"
+        multiple
+        :placeholder="t.pickCategories"
+        class="w-full"
+      />
+      <p class="mt-1 text-xs leading-5 text-muted">
+        {{ t.categoriesHint }}
+      </p>
+    </div>
+
+    <div>
+      <p class="mb-2 block text-sm font-semibold text-highlighted">
+        {{ t.placements }}
+      </p>
+      <p class="mb-3 text-xs leading-5 text-muted">
+        {{ t.placementsHint }}
+      </p>
+      <MaanPlacementPicker v-model="form.placements" />
     </div>
 
     <div>

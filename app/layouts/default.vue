@@ -32,19 +32,50 @@ const FALLBACK_HOURS: WorkingHoursDay[] = [
   { day: 5, closed: true },
   { day: 6, opens: '09:00', closes: '13:00' }
 ]
-const { getOne: getSetting } = useMaanSettings()
-const { data: workingHoursSetting } = await useFetch('/api/public/settings', {
-  key: 'public-working-hours',
-  query: { key: 'working-hours' },
-  default: () => ({ settings: {} as Record<string, { value: { days?: WorkingHoursDay[] } } | null> })
-})
+// Layer 3 — One batched fetch for both layout-wide settings
+// (`working-hours` + `contact-info`). Keeps SSR cache to a single key
+// regardless of how many layout settings get added later. Both settings
+// use locale='*', so the batch query passes a single locale.
+type LayoutSettingsShape = {
+  'working-hours'?: { value: { days?: WorkingHoursDay[] } } | null
+  'contact-info'?: { value: { phone?: string, whatsapp?: string, email?: string, mapsUrl?: string, address?: string } } | null
+}
+const { getMany: getLayoutSettings } = useMaanSettings()
+const { data: layoutSettings } = await useAsyncData<LayoutSettingsShape>(
+  'public-layout-settings',
+  () => getLayoutSettings(['working-hours', 'contact-info'], 'en') as Promise<LayoutSettingsShape>,
+  { default: (): LayoutSettingsShape => ({}) }
+)
 const workingHours = computed<WorkingHoursDay[]>(() => {
-  const raw = workingHoursSetting.value?.settings?.['working-hours']?.value?.days
+  const raw = layoutSettings.value['working-hours']?.value?.days
   return Array.isArray(raw) && raw.length ? raw : FALLBACK_HOURS
 })
-// Avoid `getSetting` being flagged unused while keeping the import available
-// to callers that don't need batch reads.
-void getSetting
+
+// Contact-info defaults — fall back to the values currently hardcoded
+// elsewhere in the site (matching pre-Layer-3 behaviour) so the layout
+// keeps working before any setting row is written.
+const FALLBACK_CONTACT = {
+  phone: '+97332055666',
+  whatsapp: '+97332055666',
+  email: '',
+  mapsUrl: 'https://maps.app.goo.gl/GNB7VK94az3Wcrrq8',
+  address: ''
+}
+const contactInfo = computed(() => {
+  const v = layoutSettings.value['contact-info']?.value
+  return {
+    phone: v?.phone || FALLBACK_CONTACT.phone,
+    whatsapp: v?.whatsapp || FALLBACK_CONTACT.whatsapp,
+    email: v?.email || FALLBACK_CONTACT.email,
+    mapsUrl: v?.mapsUrl || FALLBACK_CONTACT.mapsUrl,
+    address: v?.address || FALLBACK_CONTACT.address
+  }
+})
+
+// Strip everything but digits + leading + for `tel:` and `wa.me` URLs.
+const normalizePhone = (raw: string) => raw.replace(/[^\d+]/g, '').replace(/^\+/, '')
+const phoneHrefDynamic = computed(() => `tel:${contactInfo.value.phone}`)
+const phoneDisplay = computed(() => contactInfo.value.phone)
 
 // Format HH:mm → "8 AM" using the visitor's locale.
 const formatTime = (hhmm?: string): string => {
@@ -183,7 +214,17 @@ const headerCtaLabel = computed(() => isArabic.value ? 'احجز جلسة تقي
 const contactPath = computed(() => isArabic.value ? '/ar/contact' : '/contact')
 const mobileCallLabel = computed(() => isArabic.value ? 'اتصل بنا' : 'Call us')
 const mobileWhatsLabel = computed(() => isArabic.value ? 'واتساب' : 'WhatsApp')
-const phoneHref = 'tel:+97332055666'
+// `phoneHref` now follows the editable contact-info setting (see
+// phoneHrefDynamic above). The exported alias keeps the rest of the
+// template readable without a long property chain at every binding.
+const phoneHref = phoneHrefDynamic
+const whatsappHref = computed(() => {
+  const num = normalizePhone(contactInfo.value.whatsapp)
+  const text = isArabic.value
+    ? encodeURIComponent('أود استشارة بخصوص طفلي')
+    : encodeURIComponent('I would like a consultation about my child')
+  return `https://wa.me/${num}?text=${text}`
+})
 const localeLabel = computed(() => isArabic.value ? 'English' : 'عربي')
 const developedByLabel = computed(() => isArabic.value ? 'صمم بواسطة' : 'Developed by')
 
@@ -325,7 +366,7 @@ const drawerT = computed(() => isArabic.value
             <span>{{ headerCtaLabel }}</span>
           </NuxtLink>
           <a
-            href="https://wa.me/97332055666?text=%D8%A3%D9%88%D8%AF%20%D8%A7%D8%B3%D8%AA%D8%B4%D8%A7%D8%B1%D8%A9%20%D8%A8%D8%AE%D8%B5%D9%88%D8%B5%20%D8%B7%D9%81%D9%84%D9%8A"
+            :href="whatsappHref"
             target="_blank"
             rel="noopener noreferrer"
             class="maan-ghost-btn justify-center"
@@ -362,7 +403,7 @@ const drawerT = computed(() => isArabic.value
       <span>{{ mobileCallLabel }}</span>
     </a>
     <a
-      href="https://wa.me/97332055666?text=%D8%A3%D9%88%D8%AF%20%D8%A7%D8%B3%D8%AA%D8%B4%D8%A7%D8%B1%D8%A9%20%D8%A8%D8%AE%D8%B5%D9%88%D8%B5%20%D8%B7%D9%81%D9%84%D9%8A"
+      :href="whatsappHref"
       target="_blank"
       rel="noopener noreferrer"
       class="maan-cta-btn justify-center text-sm"
@@ -531,10 +572,25 @@ const drawerT = computed(() => isArabic.value
                   class="size-4 mt-0.5"
                 />
                 <a
-                  href="tel:+97332055666"
+                  :href="phoneHref"
                   class="hover:underline"
                   dir="ltr"
-                >+973 3205 5666</a>
+                >{{ phoneDisplay }}</a>
+              </li>
+              <li
+                v-if="contactInfo.email"
+                class="flex items-start gap-2"
+                style="color: var(--maan-ink-muted);"
+              >
+                <UIcon
+                  name="i-lucide-mail"
+                  class="size-4 mt-0.5"
+                />
+                <a
+                  :href="`mailto:${contactInfo.email}`"
+                  class="hover:underline"
+                  dir="ltr"
+                >{{ contactInfo.email }}</a>
               </li>
               <li
                 class="flex items-start gap-2"
@@ -544,13 +600,23 @@ const drawerT = computed(() => isArabic.value
                   name="i-lucide-map-pin"
                   class="size-4 mt-0.5"
                 />
-                <!-- TODO_IMPLEMENTATION_REFERENCES: streetAddress block. -->
                 <a
-                  href="https://maps.app.goo.gl/GNB7VK94az3Wcrrq8"
+                  :href="contactInfo.mapsUrl"
                   target="_blank"
                   rel="noopener noreferrer"
                   class="hover:underline"
                 >{{ isArabic ? 'فتح الموقع على خرائط جوجل' : 'Open in Google Maps' }}</a>
+              </li>
+              <li
+                v-if="contactInfo.address"
+                class="flex items-start gap-2 text-xs"
+                style="color: var(--maan-ink-muted); opacity: 0.85;"
+              >
+                <UIcon
+                  name="i-lucide-building"
+                  class="size-4 mt-0.5"
+                />
+                <span class="whitespace-pre-line">{{ contactInfo.address }}</span>
               </li>
               <li
                 class="flex items-start gap-2"

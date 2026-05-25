@@ -31,5 +31,16 @@ export default defineEventHandler((event) => {
   const accept = getHeader(event, 'accept-language') || ''
   if (!accept) return
 
+  // Persist the implicit default so downstream pages (e.g. the dashboard
+  // index that recovers locale after a Better-Auth redirect) can read it.
+  // Without this, first-visit Arabic users have no cookie and any
+  // out-of-band redirect to a canonical `/dashboard` path would land them
+  // in the English UI.
+  setCookie(event, LOCALE_COOKIE, 'ar', {
+    path: '/',
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: 'lax'
+  })
+
   return sendRedirect(event, '/ar' + (url === '/' ? '' : url.slice(1)), 302)
 })

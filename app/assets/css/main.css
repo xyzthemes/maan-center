@@ -73,18 +73,22 @@
   --color-red-900: #5C1810;
   --color-red-950: #2F0B08;
 
-  /* Soft warm stone — main page surface (off-white, low glare). */
-  --color-stone-50:  #FAF8F4;
-  --color-stone-100: #F3EFE7;
-  --color-stone-200: #E6DFD1;
-  --color-stone-300: #D2C7B2;
-  --color-stone-400: #B2A485;
-  --color-stone-500: #8C7E60;
-  --color-stone-600: #6E6249;
-  --color-stone-700: #564C39;
-  --color-stone-800: #3E372A;
-  --color-stone-900: #2A2520;
-  --color-stone-950: #181410;
+  /* Cool neutral rail — keeps the "stone" name so Nuxt UI's `neutral`
+   * mapping in app.config.ts continues to resolve here, but the values
+   * now harmonise with the cool navy `--maan-ink`. The previous warm
+   * beige tones turned dropdowns, popovers, and muted text brown, which
+   * fought the off-white header. */
+  --color-stone-50:  #F7F8FA;
+  --color-stone-100: #EEF1F5;
+  --color-stone-200: #DEE3EB;
+  --color-stone-300: #C3CCD8;
+  --color-stone-400: #95A1B3;
+  --color-stone-500: #66738A;
+  --color-stone-600: #4B5668;
+  --color-stone-700: #38414F;
+  --color-stone-800: #28303C;
+  --color-stone-900: #1A2230;
+  --color-stone-950: #0E1622;
 
   /* Semantic surfaces used by .maan-* utilities. */
   --maan-surface:      #FAF8F4; /* off-white page */
@@ -369,6 +373,7 @@ body {
 .maan-cta-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: .5rem;
   background: var(--maan-cta);
   color: white;
@@ -378,6 +383,8 @@ body {
   border: 1px solid transparent;
   box-shadow: 0 8px 20px -8px rgba(233, 75, 53, .55);
   transition: background-color .2s, transform .15s, box-shadow .2s;
+  min-height: 44px; /* WCAG 2.5.5 — minimum tappable area on touch */
+  white-space: nowrap;
 }
 .maan-cta-btn:hover {
   background: var(--maan-cta-hover);
@@ -387,6 +394,91 @@ body {
 .maan-cta-btn:focus-visible {
   outline: 2px solid var(--maan-cta);
   outline-offset: 3px;
+}
+
+/* ─── Mobile-first header CTA + tap targets ─────────────────────────────
+ * The header CTA stays visible on every breakpoint. Below `sm` the label
+ * collapses to icon-only so the button + locale + theme + hamburger all
+ * fit on a 320px viewport. Above `sm` the full label is restored.
+ * ------------------------------------------------------------------- */
+.maan-header-cta {
+  padding: .55rem .75rem;
+  font-size: .85rem;
+  border-radius: .85rem;
+  min-height: 40px;
+}
+.maan-header-cta-label {
+  display: none;
+}
+@media (min-width: 480px) {
+  .maan-header-cta {
+    padding: .55rem 1rem;
+  }
+  .maan-header-cta-label {
+    display: inline;
+  }
+}
+@media (min-width: 768px) {
+  .maan-header-cta {
+    padding: .6rem 1.15rem;
+    font-size: .9rem;
+  }
+}
+
+/* Ensure every interactive header control meets the 44×44 touch target.
+ * Nuxt UI's small buttons render at ~32px; we bump them on touch via
+ * min-height/min-width without distorting their visual weight. */
+.maan-tap-target {
+  min-height: 40px;
+  min-width: 40px;
+}
+
+/* ─── Mobile drawer (USlideover) ───────────────────────────────────── */
+.maan-mobile-drawer-content {
+  background: var(--maan-surface) !important;
+}
+.dark .maan-mobile-drawer-content {
+  background: #0B1623 !important;
+}
+
+.maan-mobile-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: .85rem 1rem;
+  border-radius: .85rem;
+  font-weight: 600;
+  color: var(--maan-ink);
+  text-align: start;
+  min-height: 44px;
+  transition: background-color .15s;
+}
+.maan-mobile-link:hover {
+  background: var(--maan-autism-soft);
+  text-decoration: none;
+}
+.maan-mobile-link.router-link-active,
+.maan-mobile-link.router-link-exact-active {
+  background: var(--maan-autism-soft);
+  color: var(--maan-autism);
+}
+.maan-mobile-link--group {
+  cursor: pointer;
+  list-style: none;
+}
+.maan-mobile-link--group::-webkit-details-marker {
+  display: none;
+}
+.maan-mobile-group[open] > .maan-mobile-link--group .iconify {
+  transform: rotate(180deg);
+}
+.maan-mobile-link--child {
+  margin-inline-start: 1rem;
+  padding-block: .65rem;
+  font-size: .9rem;
+  font-weight: 500;
+  color: var(--maan-ink-muted);
 }
 
 .maan-ghost-btn {

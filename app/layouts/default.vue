@@ -1,5 +1,6 @@
 <script setup lang="ts">
 type NavPage = { id: string, title: string, permalink: string }
+type NavItem = { label: string, to: string, children?: Array<{ label: string, to: string }> }
 
 const route = useRoute()
 const isArabic = computed(() => route.path.startsWith('/ar'))
@@ -57,10 +58,14 @@ const alternatePaths = computed(() => {
   }
 })
 
+// Switching locale remembers the choice in a cookie so the server-side
+// locale-default middleware doesn't keep auto-redirecting the user.
+// The cookie lives for a year and is path-scoped to the whole site.
 const switchLocale = (path: string) => {
-  if (import.meta.client) {
-    window.location.assign(path)
-  }
+  if (!import.meta.client) return
+  const target = path.startsWith('/ar') ? 'ar' : 'en'
+  document.cookie = `maan-locale=${target}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`
+  window.location.assign(path)
 }
 
 const cmsNavItems = computed(() => {
@@ -78,9 +83,9 @@ const cmsNavItems = computed(() => {
 // Phase 2 renames "Blog" → "المرجع العلمي الشامل: دليل معًا للتمكين".
 // The route itself stays `/blog` (and `/ar/blog`) so existing DB content and
 // inbound links keep working — only the label changes.
-const navigation = computed(() => {
+const navigation = computed<NavItem[]>(() => {
   const isAr = isArabic.value
-  const staticItems = isAr
+  const staticItems: NavItem[] = isAr
     ? [
         { label: 'الرئيسية', to: '/ar' },
         { label: 'البرامج', to: '/ar#programs', children: [
@@ -115,6 +120,17 @@ const mobileWhatsLabel = computed(() => isArabic.value ? 'واتساب' : 'Whats
 const phoneHref = 'tel:+97332055666'
 const localeLabel = computed(() => isArabic.value ? 'English' : 'عربي')
 const developedByLabel = computed(() => isArabic.value ? 'صمم بواسطة' : 'Developed by')
+
+// Mobile drawer state. Closes on route change so navigating from inside it
+// doesn't leave the slideover open over the new page.
+const mobileMenuOpen = ref(false)
+watch(() => route.path, () => {
+  mobileMenuOpen.value = false
+})
+
+const drawerT = computed(() => isArabic.value
+  ? { open: 'فتح القائمة', close: 'إغلاق', menu: 'القائمة', theme: 'المظهر', language: 'اللغة' }
+  : { open: 'Open menu', close: 'Close', menu: 'Menu', theme: 'Theme', language: 'Language' })
 </script>
 
 <template>
@@ -145,29 +161,126 @@ const developedByLabel = computed(() => isArabic.value ? 'صمم بواسطة' :
     />
 
     <template #right>
+      <!--
+        Always-visible CTA. Below sm the label collapses to icon-only so it
+        fits on a 320px viewport next to the locale + theme + hamburger.
+        From sm upward the full label shows.
+      -->
       <NuxtLink
         :to="contactPath"
-        class="maan-cta-btn hidden md:inline-flex"
-        style="padding: 0.6rem 1rem; font-size: 0.9rem;"
+        class="maan-cta-btn maan-header-cta inline-flex"
+        :aria-label="headerCtaLabel"
       >
         <UIcon
           name="i-lucide-calendar-check"
           class="size-4"
         />
-        <span>{{ headerCtaLabel }}</span>
+        <span class="maan-header-cta-label">{{ headerCtaLabel }}</span>
       </NuxtLink>
-      <UColorModeButton />
+      <UColorModeButton class="maan-tap-target" />
       <UButton
         :href="isArabic ? alternatePaths.en : alternatePaths.ar"
         color="neutral"
         variant="ghost"
         size="sm"
+        class="maan-tap-target"
         @click.prevent="switchLocale(isArabic ? alternatePaths.en : alternatePaths.ar)"
       >
         {{ localeLabel }}
       </UButton>
+      <!-- Hamburger only visible below lg, where the inline nav disappears. -->
+      <UButton
+        color="neutral"
+        variant="ghost"
+        size="sm"
+        icon="i-lucide-menu"
+        class="lg:hidden maan-tap-target"
+        :aria-label="drawerT.open"
+        :aria-expanded="mobileMenuOpen"
+        aria-controls="maan-mobile-drawer"
+        @click="mobileMenuOpen = true"
+      />
     </template>
   </UHeader>
+
+  <!-- Mobile menu drawer — nav + locale + theme + primary CTA. Closes on
+       navigation via the watch on route.path above. -->
+  <USlideover
+    v-model:open="mobileMenuOpen"
+    :side="isArabic ? 'right' : 'left'"
+    :title="drawerT.menu"
+    :ui="{ content: 'maan-mobile-drawer-content' }"
+  >
+    <template #body>
+      <nav
+        id="maan-mobile-drawer"
+        class="grid gap-1"
+        :aria-label="drawerT.menu"
+      >
+        <template
+          v-for="item in navigation"
+          :key="item.label"
+        >
+          <NuxtLink
+            v-if="!item.children"
+            :to="item.to"
+            class="maan-mobile-link"
+            @click="mobileMenuOpen = false"
+          >
+            {{ item.label }}
+          </NuxtLink>
+          <details
+            v-else
+            class="maan-mobile-group"
+          >
+            <summary class="maan-mobile-link maan-mobile-link--group">
+              {{ item.label }}
+              <UIcon
+                name="i-lucide-chevron-down"
+                class="size-4 transition-transform"
+              />
+            </summary>
+            <NuxtLink
+              v-for="child in item.children"
+              :key="child.to"
+              :to="child.to"
+              class="maan-mobile-link maan-mobile-link--child"
+              @click="mobileMenuOpen = false"
+            >
+              {{ child.label }}
+            </NuxtLink>
+          </details>
+        </template>
+
+        <!-- Quick actions inside the drawer -->
+        <div class="mt-4 grid gap-2">
+          <NuxtLink
+            :to="contactPath"
+            class="maan-cta-btn justify-center"
+            @click="mobileMenuOpen = false"
+          >
+            <UIcon
+              name="i-lucide-calendar-check"
+              class="size-5"
+            />
+            <span>{{ headerCtaLabel }}</span>
+          </NuxtLink>
+          <a
+            href="https://wa.me/97332055666?text=%D8%A3%D9%88%D8%AF%20%D8%A7%D8%B3%D8%AA%D8%B4%D8%A7%D8%B1%D8%A9%20%D8%A8%D8%AE%D8%B5%D9%88%D8%B5%20%D8%B7%D9%81%D9%84%D9%8A"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="maan-ghost-btn justify-center"
+          >
+            <UIcon
+              name="i-lucide-message-circle"
+              class="size-5"
+            />
+            <span>{{ mobileWhatsLabel }}</span>
+          </a>
+        </div>
+      </nav>
+    </template>
+  </USlideover>
 
   <UMain class="maan-main">
     <slot />
@@ -353,8 +466,13 @@ const developedByLabel = computed(() => isArabic.value ? 'صمم بواسطة' :
                 name="i-lucide-map-pin"
                 class="size-4 mt-0.5"
               />
-              <!-- TODO_IMPLEMENTATION_REFERENCES: confirm exact business address. -->
-              <span>{{ isArabic ? 'مملكة البحرين' : 'Kingdom of Bahrain' }}</span>
+              <!-- TODO_IMPLEMENTATION_REFERENCES: streetAddress block. -->
+              <a
+                href="https://maps.app.goo.gl/GNB7VK94az3Wcrrq8"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="hover:underline"
+              >{{ isArabic ? 'فتح الموقع على خرائط جوجل' : 'Open in Google Maps' }}</a>
             </li>
             <li
               class="flex items-start gap-2"
@@ -364,8 +482,30 @@ const developedByLabel = computed(() => isArabic.value ? 'صمم بواسطة' :
                 name="i-lucide-clock"
                 class="size-4 mt-0.5"
               />
-              <!-- TODO_IMPLEMENTATION_REFERENCES: confirm official working hours. -->
-              <span>{{ isArabic ? 'ساعات العمل تُحدد قريباً' : 'Working hours: to be announced' }}</span>
+              <div>
+                <p
+                  class="font-semibold"
+                  style="color: var(--maan-ink);"
+                >
+                  {{ isArabic ? 'ساعات العمل' : 'Working hours' }}
+                </p>
+                <dl class="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
+                  <dt>{{ isArabic ? 'الأحد' : 'Sun' }}</dt>
+                  <dd>8 AM – 12 PM · 4 – 8 PM</dd>
+                  <dt>{{ isArabic ? 'الإثنين' : 'Mon' }}</dt>
+                  <dd>8 AM – 12 PM · 4 – 8 PM</dd>
+                  <dt>{{ isArabic ? 'الثلاثاء' : 'Tue' }}</dt>
+                  <dd>8 AM – 12 PM · 4 – 8 PM</dd>
+                  <dt>{{ isArabic ? 'الأربعاء' : 'Wed' }}</dt>
+                  <dd>8 AM – 12 PM · 4 – 8 PM</dd>
+                  <dt>{{ isArabic ? 'الخميس' : 'Thu' }}</dt>
+                  <dd>8 AM – 12 PM · 4 – 8 PM</dd>
+                  <dt>{{ isArabic ? 'الجمعة' : 'Fri' }}</dt>
+                  <dd>{{ isArabic ? 'مغلق' : 'Closed' }}</dd>
+                  <dt>{{ isArabic ? 'السبت' : 'Sat' }}</dt>
+                  <dd>9 AM – 1 PM</dd>
+                </dl>
+              </div>
             </li>
           </ul>
           <p

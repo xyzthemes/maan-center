@@ -34,10 +34,12 @@ Branch: `redesign`
 
 - [ ] **Exact business address** (building, road, block, area) — currently
       shows "Kingdom of Bahrain" only in the footer.
-- [ ] **Google Maps embed / geo coordinates** (latitude/longitude) — for the
-      contact page map and LocalBusiness schema.
-- [ ] **Official working hours** — currently footer shows
-      "Working hours: to be announced".
+- [ ] **Geo coordinates** (latitude/longitude) — for LocalBusiness `geo` schema.
+- [x] **Google Maps link** — `https://maps.app.goo.gl/GNB7VK94az3Wcrrq8`,
+      wired into the footer + LocalBusiness `hasMap`.
+- [x] **Official working hours** — Sun–Thu 08:00–12:00 + 16:00–20:00,
+      Fri closed, Sat 09:00–13:00. Rendered in footer + LocalBusiness
+      `openingHoursSpecification`.
 - [ ] **Licenses and accreditations** — footer line + LocalBusiness schema.
 - [ ] **Commercial Registration (CR) number** — for the footer / legal page.
 - [ ] **Privacy policy + terms of service** — needed before launch.

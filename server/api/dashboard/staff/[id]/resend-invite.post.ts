@@ -1,4 +1,4 @@
-// Re-send the invitation email. Calls Better Auth's forgetPassword
+// Re-send the invitation email. Calls Better Auth's requestPasswordReset
 // endpoint which issues a fresh token + URL, then fires the
 // `sendResetPassword` callback. The callback's invitation/reset
 // branch logic still applies (sessions=0 → invitation copy).
@@ -18,8 +18,8 @@ export default defineEventHandler(async (event) => {
 
   try {
     await (auth.api as unknown as {
-      forgetPassword: (opts: { body: object, headers: Headers }) => Promise<unknown>
-    }).forgetPassword({
+      requestPasswordReset: (opts: { body: object, headers: Headers }) => Promise<unknown>
+    }).requestPasswordReset({
       body: { email: target.email, redirectTo: '/dashboard/reset-password' },
       headers
     })

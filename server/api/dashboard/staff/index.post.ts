@@ -67,10 +67,16 @@ export default defineEventHandler(async (event) => {
   // Send the invitation email via Better Auth's password-reset machinery.
   // The callback in auth.config.ts checks for zero sessions and renders
   // invitation copy automatically.
+  //
+  // Method name is `requestPasswordReset`, not `forgetPassword` — the
+  // earlier `forgetPassword` call threw `TypeError: ... is not a function`
+  // and prod logs showed the invitation never went out. See
+  // node_modules/better-auth/dist/api/routes/password.mjs:20 for the
+  // canonical operationId.
   try {
     await (auth.api as unknown as {
-      forgetPassword: (opts: { body: object, headers: Headers }) => Promise<unknown>
-    }).forgetPassword({
+      requestPasswordReset: (opts: { body: object, headers: Headers }) => Promise<unknown>
+    }).requestPasswordReset({
       body: { email: payload.email, redirectTo: '/dashboard/reset-password' },
       headers
     })

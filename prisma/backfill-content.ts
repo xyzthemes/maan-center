@@ -233,14 +233,44 @@ async function seedContentBlocks() {
 
 // ── 3. Post taxonomy ──────────────────────────────────────────────────────
 //
-// The three EN posts and three AR posts each cover one subject:
-//   • building-confident-routines-at-home → family-support
-//   • how-early-assessment-guides-support → assessment
-//   • supporting-communication-through-play → therapy
+// Each EN post has an AR mirror with the same topic. Three subjects:
+//   • building-confident-routines-at-home — family-support
+//   • how-early-assessment-guides-support — assessment
+//   • supporting-communication-through-play — therapy
 //
-// All three are evergreen general-advice posts, so all three get the
-// `homepage-featured` placement (matches the previous "latest 3"
-// auto-curation; the editor can prune later if they want fewer).
+// All three are evergreen general-advice posts; all three keep the
+// `homepage-featured` placement. They also get the program-related
+// placements where they make sense topically — the program pages
+// query their placement to populate the "Related articles" rail.
+//
+// Topical fit per program:
+//   • Routines-at-home: universally useful (all 3 programs)
+//   • Early-assessment: universally useful (assessment is the entry
+//     point for every program)
+//   • Communication-through-play: most relevant to autism + Down
+//     syndrome; less central to learning-difficulties (LD focus is
+//     academic, not communication). Intentionally skipped on LD.
+//
+// The 20 DRAFT posts cover internal operational tooling (IEP system,
+// attendance, monthly reports, etc.). They aren't subject-matter
+// articles, so we deliberately don't fit them into the autism /
+// down-syndrome / therapy / etc. taxonomy. They stay untagged. If
+// they're ever promoted to public content the admin should categorize
+// them via the editor.
+
+const ALL_PROGRAMS_RELATED = [
+  'homepage-featured',
+  'autism-program-related',
+  'down-syndrome-program-related',
+  'learning-difficulties-program-related'
+]
+
+// Excludes the LD program placement — see "Topical fit per program" note above.
+const AUTISM_DOWN_RELATED = [
+  'homepage-featured',
+  'autism-program-related',
+  'down-syndrome-program-related'
+]
 
 async function seedPostTaxonomy() {
   console.log('— Post taxonomy')
@@ -248,33 +278,33 @@ async function seedPostTaxonomy() {
   await setPostTaxonomy(
     'building-confident-routines-at-home',
     ['family-support'],
-    ['homepage-featured']
+    ALL_PROGRAMS_RELATED
   )
   await setPostTaxonomy(
     'how-early-assessment-guides-support',
     ['assessment'],
-    ['homepage-featured']
+    ALL_PROGRAMS_RELATED
   )
   await setPostTaxonomy(
     'supporting-communication-through-play',
     ['therapy'],
-    ['homepage-featured']
+    AUTISM_DOWN_RELATED
   )
 
   await setPostTaxonomy(
     'ar-building-confident-routines-at-home',
     ['family-support'],
-    ['homepage-featured']
+    ALL_PROGRAMS_RELATED
   )
   await setPostTaxonomy(
     'ar-how-early-assessment-guides-support',
     ['assessment'],
-    ['homepage-featured']
+    ALL_PROGRAMS_RELATED
   )
   await setPostTaxonomy(
     'ar-supporting-communication-through-play',
     ['therapy'],
-    ['homepage-featured']
+    AUTISM_DOWN_RELATED
   )
 }
 

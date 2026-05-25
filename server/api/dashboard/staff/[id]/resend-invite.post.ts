@@ -16,6 +16,12 @@ export default defineEventHandler(async (event) => {
   const auth = serverAuth(event)
   const headers = new Headers(getHeaders(event) as Record<string, string>)
 
+  // Match the locale of the dashboard page the admin clicked from —
+  // see staff/index.post.ts for the same pattern.
+  const adminReferer = getHeaders(event).referer || ''
+  const adminLocale = adminReferer.includes('/ar/') ? 'ar' : 'en'
+  headers.set('x-mail-locale', adminLocale)
+
   try {
     await (auth.api as unknown as {
       requestPasswordReset: (opts: { body: object, headers: Headers }) => Promise<unknown>

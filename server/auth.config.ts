@@ -29,48 +29,93 @@ export default defineServerAuth(() => ({
     enabled: true,
     autoSignIn: false,
 
-    // Forgot-password flow. Better Auth generates the token + reset URL; this
-    // callback ships it to the user via SMTP (see server/utils/email.ts).
-    // The `url` already includes the token and points at /dashboard/reset-password
-    // because that's the callbackURL the client sends in the forget-password call.
+    // Forgot-password + staff-invitation flow. Better Auth generates the
+    // token + reset URL; this callback ships it to the user via SMTP
+    // (see server/utils/email.ts). The `url` already includes the token
+    // and points at /dashboard/reset-password (or /ar/...) because
+    // that's the callbackURL the client passes in.
     //
-    // The same callback handles staff INVITATIONS too: when the admin adds a
-    // new staff member, the server creates the user then calls
-    // requestPasswordReset; we detect "never signed in before" via a
-    // sessions=0 lookup and switch the copy. This keeps the flow within
-    // Better Auth's token machinery without an extra "invitation accept"
-    // route to build.
-    sendResetPassword: async ({ user, url }) => {
+    // Two branch axes:
+    //   - Invitation vs. reset: derived from sessions=0 (never signed in).
+    //   - English vs. Arabic copy: derived from the request — explicit
+    //     `x-mail-locale` header wins (forwarded by our staff endpoints),
+    //     otherwise the `Referer` URL containing `/ar/` flips to Arabic.
+    //
+    // Both branches share token machinery — no separate "invitation
+    // accept" route needed.
+    sendResetPassword: async ({ user, url }, request) => {
       const sessionCount = await prisma.session.count({ where: { userId: user.id } })
       const isInvitation = sessionCount === 0
 
-      const subject = isInvitation
-        ? 'You\'ve been added to the Maan dashboard'
-        : 'Reset your Maan dashboard password'
+      // Resolve locale from the incoming request (admin's header > referer > en).
+      const headerLocale = request?.headers?.get('x-mail-locale')
+      const referer = request?.headers?.get('referer') || ''
+      const locale: 'ar' | 'en'
+        = headerLocale === 'ar' || headerLocale === 'en'
+          ? headerLocale
+          : referer.includes('/ar/')
+            ? 'ar'
+            : 'en'
+      const isArabic = locale === 'ar'
 
-      const greeting = `Hi ${user.name || ''},`
-      const body = isInvitation
-        ? [
-            'You\'ve been invited to join the Maan team dashboard.',
-            'Click the link below to set your password and finish signing in.',
-            'The link expires in 1 hour — ask your admin to re-send it if it does.'
-          ]
-        : [
-            'Reset your password by opening the link below. It expires in 1 hour.',
-            '',
-            'If you did not request this, ignore this email.'
-          ]
+      const subject = isArabic
+        ? (isInvitation ? 'تمت إضافتك إلى لوحة تحكم معاً' : 'إعادة تعيين كلمة مرور لوحة تحكم معاً')
+        : (isInvitation ? 'You\'ve been added to the Maan dashboard' : 'Reset your Maan dashboard password')
+
+      const greeting = isArabic
+        ? `مرحباً ${user.name || ''}،`
+        : `Hi ${user.name || ''},`
+
+      const body = isArabic
+        ? (isInvitation
+            ? [
+                'تمت دعوتك للانضمام إلى لوحة تحكم فريق معاً.',
+                'انقر على الرابط أدناه لتعيين كلمة المرور وإكمال تسجيل الدخول.',
+                'تنتهي صلاحية الرابط خلال ساعة — اطلب من المدير إعادة إرساله إذا انتهت.'
+              ]
+            : [
+                'أعد تعيين كلمة المرور من خلال فتح الرابط أدناه. تنتهي صلاحيته خلال ساعة.',
+                '',
+                'إذا لم تطلب ذلك، يمكنك تجاهل هذه الرسالة.'
+              ])
+        : (isInvitation
+            ? [
+                'You\'ve been invited to join the Maan team dashboard.',
+                'Click the link below to set your password and finish signing in.',
+                'The link expires in 1 hour — ask your admin to re-send it if it does.'
+              ]
+            : [
+                'Reset your password by opening the link below. It expires in 1 hour.',
+                '',
+                'If you did not request this, ignore this email.'
+              ])
+
+      const ctaLabel = isArabic
+        ? (isInvitation ? 'تعيين كلمة المرور' : 'إعادة تعيين كلمة المرور')
+        : (isInvitation ? 'Set your password' : 'Reset password')
+
+      const fallbackLabel = isArabic
+        ? 'أو انسخ هذا الرابط:'
+        : 'Or copy this link:'
+
+      const signature = isArabic ? '— مركز معاً' : '— Maan Center'
+
+      // `dir="rtl" lang="ar"` so Arabic clients render right-to-left
+      // even if their default direction is LTR. Latin clients ignore both.
+      const htmlDir = isArabic ? 'rtl' : 'ltr'
 
       await sendEmail({
         to: user.email,
         subject,
-        text: [greeting, '', ...body, '', url, '', '— Maan Center'].join('\n'),
+        text: [greeting, '', ...body, '', url, '', signature].join('\n'),
         html: `
-          <p>${greeting}</p>
-          ${body.map(line => `<p>${line}</p>`).join('')}
-          <p><a href="${url}" style="display:inline-block;background:#3D8AC5;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;">${isInvitation ? 'Set your password' : 'Reset password'}</a></p>
-          <p style="color:#466079;font-size:13px;">Or copy this link: <a href="${url}">${url}</a></p>
-          <p>— Maan Center</p>
+          <div dir="${htmlDir}" lang="${locale}" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Tajawal', sans-serif;">
+            <p>${greeting}</p>
+            ${body.map(line => `<p>${line}</p>`).join('')}
+            <p><a href="${url}" style="display:inline-block;background:#3D8AC5;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;">${ctaLabel}</a></p>
+            <p style="color:#466079;font-size:13px;">${fallbackLabel} <a href="${url}">${url}</a></p>
+            <p>${signature}</p>
+          </div>
         `
       })
     },

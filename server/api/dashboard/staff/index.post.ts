@@ -29,6 +29,14 @@ export default defineEventHandler(async (event) => {
   const auth = serverAuth(event)
   const headers = new Headers(getHeaders(event) as Record<string, string>)
 
+  // Forward the admin's locale (taken from the dashboard page they
+  // invited from) so the sendResetPassword callback in auth.config.ts
+  // picks the right template language. New invitees inherit the
+  // admin's locale by default — there's no stored preference yet.
+  const adminReferer = getHeaders(event).referer || ''
+  const adminLocale = adminReferer.includes('/ar/') ? 'ar' : 'en'
+  headers.set('x-mail-locale', adminLocale)
+
   // 32 bytes base64 = ~43 chars of high-entropy noise. The new staff
   // member never types this password — they set their own via the
   // invitation link's reset token.

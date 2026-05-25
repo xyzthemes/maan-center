@@ -115,40 +115,23 @@ onMounted(loadPosts)
             class="w-full max-w-xs"
           />
           <!--
-            Category + placement filter dropdowns. Native <select>
-            elements rather than USelect: in Nuxt UI v4 USelect ships
-            the Reka Select primitive which renders a hidden trigger +
-            portaled list, and our v-model binding was failing to
-            propagate selection state (filters never changed). Native
-            <select> has bulletproof v-model semantics and the visual
-            difference is negligible for a one-line filter pill.
+            Category + placement filter dropdowns. USelect with the
+            documented pattern: items are `{ value, label }` objects,
+            `value-key` defaults to `'value'` so we don't repeat it,
+            and the model binds to the selected option's value.
           -->
-          <select
+          <USelect
             v-model="postsCategoryFilter"
-            class="maan-form-input maan-filter-select hidden sm:block"
-            :aria-label="t.categories"
-          >
-            <option
-              v-for="option in categoryFilterOptions"
-              :key="option.value"
-              :value="option.value"
-            >
-              {{ option.label }}
-            </option>
-          </select>
-          <select
+            :items="categoryFilterOptions"
+            size="sm"
+            class="hidden sm:flex w-44"
+          />
+          <USelect
             v-model="postsPlacementFilter"
-            class="maan-form-input maan-filter-select hidden md:block"
-            :aria-label="t.placements"
-          >
-            <option
-              v-for="option in placementFilterOptions"
-              :key="option.value"
-              :value="option.value"
-            >
-              {{ option.label }}
-            </option>
-          </select>
+            :items="placementFilterOptions"
+            size="sm"
+            class="hidden md:flex w-56"
+          />
         </template>
         <template #right>
           <UFieldGroup>

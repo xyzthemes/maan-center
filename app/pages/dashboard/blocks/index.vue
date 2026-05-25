@@ -148,50 +148,24 @@ onMounted(loadBlocks)
             size="sm"
             class="w-full max-w-xs"
           />
-          <!--
-            Native <select> elements — see posts/index.vue comment for
-            the rationale (USelect v-model wasn't propagating in this
-            toolbar context).
-          -->
-          <select
+          <USelect
             v-model="blocksTypeFilter"
-            class="maan-form-input maan-filter-select hidden sm:block"
-            :aria-label="t.blockType"
-          >
-            <option
-              v-for="option in typeFilterOptions"
-              :key="option.value"
-              :value="option.value"
-            >
-              {{ option.label }}
-            </option>
-          </select>
-          <select
+            :items="typeFilterOptions"
+            size="sm"
+            class="hidden sm:flex w-44"
+          />
+          <USelect
             v-model="blocksLocaleFilter"
-            class="maan-form-input maan-filter-select hidden md:block"
-            :aria-label="t.blockLocale"
-          >
-            <option
-              v-for="option in localeFilterOptions"
-              :key="option.value"
-              :value="option.value"
-            >
-              {{ option.label }}
-            </option>
-          </select>
-          <select
+            :items="localeFilterOptions"
+            size="sm"
+            class="hidden md:flex w-32"
+          />
+          <USelect
             v-model="blocksPlacementFilter"
-            class="maan-form-input maan-filter-select hidden lg:block"
-            :aria-label="t.placements"
-          >
-            <option
-              v-for="option in placementFilterOptions"
-              :key="option.value"
-              :value="option.value"
-            >
-              {{ option.label }}
-            </option>
-          </select>
+            :items="placementFilterOptions"
+            size="sm"
+            class="hidden lg:flex w-56"
+          />
         </template>
         <template #right>
           <UFieldGroup>

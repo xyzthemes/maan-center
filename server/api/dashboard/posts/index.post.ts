@@ -21,7 +21,7 @@ type DashboardPostBody = {
 }
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event, { user: { role: 'admin' } })
+  await requirePermission(event, 'posts')
   const body = await readBody<DashboardPostBody>(event)
 
   const title = body.title?.trim()

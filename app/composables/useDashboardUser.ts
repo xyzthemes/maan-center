@@ -10,6 +10,11 @@ export const useDashboardUser = () => {
 
   const userName = computed(() => user.value?.name || user.value?.email || t.value.managerFallback)
   const userRole = computed(() => (user.value as { role?: string } | null)?.role ?? undefined)
+  // Staff permissions array (empty for admins, but admins bypass the
+  // checks anyway). Exposed alongside role so the sidebar nav and
+  // permission middleware can branch without re-reading the session.
+  const userPermissions = computed(() => (user.value as { permissions?: string[] } | null)?.permissions ?? [])
+  const isAdmin = computed(() => userRole.value === 'admin')
 
   const ensureUser = async () => {
     if (!ready.value) {
@@ -30,6 +35,8 @@ export const useDashboardUser = () => {
     user,
     userName,
     userRole,
+    userPermissions,
+    isAdmin,
     authError,
     ensureUser,
     logout

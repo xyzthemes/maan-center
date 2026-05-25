@@ -4,7 +4,7 @@
 // Phase 7 cleanup can rename these to camelCase (post/page interfaces) and
 // drop this layer.
 
-import type { Page, Post, FormSubmission, FormSubmissionValue, Form, FormField, ContentBlock } from './db/types'
+import type { Page, Post, FormSubmission, FormSubmissionValue, Form, FormField, ContentBlock, User, Session } from './db/types'
 
 export type DashboardPostShape = {
   id: string
@@ -206,6 +206,43 @@ export const toDashboardForm = (
       sort: f.sort
     }))
 })
+
+// ── Dashboard Staff shape ────────────────────────────────────────────────
+
+export type DashboardStaffShape = {
+  id: string
+  name: string
+  email: string
+  role: string
+  permissions: string[]
+  banned: boolean
+  banReason: string | null
+  banExpires: string | null
+  emailVerified: boolean
+  createdAt: string
+  lastSignInAt: string | null
+}
+
+export const toDashboardStaff = (
+  user: User & { sessions?: Pick<Session, 'createdAt'>[] }
+): DashboardStaffShape => {
+  // Latest session timestamp ≈ "last active". Newer sessions sort first
+  // when the query includes `orderBy: { createdAt: 'desc' }, take: 1`.
+  const latestSession = user.sessions?.[0]?.createdAt
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role || 'user',
+    permissions: user.permissions || [],
+    banned: !!user.banned,
+    banReason: user.banReason || null,
+    banExpires: user.banExpires ? user.banExpires.toISOString() : null,
+    emailVerified: !!user.emailVerified,
+    createdAt: user.createdAt.toISOString(),
+    lastSignInAt: latestSession ? new Date(latestSession).toISOString() : null
+  }
+}
 
 // Normalizers used by the create/patch endpoints. The dashboard editors send
 // snake_case payloads (legacy from the Directus shape); these helpers turn that

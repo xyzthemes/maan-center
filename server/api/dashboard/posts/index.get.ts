@@ -2,7 +2,7 @@
 // Wire shape preserved (snake_case) so usePosts doesn't need changes.
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event, { user: { role: 'admin' } })
+  await requirePermission(event, 'posts')
 
   const rows = await prisma.post.findMany({
     orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],

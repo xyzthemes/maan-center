@@ -16,7 +16,7 @@ type DashboardBlockBody = {
 }
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event, { user: { role: 'admin' } })
+  await requirePermission(event, 'blocks')
   const body = await readBody<DashboardBlockBody>(event)
 
   const type = String(body.type || '')

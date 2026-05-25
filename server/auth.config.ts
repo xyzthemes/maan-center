@@ -33,26 +33,43 @@ export default defineServerAuth(() => ({
     // callback ships it to the user via SMTP (see server/utils/email.ts).
     // The `url` already includes the token and points at /dashboard/reset-password
     // because that's the callbackURL the client sends in the forget-password call.
+    //
+    // The same callback handles staff INVITATIONS too: when the admin adds a
+    // new staff member, the server creates the user then calls
+    // requestPasswordReset; we detect "never signed in before" via a
+    // sessions=0 lookup and switch the copy. This keeps the flow within
+    // Better Auth's token machinery without an extra "invitation accept"
+    // route to build.
     sendResetPassword: async ({ user, url }) => {
+      const sessionCount = await prisma.session.count({ where: { userId: user.id } })
+      const isInvitation = sessionCount === 0
+
+      const subject = isInvitation
+        ? 'You\'ve been added to the Maan dashboard'
+        : 'Reset your Maan dashboard password'
+
+      const greeting = `Hi ${user.name || ''},`
+      const body = isInvitation
+        ? [
+            'You\'ve been invited to join the Maan team dashboard.',
+            'Click the link below to set your password and finish signing in.',
+            'The link expires in 1 hour — ask your admin to re-send it if it does.'
+          ]
+        : [
+            'Reset your password by opening the link below. It expires in 1 hour.',
+            '',
+            'If you did not request this, ignore this email.'
+          ]
+
       await sendEmail({
         to: user.email,
-        subject: 'Reset your Maan dashboard password',
-        text: [
-          `Hi ${user.name || ''},`,
-          '',
-          'Reset your password by opening the link below. It expires in 1 hour.',
-          '',
-          url,
-          '',
-          'If you did not request this, ignore this email.',
-          '',
-          '— Maan Center'
-        ].join('\n'),
+        subject,
+        text: [greeting, '', ...body, '', url, '', '— Maan Center'].join('\n'),
         html: `
-          <p>Hi ${user.name || ''},</p>
-          <p>Reset your password by opening the link below. It expires in 1 hour.</p>
-          <p><a href="${url}">${url}</a></p>
-          <p>If you did not request this, ignore this email.</p>
+          <p>${greeting}</p>
+          ${body.map(line => `<p>${line}</p>`).join('')}
+          <p><a href="${url}" style="display:inline-block;background:#3D8AC5;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;">${isInvitation ? 'Set your password' : 'Reset password'}</a></p>
+          <p style="color:#466079;font-size:13px;">Or copy this link: <a href="${url}">${url}</a></p>
           <p>— Maan Center</p>
         `
       })

@@ -5,7 +5,7 @@ import { getQuery } from 'h3'
 // isBlockType + toDashboardBlock auto-imported from server/utils by Nitro.
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event, { user: { role: 'admin' } })
+  await requirePermission(event, 'blocks')
 
   const q = getQuery(event)
   const typeRaw = String(q.type || '')

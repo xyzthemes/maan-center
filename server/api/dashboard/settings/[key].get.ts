@@ -6,7 +6,7 @@
 import { createError, getRouterParam } from 'h3'
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event, { user: { role: 'admin' } })
+  await requirePermission(event, 'settings')
   const keyRaw = getRouterParam(event, 'key')
   if (!keyRaw || !isSettingKey(keyRaw)) {
     throw createError({ statusCode: 404, statusMessage: 'Unknown setting key.' })

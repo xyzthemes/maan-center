@@ -7,7 +7,7 @@
 import { getQuery } from 'h3'
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event, { user: { role: 'admin' } })
+  await requirePermission(event, 'submissions')
 
   const q = getQuery(event)
   const formId = typeof q.formId === 'string' && q.formId ? q.formId : undefined

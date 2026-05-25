@@ -17,7 +17,7 @@ type DashboardPageBody = {
 }
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event, { user: { role: 'admin' } })
+  await requirePermission(event, 'pages')
   const body = await readBody<DashboardPageBody>(event)
   const title = body.title?.trim()
 

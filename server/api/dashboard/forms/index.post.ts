@@ -6,7 +6,7 @@
 import { createError, readBody } from 'h3'
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event, { user: { role: 'admin' } })
+  await requirePermission(event, 'forms')
 
   const raw = await readBody(event)
   const payload = parseFormPayload(raw)

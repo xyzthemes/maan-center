@@ -3,7 +3,7 @@
 import { createError, getRouterParam } from 'h3'
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event, { user: { role: 'admin' } })
+  await requirePermission(event, 'blocks')
   const id = getRouterParam(event, 'id')
   if (!id) throw createError({ statusCode: 400, statusMessage: 'Block id is required.' })
 

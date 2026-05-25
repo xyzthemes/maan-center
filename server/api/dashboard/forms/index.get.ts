@@ -3,7 +3,7 @@
 // so the list can render badges without follow-up requests.
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event, { user: { role: 'admin' } })
+  await requirePermission(event, 'forms')
 
   const rows = await prisma.form.findMany({
     orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],

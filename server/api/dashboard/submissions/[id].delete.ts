@@ -5,7 +5,7 @@
 import { createError, getRouterParam } from 'h3'
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event, { user: { role: 'admin' } })
+  await requirePermission(event, 'submissions')
   const id = getRouterParam(event, 'id')
   if (!id) throw createError({ statusCode: 400, statusMessage: 'Submission id is required.' })
 

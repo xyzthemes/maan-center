@@ -1,12 +1,34 @@
 <script setup lang="ts">
+import { canAccessScope, type PermissionScope } from '~/utils/permissions'
+
 const {
   isArabic,
   sitePath,
   t,
   switchDashboardLocale
 } = useDashboardI18n()
-const { userName, userRole, ensureUser, logout } = useDashboardUser()
+const { userName, userRole, userPermissions, isAdmin, ensureUser, logout } = useDashboardUser()
 const colorMode = useColorMode()
+
+// Per-nav-entry scope. Items with scope === undefined are visible to
+// every signed-in staff member (Overview). Items with adminOnly are
+// hidden unless userRole === 'admin' (Staff section).
+type NavEntry = {
+  label: string
+  icon: string
+  to: string
+  scope?: PermissionScope
+  adminOnly?: boolean
+}
+
+const canSeeEntry = (entry: NavEntry) => {
+  if (entry.adminOnly) return isAdmin.value
+  if (!entry.scope) return true
+  return canAccessScope(
+    { role: userRole.value, permissions: userPermissions.value },
+    entry.scope
+  )
+}
 
 const sidebarSide = computed<'left' | 'right'>(() => isArabic.value ? 'right' : 'left')
 const isDark = computed(() => colorMode.value === 'dark')
@@ -20,7 +42,7 @@ const toggleTheme = () => {
 
 const overviewPath = computed(() => isArabic.value ? '/ar/dashboard/overview' : '/dashboard/overview')
 
-const navItems = computed(() => [[
+const allNavEntries = computed<NavEntry[]>(() => [
   {
     label: isArabic.value ? 'نظرة عامة' : 'Overview',
     icon: 'i-lucide-layout-dashboard',
@@ -29,75 +51,57 @@ const navItems = computed(() => [[
   {
     label: t.value.blogPosts,
     icon: 'i-lucide-file-pen-line',
-    to: isArabic.value ? '/ar/dashboard/posts' : '/dashboard/posts'
+    to: isArabic.value ? '/ar/dashboard/posts' : '/dashboard/posts',
+    scope: 'posts'
   },
   {
     label: t.value.websitePages,
     icon: 'i-lucide-files',
-    to: isArabic.value ? '/ar/dashboard/pages' : '/dashboard/pages'
+    to: isArabic.value ? '/ar/dashboard/pages' : '/dashboard/pages',
+    scope: 'pages'
   },
   {
     label: t.value.contentBlocks,
     icon: 'i-lucide-blocks',
-    to: isArabic.value ? '/ar/dashboard/blocks' : '/dashboard/blocks'
+    to: isArabic.value ? '/ar/dashboard/blocks' : '/dashboard/blocks',
+    scope: 'blocks'
   },
   {
     label: t.value.forms,
     icon: 'i-lucide-clipboard-list',
-    to: isArabic.value ? '/ar/dashboard/forms' : '/dashboard/forms'
+    to: isArabic.value ? '/ar/dashboard/forms' : '/dashboard/forms',
+    scope: 'forms'
   },
   {
     label: t.value.contactResponses,
     icon: 'i-lucide-inbox',
-    to: isArabic.value ? '/ar/dashboard/submissions' : '/dashboard/submissions'
+    to: isArabic.value ? '/ar/dashboard/submissions' : '/dashboard/submissions',
+    scope: 'submissions'
   },
   {
     label: t.value.siteSettings,
     icon: 'i-lucide-settings',
-    to: isArabic.value ? '/ar/dashboard/settings' : '/dashboard/settings'
+    to: isArabic.value ? '/ar/dashboard/settings' : '/dashboard/settings',
+    scope: 'settings'
+  },
+  {
+    label: t.value.staff,
+    icon: 'i-lucide-users',
+    to: isArabic.value ? '/ar/dashboard/staff' : '/dashboard/staff',
+    adminOnly: true
   }
-]])
+])
 
+const navItems = computed(() => [allNavEntries.value.filter(canSeeEntry)])
+
+// Search palette items reuse the same canAccessScope filter so the
+// command-K dropdown never shows surfaces the staff member can't open.
 const searchGroups = computed(() => [
   {
     id: 'navigation',
     label: t.value.navigation,
     items: [
-      {
-        label: isArabic.value ? 'نظرة عامة' : 'Overview',
-        icon: 'i-lucide-layout-dashboard',
-        to: overviewPath.value
-      },
-      {
-        label: t.value.blogPosts,
-        icon: 'i-lucide-file-pen-line',
-        to: isArabic.value ? '/ar/dashboard/posts' : '/dashboard/posts'
-      },
-      {
-        label: t.value.websitePages,
-        icon: 'i-lucide-files',
-        to: isArabic.value ? '/ar/dashboard/pages' : '/dashboard/pages'
-      },
-      {
-        label: t.value.contentBlocks,
-        icon: 'i-lucide-blocks',
-        to: isArabic.value ? '/ar/dashboard/blocks' : '/dashboard/blocks'
-      },
-      {
-        label: t.value.forms,
-        icon: 'i-lucide-clipboard-list',
-        to: isArabic.value ? '/ar/dashboard/forms' : '/dashboard/forms'
-      },
-      {
-        label: t.value.contactResponses,
-        icon: 'i-lucide-inbox',
-        to: isArabic.value ? '/ar/dashboard/submissions' : '/dashboard/submissions'
-      },
-      {
-        label: t.value.siteSettings,
-        icon: 'i-lucide-settings',
-        to: isArabic.value ? '/ar/dashboard/settings' : '/dashboard/settings'
-      },
+      ...allNavEntries.value.filter(canSeeEntry),
       {
         label: t.value.site,
         icon: 'i-lucide-external-link',

@@ -328,190 +328,206 @@ const drawerT = computed(() => isArabic.value
 
   <UFooter class="maan-footer">
     <template #top>
-      <div class="grid gap-10 py-12 md:grid-cols-[1.2fr_1fr_1fr_1fr]">
-        <div>
-          <AppLogo
-            size="lg"
-            :locale="isArabic ? 'ar' : 'en'"
-          />
-          <p
-            class="mt-4 text-sm"
-            style="color: var(--maan-ink-muted);"
-          >
-            {{ isArabic
-              ? 'مركز معاً للتربية الخاصة — تقييم وخطط تعليمية فردية وجلسات علاجية للأطفال ذوي اضطراب طيف التوحد ومتلازمة داون وصعوبات التعلم.'
-              : 'Maan Special Education Center — assessment, individualized plans, and therapy for children with autism spectrum disorder, Down syndrome, and learning difficulties.' }}
-          </p>
-        </div>
+      <!--
+        UFooter's #top slot renders outside the built-in UContainer, so we
+        wrap it here ourselves. Without this, content slams into the
+        viewport edges on mobile.
 
-        <div>
-          <h4
-            class="text-sm font-bold uppercase tracking-wider"
-            style="color: var(--maan-ink);"
-          >
-            {{ isArabic ? 'البرامج' : 'Programs' }}
-          </h4>
-          <ul class="mt-4 space-y-2 text-sm">
-            <li>
-              <NuxtLink
-                :to="isArabic ? '/ar/programs/autism' : '/programs/autism'"
-                class="hover:underline"
-                style="color: var(--maan-ink-muted);"
-              >
-                {{ isArabic ? 'اضطراب طيف التوحد' : 'Autism Spectrum' }}
-              </NuxtLink>
-            </li>
-            <li>
-              <NuxtLink
-                :to="isArabic ? '/ar/programs/down-syndrome' : '/programs/down-syndrome'"
-                class="hover:underline"
-                style="color: var(--maan-ink-muted);"
-              >
-                {{ isArabic ? 'متلازمة داون' : 'Down Syndrome' }}
-              </NuxtLink>
-            </li>
-            <li>
-              <NuxtLink
-                :to="isArabic ? '/ar/programs/learning-difficulties' : '/programs/learning-difficulties'"
-                class="hover:underline"
-                style="color: var(--maan-ink-muted);"
-              >
-                {{ isArabic ? 'صعوبات التعلم' : 'Learning Difficulties' }}
-              </NuxtLink>
-            </li>
-          </ul>
-        </div>
-
-        <div>
-          <h4
-            class="text-sm font-bold uppercase tracking-wider"
-            style="color: var(--maan-ink);"
-          >
-            {{ isArabic ? 'الموارد' : 'Resources' }}
-          </h4>
-          <ul class="mt-4 space-y-2 text-sm">
-            <li>
-              <NuxtLink
-                :to="isArabic ? '/ar/about-us' : '/about-us'"
-                class="hover:underline"
-                style="color: var(--maan-ink-muted);"
-              >
-                {{ isArabic ? 'عن المركز' : 'About the center' }}
-              </NuxtLink>
-            </li>
-            <li>
-              <NuxtLink
-                :to="isArabic ? '/ar/blog' : '/blog'"
-                class="hover:underline"
-                style="color: var(--maan-ink-muted);"
-              >
-                {{ isArabic ? 'المرجع العلمي الشامل' : 'Scientific Reference' }}
-              </NuxtLink>
-            </li>
-            <li>
-              <NuxtLink
-                :to="isArabic ? '/ar/contact' : '/contact'"
-                class="hover:underline"
-                style="color: var(--maan-ink-muted);"
-              >
-                {{ isArabic ? 'تواصل معنا' : 'Contact Us' }}
-              </NuxtLink>
-            </li>
-            <li>
-              <NuxtLink
-                :to="isArabic ? '/ar#careers' : '/#careers'"
-                class="hover:underline"
-                style="color: var(--maan-ink-muted);"
-              >
-                {{ isArabic ? 'وظائف ومتطوعين' : 'Careers & Volunteers' }}
-              </NuxtLink>
-            </li>
-          </ul>
-        </div>
-
-        <div>
-          <h4
-            class="text-sm font-bold uppercase tracking-wider"
-            style="color: var(--maan-ink);"
-          >
-            {{ isArabic ? 'تواصل' : 'Contact' }}
-          </h4>
-          <ul class="mt-4 space-y-2 text-sm">
-            <li
-              class="flex items-start gap-2"
+        `[&>*]:min-w-0` lets every grid track shrink below its intrinsic
+        content width, preventing horizontal overflow from long phone/email
+        runs or the working-hours `<dl>`.
+      -->
+      <UContainer class="py-12">
+        <div class="grid gap-10 sm:grid-cols-2 md:grid-cols-[1.2fr_1fr_1fr_1.1fr] *:min-w-0">
+          <div>
+            <AppLogo
+              size="lg"
+              :locale="isArabic ? 'ar' : 'en'"
+            />
+            <p
+              class="mt-4 text-sm"
               style="color: var(--maan-ink-muted);"
             >
-              <UIcon
-                name="i-lucide-phone"
-                class="size-4 mt-0.5"
-              />
-              <a
-                href="tel:+97332055666"
-                class="hover:underline"
-                dir="ltr"
-              >+973 3205 5666</a>
-            </li>
-            <li
-              class="flex items-start gap-2"
-              style="color: var(--maan-ink-muted);"
+              {{ isArabic
+                ? 'مركز معاً للتربية الخاصة — تقييم وخطط تعليمية فردية وجلسات علاجية للأطفال ذوي اضطراب طيف التوحد ومتلازمة داون وصعوبات التعلم.'
+                : 'Maan Special Education Center — assessment, individualized plans, and therapy for children with autism spectrum disorder, Down syndrome, and learning difficulties.' }}
+            </p>
+          </div>
+
+          <div>
+            <h4
+              class="text-sm font-bold uppercase tracking-wider"
+              style="color: var(--maan-ink);"
             >
-              <UIcon
-                name="i-lucide-map-pin"
-                class="size-4 mt-0.5"
-              />
-              <!-- TODO_IMPLEMENTATION_REFERENCES: streetAddress block. -->
-              <a
-                href="https://maps.app.goo.gl/GNB7VK94az3Wcrrq8"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="hover:underline"
-              >{{ isArabic ? 'فتح الموقع على خرائط جوجل' : 'Open in Google Maps' }}</a>
-            </li>
-            <li
-              class="flex items-start gap-2"
-              style="color: var(--maan-ink-muted);"
-            >
-              <UIcon
-                name="i-lucide-clock"
-                class="size-4 mt-0.5"
-              />
-              <div>
-                <p
-                  class="font-semibold"
-                  style="color: var(--maan-ink);"
+              {{ isArabic ? 'البرامج' : 'Programs' }}
+            </h4>
+            <ul class="mt-4 space-y-2 text-sm">
+              <li>
+                <NuxtLink
+                  :to="isArabic ? '/ar/programs/autism' : '/programs/autism'"
+                  class="hover:underline"
+                  style="color: var(--maan-ink-muted);"
                 >
-                  {{ isArabic ? 'ساعات العمل' : 'Working hours' }}
-                </p>
-                <dl class="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
-                  <dt>{{ isArabic ? 'الأحد' : 'Sun' }}</dt>
-                  <dd>8 AM – 12 PM · 4 – 8 PM</dd>
-                  <dt>{{ isArabic ? 'الإثنين' : 'Mon' }}</dt>
-                  <dd>8 AM – 12 PM · 4 – 8 PM</dd>
-                  <dt>{{ isArabic ? 'الثلاثاء' : 'Tue' }}</dt>
-                  <dd>8 AM – 12 PM · 4 – 8 PM</dd>
-                  <dt>{{ isArabic ? 'الأربعاء' : 'Wed' }}</dt>
-                  <dd>8 AM – 12 PM · 4 – 8 PM</dd>
-                  <dt>{{ isArabic ? 'الخميس' : 'Thu' }}</dt>
-                  <dd>8 AM – 12 PM · 4 – 8 PM</dd>
-                  <dt>{{ isArabic ? 'الجمعة' : 'Fri' }}</dt>
-                  <dd>{{ isArabic ? 'مغلق' : 'Closed' }}</dd>
-                  <dt>{{ isArabic ? 'السبت' : 'Sat' }}</dt>
-                  <dd>9 AM – 1 PM</dd>
-                </dl>
-              </div>
-            </li>
-          </ul>
-          <p
-            class="mt-4 text-[11px]"
-            style="color: var(--maan-ink-muted);"
-          >
-            {{ isArabic
-              ? 'الترخيص والاعتمادات الرسمية ستُعرض هنا فور توفرها.'
-              : 'License and official accreditations will be displayed here once provided.' }}
-          </p>
+                  {{ isArabic ? 'اضطراب طيف التوحد' : 'Autism Spectrum' }}
+                </NuxtLink>
+              </li>
+              <li>
+                <NuxtLink
+                  :to="isArabic ? '/ar/programs/down-syndrome' : '/programs/down-syndrome'"
+                  class="hover:underline"
+                  style="color: var(--maan-ink-muted);"
+                >
+                  {{ isArabic ? 'متلازمة داون' : 'Down Syndrome' }}
+                </NuxtLink>
+              </li>
+              <li>
+                <NuxtLink
+                  :to="isArabic ? '/ar/programs/learning-difficulties' : '/programs/learning-difficulties'"
+                  class="hover:underline"
+                  style="color: var(--maan-ink-muted);"
+                >
+                  {{ isArabic ? 'صعوبات التعلم' : 'Learning Difficulties' }}
+                </NuxtLink>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4
+              class="text-sm font-bold uppercase tracking-wider"
+              style="color: var(--maan-ink);"
+            >
+              {{ isArabic ? 'الموارد' : 'Resources' }}
+            </h4>
+            <ul class="mt-4 space-y-2 text-sm">
+              <li>
+                <NuxtLink
+                  :to="isArabic ? '/ar/about-us' : '/about-us'"
+                  class="hover:underline"
+                  style="color: var(--maan-ink-muted);"
+                >
+                  {{ isArabic ? 'عن المركز' : 'About the center' }}
+                </NuxtLink>
+              </li>
+              <li>
+                <NuxtLink
+                  :to="isArabic ? '/ar/blog' : '/blog'"
+                  class="hover:underline"
+                  style="color: var(--maan-ink-muted);"
+                >
+                  {{ isArabic ? 'المرجع العلمي الشامل' : 'Scientific Reference' }}
+                </NuxtLink>
+              </li>
+              <li>
+                <NuxtLink
+                  :to="isArabic ? '/ar/contact' : '/contact'"
+                  class="hover:underline"
+                  style="color: var(--maan-ink-muted);"
+                >
+                  {{ isArabic ? 'تواصل معنا' : 'Contact Us' }}
+                </NuxtLink>
+              </li>
+              <li>
+                <NuxtLink
+                  :to="isArabic ? '/ar#careers' : '/#careers'"
+                  class="hover:underline"
+                  style="color: var(--maan-ink-muted);"
+                >
+                  {{ isArabic ? 'وظائف ومتطوعين' : 'Careers & Volunteers' }}
+                </NuxtLink>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4
+              class="text-sm font-bold uppercase tracking-wider"
+              style="color: var(--maan-ink);"
+            >
+              {{ isArabic ? 'تواصل' : 'Contact' }}
+            </h4>
+            <ul class="mt-4 space-y-2 text-sm">
+              <li
+                class="flex items-start gap-2"
+                style="color: var(--maan-ink-muted);"
+              >
+                <UIcon
+                  name="i-lucide-phone"
+                  class="size-4 mt-0.5"
+                />
+                <a
+                  href="tel:+97332055666"
+                  class="hover:underline"
+                  dir="ltr"
+                >+973 3205 5666</a>
+              </li>
+              <li
+                class="flex items-start gap-2"
+                style="color: var(--maan-ink-muted);"
+              >
+                <UIcon
+                  name="i-lucide-map-pin"
+                  class="size-4 mt-0.5"
+                />
+                <!-- TODO_IMPLEMENTATION_REFERENCES: streetAddress block. -->
+                <a
+                  href="https://maps.app.goo.gl/GNB7VK94az3Wcrrq8"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="hover:underline"
+                >{{ isArabic ? 'فتح الموقع على خرائط جوجل' : 'Open in Google Maps' }}</a>
+              </li>
+              <li
+                class="flex items-start gap-2"
+                style="color: var(--maan-ink-muted);"
+              >
+                <UIcon
+                  name="i-lucide-clock"
+                  class="size-4 mt-0.5"
+                />
+                <div>
+                  <p
+                    class="font-semibold"
+                    style="color: var(--maan-ink);"
+                  >
+                    {{ isArabic ? 'ساعات العمل' : 'Working hours' }}
+                  </p>
+                  <!--
+                  Two-column grid (day → hours). The `dd` cells get
+                  `min-w-0` so long hour ranges can wrap instead of
+                  pushing the whole footer column wider than its track.
+                -->
+                  <dl class="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs *:min-w-0">
+                    <dt>{{ isArabic ? 'الأحد' : 'Sun' }}</dt>
+                    <dd>8 AM – 12 PM · 4 – 8 PM</dd>
+                    <dt>{{ isArabic ? 'الإثنين' : 'Mon' }}</dt>
+                    <dd>8 AM – 12 PM · 4 – 8 PM</dd>
+                    <dt>{{ isArabic ? 'الثلاثاء' : 'Tue' }}</dt>
+                    <dd>8 AM – 12 PM · 4 – 8 PM</dd>
+                    <dt>{{ isArabic ? 'الأربعاء' : 'Wed' }}</dt>
+                    <dd>8 AM – 12 PM · 4 – 8 PM</dd>
+                    <dt>{{ isArabic ? 'الخميس' : 'Thu' }}</dt>
+                    <dd>8 AM – 12 PM · 4 – 8 PM</dd>
+                    <dt>{{ isArabic ? 'الجمعة' : 'Fri' }}</dt>
+                    <dd>{{ isArabic ? 'مغلق' : 'Closed' }}</dd>
+                    <dt>{{ isArabic ? 'السبت' : 'Sat' }}</dt>
+                    <dd>9 AM – 1 PM</dd>
+                  </dl>
+                </div>
+              </li>
+            </ul>
+            <p
+              class="mt-4 text-[11px]"
+              style="color: var(--maan-ink-muted);"
+            >
+              {{ isArabic
+                ? 'الترخيص والاعتمادات الرسمية ستُعرض هنا فور توفرها.'
+                : 'License and official accreditations will be displayed here once provided.' }}
+            </p>
           <!-- TODO_IMPLEMENTATION_REFERENCES: licenses & accreditations. -->
+          </div>
         </div>
-      </div>
+      </UContainer>
     </template>
 
     <template #left>

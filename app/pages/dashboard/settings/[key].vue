@@ -134,13 +134,12 @@ watch(() => route.params.key, refresh)
         <template #leading>
           <UButton
             :to="backHref"
-            icon="i-lucide-arrow-left"
+            :icon="isArabic ? 'i-lucide-arrow-right' : 'i-lucide-arrow-left'"
             color="neutral"
             variant="ghost"
             size="sm"
             square
             :aria-label="t.siteSettings"
-            class="ltr:[&_.iconify]:rtl:rotate-180"
           />
         </template>
       </UDashboardNavbar>

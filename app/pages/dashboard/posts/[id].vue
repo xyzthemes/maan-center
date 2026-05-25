@@ -67,15 +67,22 @@ watch(() => route.params.id, () => {
     <template #header>
       <UDashboardNavbar :title="isNew ? t.createPost : (postForm.title || t.editPost)">
         <template #leading>
+          <!--
+            Back-arrow direction follows reading order: left arrow in
+            LTR (English), right arrow in RTL (Arabic). The previous
+            `class="ltr:[&_.iconify]:rtl:rotate-180"` was a contradictory
+            variant chain (ltr: and rtl: are mutually exclusive in
+            Tailwind, so the rule never matched). Swapping the icon
+            name by locale is clearer + avoids CSS transforms.
+          -->
           <UButton
             :to="backHref"
-            icon="i-lucide-arrow-left"
+            :icon="isArabic ? 'i-lucide-arrow-right' : 'i-lucide-arrow-left'"
             color="neutral"
             variant="ghost"
             size="sm"
             square
             :aria-label="t.posts"
-            class="ltr:[&_.iconify]:rtl:rotate-180"
           />
         </template>
         <template #right>

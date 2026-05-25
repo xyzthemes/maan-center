@@ -60,6 +60,24 @@ const editHref = (post: DashboardPost) => isArabic.value
 
 const newHref = computed(() => isArabic.value ? '/ar/dashboard/posts/new' : '/dashboard/posts/new')
 
+// Chip labels — look the slug up in the same option lists driving the
+// filter dropdowns so the chip always matches the active selection's
+// visible label (including locale).
+const categoryChipLabel = computed(() => {
+  const opt = categoryFilterOptions.value.find(o => o.value === postsCategoryFilter.value)
+  return opt?.label ?? postsCategoryFilter.value
+})
+const placementChipLabel = computed(() => {
+  const opt = placementFilterOptions.value.find(o => o.value === postsPlacementFilter.value)
+  return opt?.label ?? postsPlacementFilter.value
+})
+
+const clearAllFilters = () => {
+  postsSearch.value = ''
+  postsCategoryFilter.value = 'all'
+  postsPlacementFilter.value = 'all'
+}
+
 onMounted(loadPosts)
 </script>
 
@@ -97,25 +115,40 @@ onMounted(loadPosts)
             class="w-full max-w-xs"
           />
           <!--
-            Category + placement filter dropdowns. Single-select (filter
-            by ONE taxonomy id at a time) keeps the UI simple — the
-            common admin workflow is "show me what's on the autism
-            page" or "show me all autism content".
+            Category + placement filter dropdowns. Native <select>
+            elements rather than USelect: in Nuxt UI v4 USelect ships
+            the Reka Select primitive which renders a hidden trigger +
+            portaled list, and our v-model binding was failing to
+            propagate selection state (filters never changed). Native
+            <select> has bulletproof v-model semantics and the visual
+            difference is negligible for a one-line filter pill.
           -->
-          <USelect
+          <select
             v-model="postsCategoryFilter"
-            :items="categoryFilterOptions"
-            value-key="value"
-            size="sm"
-            class="hidden sm:block w-44"
-          />
-          <USelect
+            class="maan-form-input maan-filter-select hidden sm:block"
+            :aria-label="t.categories"
+          >
+            <option
+              v-for="option in categoryFilterOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </option>
+          </select>
+          <select
             v-model="postsPlacementFilter"
-            :items="placementFilterOptions"
-            value-key="value"
-            size="sm"
-            class="hidden md:block w-56"
-          />
+            class="maan-form-input maan-filter-select hidden md:block"
+            :aria-label="t.placements"
+          >
+            <option
+              v-for="option in placementFilterOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </option>
+          </select>
         </template>
         <template #right>
           <UFieldGroup>
@@ -143,6 +176,71 @@ onMounted(loadPosts)
         :description="t.postsPermission"
         class="mb-4"
       />
+
+      <!--
+        Active-filter strip. Renders one chip per non-default filter,
+        each clickable to clear it. Doubles as a visual sanity check
+        that the v-model bindings are firing — if an admin selects
+        "Autism" and no chip appears, the dropdown is broken; if the
+        chip appears but the list doesn't change, the filter logic is.
+      -->
+      <div
+        v-if="postsCategoryFilter !== 'all' || postsPlacementFilter !== 'all' || postsSearch"
+        class="mb-4 flex flex-wrap items-center gap-2"
+      >
+        <span class="text-xs font-semibold uppercase tracking-wider text-muted">
+          {{ t.activeFilters }}
+        </span>
+        <button
+          v-if="postsSearch"
+          type="button"
+          class="maan-filter-chip"
+          @click="postsSearch = ''"
+        >
+          <UIcon
+            name="i-lucide-search"
+            class="size-3"
+          />
+          <span>{{ postsSearch }}</span>
+          <UIcon
+            name="i-lucide-x"
+            class="size-3"
+          />
+        </button>
+        <button
+          v-if="postsCategoryFilter !== 'all'"
+          type="button"
+          class="maan-filter-chip"
+          @click="postsCategoryFilter = 'all'"
+        >
+          <span>{{ categoryChipLabel }}</span>
+          <UIcon
+            name="i-lucide-x"
+            class="size-3"
+          />
+        </button>
+        <button
+          v-if="postsPlacementFilter !== 'all'"
+          type="button"
+          class="maan-filter-chip"
+          @click="postsPlacementFilter = 'all'"
+        >
+          <span>{{ placementChipLabel }}</span>
+          <UIcon
+            name="i-lucide-x"
+            class="size-3"
+          />
+        </button>
+        <UButton
+          color="neutral"
+          variant="ghost"
+          size="xs"
+          icon="i-lucide-x-circle"
+          @click="clearAllFilters"
+        >
+          {{ t.clearFilters }}
+        </UButton>
+      </div>
 
       <p
         v-if="!postsError && filteredPosts.length === 0"

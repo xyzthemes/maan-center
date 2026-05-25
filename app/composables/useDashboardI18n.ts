@@ -105,6 +105,8 @@ export const useDashboardI18n = () => {
         filterCategory: 'كل التصنيفات',
         filterPlacement: 'كل المواقع',
         noMatchingFilters: 'لا توجد منشورات مطابقة لهذه الفلاتر.',
+        activeFilters: 'الفلاتر المطبقة:',
+        clearFilters: 'مسح الكل',
         // Layer 2 — Content blocks.
         contentBlocks: 'كتل المحتوى',
         newBlock: 'كتلة جديدة',
@@ -268,6 +270,8 @@ export const useDashboardI18n = () => {
         filterCategory: 'All categories',
         filterPlacement: 'All placements',
         noMatchingFilters: 'No posts match these filters.',
+        activeFilters: 'Active filters:',
+        clearFilters: 'Clear all',
         // Layer 2 — Content blocks.
         contentBlocks: 'Content blocks',
         newBlock: 'New block',

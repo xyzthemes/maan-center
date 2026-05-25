@@ -543,6 +543,58 @@ body {
   .maan-main { padding-bottom: 4.5rem; }
 }
 
+/* ─── Dashboard filter dropdowns ─────────────────────────────────────────
+ * Compact native <select> styled to match maan-form-input. Used in the
+ * Posts + Blocks list toolbars where USelect's portaled trigger was
+ * failing to propagate v-model in the toolbar context. The native
+ * element has bulletproof v-model + screen-reader semantics.
+ */
+.maan-filter-select {
+  width: auto;
+  min-width: 9rem;
+  padding-block: .45rem;
+  padding-inline: .8rem;
+  padding-inline-end: 2rem;
+  font-size: .85rem;
+  appearance: none;
+  /* Chevron-down rendered as an SVG background so the look matches
+   * USelect's trailing icon without an extra element. RTL flips
+   * horizontal alignment automatically via inset-inline-* on the
+   * background-position. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2366738A' stroke-width='1.75'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right .55rem center;
+  background-size: 14px;
+}
+[dir="rtl"] .maan-filter-select {
+  background-position: left .55rem center;
+  padding-inline-start: 2rem;
+  padding-inline-end: .8rem;
+}
+
+/* Active-filter chip: removable pill above the list. */
+.maan-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .2rem .55rem .2rem .65rem;
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 600;
+  background: var(--maan-autism-soft);
+  color: var(--maan-autism);
+  border: 1px solid color-mix(in srgb, var(--maan-autism) 28%, transparent);
+  transition: background-color .12s, border-color .12s;
+  cursor: pointer;
+}
+.maan-filter-chip:hover {
+  background: color-mix(in srgb, var(--maan-autism) 22%, var(--maan-surface));
+}
+.maan-filter-chip:focus-visible {
+  outline: 2px solid var(--maan-autism);
+  outline-offset: 2px;
+}
+
 /* ─── Statistics ─── */
 .maan-stat {
   text-align: center;

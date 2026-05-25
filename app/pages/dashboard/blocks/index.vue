@@ -86,6 +86,32 @@ const preview = (block: DashboardBlock): string => {
   }
 }
 
+// Active-filter chips — see posts/index.vue for the rationale.
+const hasActiveFilters = computed(() =>
+  blocksSearch.value
+  || blocksTypeFilter.value !== 'all'
+  || blocksLocaleFilter.value !== 'all'
+  || blocksPlacementFilter.value !== 'all'
+)
+const typeChipLabel = computed(() => {
+  const opt = typeFilterOptions.value.find(o => o.value === blocksTypeFilter.value)
+  return opt?.label ?? blocksTypeFilter.value
+})
+const localeChipLabel = computed(() => {
+  const opt = localeFilterOptions.value.find(o => o.value === blocksLocaleFilter.value)
+  return opt?.label ?? blocksLocaleFilter.value
+})
+const placementChipLabel = computed(() => {
+  const opt = placementFilterOptions.value.find(o => o.value === blocksPlacementFilter.value)
+  return opt?.label ?? blocksPlacementFilter.value
+})
+const clearAllFilters = () => {
+  blocksSearch.value = ''
+  blocksTypeFilter.value = 'all'
+  blocksLocaleFilter.value = 'all'
+  blocksPlacementFilter.value = 'all'
+}
+
 onMounted(loadBlocks)
 </script>
 
@@ -122,27 +148,50 @@ onMounted(loadBlocks)
             size="sm"
             class="w-full max-w-xs"
           />
-          <USelect
+          <!--
+            Native <select> elements — see posts/index.vue comment for
+            the rationale (USelect v-model wasn't propagating in this
+            toolbar context).
+          -->
+          <select
             v-model="blocksTypeFilter"
-            :items="typeFilterOptions"
-            value-key="value"
-            size="sm"
-            class="hidden sm:block w-44"
-          />
-          <USelect
+            class="maan-form-input maan-filter-select hidden sm:block"
+            :aria-label="t.blockType"
+          >
+            <option
+              v-for="option in typeFilterOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </option>
+          </select>
+          <select
             v-model="blocksLocaleFilter"
-            :items="localeFilterOptions"
-            value-key="value"
-            size="sm"
-            class="hidden md:block w-32"
-          />
-          <USelect
+            class="maan-form-input maan-filter-select hidden md:block"
+            :aria-label="t.blockLocale"
+          >
+            <option
+              v-for="option in localeFilterOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </option>
+          </select>
+          <select
             v-model="blocksPlacementFilter"
-            :items="placementFilterOptions"
-            value-key="value"
-            size="sm"
-            class="hidden lg:block w-56"
-          />
+            class="maan-form-input maan-filter-select hidden lg:block"
+            :aria-label="t.placements"
+          >
+            <option
+              v-for="option in placementFilterOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </option>
+          </select>
         </template>
         <template #right>
           <UFieldGroup>
@@ -171,11 +220,85 @@ onMounted(loadBlocks)
         class="mb-4"
       />
 
+      <!--
+        Active-filter strip — see posts/index.vue for the rationale.
+        Each chip is removable, plus a global Clear button.
+      -->
+      <div
+        v-if="hasActiveFilters"
+        class="mb-4 flex flex-wrap items-center gap-2"
+      >
+        <span class="text-xs font-semibold uppercase tracking-wider text-muted">
+          {{ t.activeFilters }}
+        </span>
+        <button
+          v-if="blocksSearch"
+          type="button"
+          class="maan-filter-chip"
+          @click="blocksSearch = ''"
+        >
+          <UIcon
+            name="i-lucide-search"
+            class="size-3"
+          />
+          <span>{{ blocksSearch }}</span>
+          <UIcon
+            name="i-lucide-x"
+            class="size-3"
+          />
+        </button>
+        <button
+          v-if="blocksTypeFilter !== 'all'"
+          type="button"
+          class="maan-filter-chip"
+          @click="blocksTypeFilter = 'all'"
+        >
+          <span>{{ typeChipLabel }}</span>
+          <UIcon
+            name="i-lucide-x"
+            class="size-3"
+          />
+        </button>
+        <button
+          v-if="blocksLocaleFilter !== 'all'"
+          type="button"
+          class="maan-filter-chip"
+          @click="blocksLocaleFilter = 'all'"
+        >
+          <span>{{ localeChipLabel }}</span>
+          <UIcon
+            name="i-lucide-x"
+            class="size-3"
+          />
+        </button>
+        <button
+          v-if="blocksPlacementFilter !== 'all'"
+          type="button"
+          class="maan-filter-chip"
+          @click="blocksPlacementFilter = 'all'"
+        >
+          <span>{{ placementChipLabel }}</span>
+          <UIcon
+            name="i-lucide-x"
+            class="size-3"
+          />
+        </button>
+        <UButton
+          color="neutral"
+          variant="ghost"
+          size="xs"
+          icon="i-lucide-x-circle"
+          @click="clearAllFilters"
+        >
+          {{ t.clearFilters }}
+        </UButton>
+      </div>
+
       <p
         v-if="!blocksError && filteredBlocks.length === 0"
         class="text-sm text-muted"
       >
-        {{ blocksSearch || blocksTypeFilter !== 'all' || blocksLocaleFilter !== 'all' || blocksPlacementFilter !== 'all'
+        {{ hasActiveFilters
           ? t.noMatchingFilters
           : t.noBlocksFound }}
       </p>

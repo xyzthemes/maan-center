@@ -27,7 +27,7 @@ concurrency:
 jobs:
   deploy:
     name: deploy to fly.io
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     # workflow_run fires on any conclusion (success/failure/cancelled). Only
     # deploy if CI was green. workflow_dispatch has no .workflow_run context,
     # so the inner OR keeps manual deploys working.

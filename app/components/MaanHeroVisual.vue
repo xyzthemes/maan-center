@@ -85,6 +85,8 @@ const captions = computed(() => props.locale === 'ar'
             src="/logo-transparent.png"
             alt=""
             class="size-32 object-contain sm:size-40"
+            width="160"
+            height="160"
             aria-hidden="true"
             decoding="async"
           >

@@ -18,6 +18,14 @@ const {
   savePage,
   deletePage
 } = usePageForm(loadPages)
+const dashToast = useDashboardToast()
+
+watch(saveSuccess, (msg) => {
+  if (msg) dashToast.saved(msg)
+})
+watch(saveError, (msg) => {
+  if (msg) dashToast.failed(msg)
+})
 
 const id = computed(() => String(route.params.id))
 const isNew = computed(() => id.value === 'new')
@@ -37,7 +45,10 @@ const onDelete = async () => {
 
   if (ok) {
     isDeleteOpen.value = false
+    dashToast.deleted()
     await navigateTo(backHref.value, { replace: true })
+  } else {
+    dashToast.deleteFailed()
   }
 }
 

@@ -75,9 +75,10 @@ const isAtDefault = computed(() => props.modelValue === props.defaultValue)
       <UButton
         v-if="!isAtDefault"
         icon="i-lucide-rotate-ccw"
-        size="xs"
+        size="sm"
         color="neutral"
         variant="ghost"
+        class="maan-tap-target"
         :aria-label="resetLabel || 'Reset'"
         :title="resetLabel || 'Reset'"
         @click="onReset"

@@ -299,6 +299,11 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 1px 0 rgba(15, 39, 65, .04), 0 18px 36px -22px rgba(15, 39, 65, .35);
 }
+/* Press feedback — quick snap back so cards feel responsive on tap. */
+.maan-card:active {
+  transform: translateY(0);
+  transition-duration: 80ms;
+}
 
 .maan-card--autism { border-top: 4px solid var(--maan-autism); }
 .maan-card--down   { border-top: 4px solid var(--maan-down); }
@@ -532,11 +537,15 @@ body {
   background: var(--maan-autism-soft);
   color: var(--maan-autism);
   border: 1px solid color-mix(in srgb, var(--maan-autism) 28%, transparent);
-  transition: background-color .12s, border-color .12s;
+  transition: background-color .12s, border-color .12s, transform .12s, opacity .12s;
   cursor: pointer;
 }
 .maan-filter-chip:hover {
   background: color-mix(in srgb, var(--maan-autism) 22%, var(--maan-surface));
+  opacity: .92;
+}
+.maan-filter-chip:active {
+  transform: scale(.96);
 }
 .maan-filter-chip:focus-visible {
   outline: 2px solid var(--maan-autism);
@@ -580,6 +589,14 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  border-radius: .5rem;
+  /* Padding pulls the focus ring slightly away from the heading text. */
+  padding: .1rem .15rem;
+  margin: -.1rem -.15rem;
+}
+.maan-faq-summary:focus-visible {
+  outline: 2px solid var(--maan-autism);
+  outline-offset: 2px;
 }
 .maan-faq-summary::-webkit-details-marker { display: none; }
 .maan-faq-summary::after {
@@ -587,8 +604,11 @@ body {
   font-weight: 600;
   color: var(--maan-autism);
   transition: transform .2s;
+  display: inline-block;
 }
-[open] > .maan-faq-summary::after { content: "−"; }
+/* Smooth rotation from "+" to "−" — visually a quarter turn that
+ * doubles as the open/close affordance. */
+[open] > .maan-faq-summary::after { content: "+"; transform: rotate(45deg); }
 .maan-faq-body { color: var(--maan-ink-muted); margin-top: .65rem; line-height: 1.85; font-size: .95rem; }
 
 /* ─── Form (refined for accessibility) ─── */

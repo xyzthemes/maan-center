@@ -17,6 +17,14 @@ const {
   newBlock,
   saveBlock
 } = useBlockForm(loadBlocks)
+const dashToast = useDashboardToast()
+
+watch(saveSuccess, (msg) => {
+  if (msg) dashToast.saved(msg)
+})
+watch(saveError, (msg) => {
+  if (msg) dashToast.failed(msg)
+})
 
 const id = computed(() => String(route.params.id))
 const isNew = computed(() => id.value === 'new')
@@ -58,12 +66,18 @@ const onSave = async () => {
 }
 
 const confirmingDelete = ref(false)
+const isDeleting = ref(false)
 const onDelete = async () => {
   if (!blockForm.id) return
+  isDeleting.value = true
   const ok = await deleteBlock(blockForm.id)
+  isDeleting.value = false
   if (ok) {
     confirmingDelete.value = false
+    dashToast.deleted()
     await navigateTo(backHref.value)
+  } else {
+    dashToast.deleteFailed()
   }
 }
 
@@ -143,12 +157,15 @@ watch(() => route.params.id, () => {
               <UButton
                 color="neutral"
                 variant="ghost"
+                :disabled="isDeleting"
                 @click="confirmingDelete = false"
               >
                 {{ t.cancel }}
               </UButton>
               <UButton
                 color="error"
+                icon="i-lucide-trash-2"
+                :loading="isDeleting"
                 @click="onDelete"
               >
                 {{ t.confirmDelete }}

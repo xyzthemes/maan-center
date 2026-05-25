@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DashboardBlock } from '~/composables/useDashboardBlocks'
+import { statusBadgeStyle, statusCardTopBorder } from '~/utils/status-badge'
 
 definePageMeta({
   alias: ['/ar/dashboard/blocks'],
@@ -7,7 +8,7 @@ definePageMeta({
 })
 
 const { t, isArabic } = useDashboardI18n()
-const { blocks, blocksError, loadBlocks } = useDashboardBlocks()
+const { blocks, blocksError, isLoading, loadBlocks } = useDashboardBlocks()
 const { statusOptions, statusLabel } = useBlockForm()
 const { placements: taxonomyPlacements, labelForPlacement } = useMaanTaxonomy()
 
@@ -268,35 +269,44 @@ onMounted(loadBlocks)
         </UButton>
       </div>
 
+      <div
+        v-if="isLoading && blocks.length === 0"
+        class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
+      >
+        <MaanSkeletonGrid :count="6" />
+      </div>
+
       <p
-        v-if="!blocksError && filteredBlocks.length === 0"
+        v-else-if="!blocksError && filteredBlocks.length === 0 && hasActiveFilters"
         class="text-sm text-muted"
       >
-        {{ hasActiveFilters
-          ? t.noMatchingFilters
-          : t.noBlocksFound }}
+        {{ t.noMatchingFilters }}
       </p>
 
-      <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <MaanEmptyState
+        v-else-if="!blocksError && blocks.length === 0"
+        icon="i-lucide-blocks"
+        :title="t.noBlocksYet"
+        :description="t.createFirstBlockHint"
+        :cta-label="t.newBlock"
+        :cta-to="newHref"
+      />
+
+      <div
+        v-else
+        class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
+      >
         <NuxtLink
           v-for="block in filteredBlocks"
           :key="block.id"
           :to="editHref(block)"
           class="maan-card block p-5 text-start hover:no-underline"
-          :style="block.status === 'published'
-            ? 'border-top: 4px solid var(--maan-down);'
-            : block.status === 'in_review'
-              ? 'border-top: 4px solid var(--maan-autism);'
-              : 'border-top: 4px solid var(--maan-cta);'"
+          :style="statusCardTopBorder(block.status)"
         >
           <div class="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-wider">
             <span
               class="rounded-full px-2 py-0.5"
-              :style="block.status === 'published'
-                ? 'background: color-mix(in srgb, var(--maan-down) 16%, transparent); color: var(--maan-down);'
-                : block.status === 'in_review'
-                  ? 'background: color-mix(in srgb, var(--maan-autism) 16%, transparent); color: var(--maan-autism);'
-                  : 'background: color-mix(in srgb, var(--maan-cta) 16%, transparent); color: var(--maan-cta);'"
+              :style="statusBadgeStyle(block.status)"
             >
               {{ statusLabel(block.status) }}
             </span>

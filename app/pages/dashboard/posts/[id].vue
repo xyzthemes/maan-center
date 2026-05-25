@@ -17,6 +17,17 @@ const {
   newPost,
   savePost
 } = usePostForm(loadPosts)
+const dashToast = useDashboardToast()
+
+// Fire a toast every time the save flow flips a flag. The inline
+// success/error panels in PostEditorForm remain — the toast is the
+// belt-and-suspenders global confirmation.
+watch(saveSuccess, (msg) => {
+  if (msg) dashToast.saved(msg)
+})
+watch(saveError, (msg) => {
+  if (msg) dashToast.failed(msg)
+})
 
 const id = computed(() => String(route.params.id))
 const isNew = computed(() => id.value === 'new')

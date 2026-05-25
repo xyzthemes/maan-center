@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DashboardPost } from '~/composables/usePosts'
+import { statusBadgeStyle, statusCardTopBorder } from '~/utils/status-badge'
 
 definePageMeta({
   alias: ['/ar/dashboard/posts'],
@@ -7,7 +8,7 @@ definePageMeta({
 })
 
 const { t, isArabic } = useDashboardI18n()
-const { posts, postsError, loadPosts } = usePosts()
+const { posts, postsError, isLoading, loadPosts } = usePosts()
 const { statusOptions, statusLabel } = usePostForm()
 const { categories: taxonomyCategories, placements: taxonomyPlacements } = useMaanTaxonomy()
 
@@ -76,7 +77,18 @@ const clearAllFilters = () => {
   postsSearch.value = ''
   postsCategoryFilter.value = 'all'
   postsPlacementFilter.value = 'all'
+  postsStatusFilter.value = 'all'
 }
+
+// `posts.length === 0 && !filterActive` is the genuine "create your
+// first post" state. The status filter defaults to 'all' so we don't
+// gate the empty-state UI on it here.
+const hasActiveFilter = computed(() =>
+  postsCategoryFilter.value !== 'all'
+  || postsPlacementFilter.value !== 'all'
+  || postsStatusFilter.value !== 'all'
+  || postsSearch.value !== ''
+)
 
 onMounted(loadPosts)
 </script>
@@ -225,34 +237,46 @@ onMounted(loadPosts)
         </UButton>
       </div>
 
+      <!-- Loading: skeleton grid until the first fetch resolves. -->
+      <div
+        v-if="isLoading && posts.length === 0"
+        class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
+      >
+        <MaanSkeletonGrid :count="6" />
+      </div>
+
+      <!-- Filtered-empty: keep terse copy + nudge to clear. -->
       <p
-        v-if="!postsError && filteredPosts.length === 0"
+        v-else-if="!postsError && filteredPosts.length === 0 && hasActiveFilter"
         class="text-sm text-muted"
       >
-        {{ postsCategoryFilter !== 'all' || postsPlacementFilter !== 'all' || postsSearch
-          ? t.noMatchingFilters
-          : t.noPostsFound }}
+        {{ t.noMatchingFilters }}
       </p>
 
-      <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <!-- Genuinely empty (no posts yet) + no filter active → CTA panel. -->
+      <MaanEmptyState
+        v-else-if="!postsError && posts.length === 0"
+        icon="i-lucide-file-pen-line"
+        :title="t.noPostsYet"
+        :description="t.createFirstPostHint"
+        :cta-label="t.newPost"
+        :cta-to="newHref"
+      />
+
+      <div
+        v-else
+        class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
+      >
         <NuxtLink
           v-for="post in filteredPosts"
           :key="post.id"
           :to="editHref(post)"
           class="maan-card block p-5 text-start hover:no-underline"
-          :style="post.status === 'published'
-            ? 'border-top: 4px solid var(--maan-down);'
-            : post.status === 'in_review'
-              ? 'border-top: 4px solid var(--maan-autism);'
-              : 'border-top: 4px solid var(--maan-cta);'"
+          :style="statusCardTopBorder(post.status)"
         >
           <span
             class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-            :style="post.status === 'published'
-              ? 'background: color-mix(in srgb, var(--maan-down) 16%, transparent); color: var(--maan-down);'
-              : post.status === 'in_review'
-                ? 'background: color-mix(in srgb, var(--maan-autism) 16%, transparent); color: var(--maan-autism);'
-                : 'background: color-mix(in srgb, var(--maan-cta) 16%, transparent); color: var(--maan-cta);'"
+            :style="statusBadgeStyle(post.status)"
           >
             {{ statusLabel(post.status) }}
           </span>

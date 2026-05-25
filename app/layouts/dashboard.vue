@@ -183,6 +183,8 @@ onMounted(() => {
             src="/logo-transparent.png"
             alt=""
             class="size-9 shrink-0 object-contain"
+            width="36"
+            height="36"
             aria-hidden="true"
           >
           <span

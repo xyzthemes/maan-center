@@ -237,6 +237,19 @@ const drawerT = computed(() => isArabic.value
 </script>
 
 <template>
+  <!--
+    Skip-to-main link. Hidden via sr-only until it receives keyboard
+    focus, then it materializes top-start (so RTL users see it in the
+    natural reading corner). Lets a keyboard user jump past the nav.
+  -->
+  <a
+    href="#maan-main"
+    class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:start-4 focus:z-[100] focus:rounded-lg focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2"
+    :style="{ background: 'var(--maan-autism)', color: 'white' }"
+  >
+    {{ isArabic ? 'انتقل إلى المحتوى الرئيسي' : 'Skip to main content' }}
+  </a>
+
   <UHeader
     class="maan-header"
     :ui="{
@@ -331,8 +344,15 @@ const drawerT = computed(() => isArabic.value
       automatically.
     -->
     <template #body>
+      <!--
+        100dvh (dynamic viewport) so iOS Safari accounts for the URL
+        bar shrinking. The min-h-0 + overflow-y-auto chain lets the nav
+        scroll inside the slideover instead of pushing CTAs off-screen
+        on short landscape phones.
+      -->
       <nav
-        class="grid gap-1"
+        class="grid gap-1 overflow-y-auto pb-6"
+        :style="{ maxHeight: 'calc(100dvh - 4rem)' }"
         :aria-label="drawerT.menu"
       >
         <template
@@ -397,7 +417,10 @@ const drawerT = computed(() => isArabic.value
     </template>
   </UHeader>
 
-  <UMain class="maan-main">
+  <UMain
+    id="maan-main"
+    class="maan-main"
+  >
     <slot />
   </UMain>
 
@@ -695,7 +718,7 @@ const drawerT = computed(() => isArabic.value
         >·</span>
         <NuxtLink
           :to="isArabic ? '/ar/dashboard/login' : '/dashboard/login'"
-          class="inline-flex items-center gap-1 text-xs font-medium opacity-70 transition hover:opacity-100"
+          class="maan-tap-target inline-flex items-center gap-1 px-2 text-xs font-medium opacity-70 transition hover:opacity-100"
           style="color: var(--maan-ink-muted);"
         >
           <UIcon
@@ -713,7 +736,7 @@ const drawerT = computed(() => isArabic.value
           href="https://xyz.dev"
           target="_blank"
           rel="noopener noreferrer"
-          class="maan-design-credit inline-flex items-center gap-2 text-sm font-medium transition hover:opacity-80"
+          class="maan-design-credit maan-tap-target inline-flex items-center gap-2 px-2 text-sm font-medium transition hover:opacity-80"
           style="color: var(--maan-ink-muted);"
           aria-label="Website developed by XYZ"
         >
@@ -721,6 +744,8 @@ const drawerT = computed(() => isArabic.value
           <img
             src="https://cdn.xyz.dev/assets/xyz/brand/logo/long/black.svg"
             alt="XYZ"
+            width="80"
+            height="24"
             class="h-6 w-auto"
           >
         </a>

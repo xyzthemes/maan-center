@@ -5,7 +5,7 @@ definePageMeta({
 })
 
 const { t, isArabic } = useDashboardI18n()
-const { submissions, submissionsError, loadSubmissions } = useSubmissions()
+const { submissions, submissionsError, isLoading, loadSubmissions } = useSubmissions()
 
 const formatTimestamp = (timestamp?: string) => {
   if (!timestamp) {
@@ -46,14 +46,24 @@ onMounted(loadSubmissions)
         class="mb-4"
       />
 
-      <p
-        v-if="!submissionsError && submissions.length === 0"
-        class="text-sm text-muted"
+      <div
+        v-if="isLoading && submissions.length === 0"
+        class="grid gap-5"
       >
-        {{ t.emptySubmissions }}
-      </p>
+        <MaanSkeletonGrid :count="3" />
+      </div>
 
-      <div class="grid gap-5">
+      <MaanEmptyState
+        v-else-if="!submissionsError && submissions.length === 0"
+        icon="i-lucide-inbox"
+        :title="t.noSubmissionsYet"
+        :description="t.submissionsEmptyHint"
+      />
+
+      <div
+        v-else
+        class="grid gap-5"
+      >
         <article
           v-for="submission in submissions"
           :key="submission.id"

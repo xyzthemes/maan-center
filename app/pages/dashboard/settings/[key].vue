@@ -10,6 +10,7 @@ definePageMeta({
 const route = useRoute()
 const { t, isArabic } = useDashboardI18n()
 const { isLoading, error, load, save } = useDashboardSettings()
+const dashToast = useDashboardToast()
 
 const key = computed(() => String(route.params.key))
 const backHref = computed(() => isArabic.value ? '/ar/dashboard/settings' : '/dashboard/settings')
@@ -78,14 +79,23 @@ const refresh = async () => {
   }
 }
 
+const localeLabel = (locale: string) => locale === 'en'
+  ? 'English'
+  : locale === 'ar'
+    ? 'العربية'
+    : ''
+
 const onSave = async (locale: string) => {
   savedFlash.value = ''
   const ok = await save(key.value, locale, values[locale])
   if (ok) {
     savedFlash.value = locale
+    dashToast.saved(localeLabel(locale))
     setTimeout(() => {
       savedFlash.value = ''
     }, 2500)
+  } else {
+    dashToast.failed(error.value)
   }
 }
 

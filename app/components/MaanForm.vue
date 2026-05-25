@@ -68,6 +68,17 @@ const inputType = (field: MaanFormField) => field.validation?.includes('email') 
   ? 'email'
   : 'text'
 
+// Build the `aria-describedby` value for text-style inputs, referencing
+// the help + error spans below them so screen-reader users hear both
+// the label and the supporting copy when they focus the field.
+const ariaDescribedFor = (field: MaanFormField, idPrefix = '') => {
+  const id = idPrefix ? `${idPrefix}-${field.id}` : field.id
+  const parts: string[] = []
+  if (field.help) parts.push(`${id}-help`)
+  if (fieldErrors[field.name]) parts.push(`${id}-error`)
+  return parts.length ? parts.join(' ') : undefined
+}
+
 watchEffect(() => {
   for (const field of form.value?.fields || []) {
     if (values[field.name] === undefined) {
@@ -190,6 +201,8 @@ const submit = async () => {
               :name="field.name"
               :placeholder="localizedField(field).placeholder"
               :required="field.required"
+              :aria-describedby="ariaDescribedFor(field)"
+              :aria-invalid="!!fieldErrors[field.name]"
               @input="values[field.name] = ($event.target as HTMLTextAreaElement).value"
             />
 
@@ -200,6 +213,8 @@ const submit = async () => {
               class="maan-form-input"
               :name="field.name"
               :required="field.required"
+              :aria-describedby="ariaDescribedFor(field)"
+              :aria-invalid="!!fieldErrors[field.name]"
               @change="values[field.name] = ($event.target as HTMLSelectElement).value"
             >
               <option value="">
@@ -275,17 +290,21 @@ const submit = async () => {
               :name="field.name"
               :placeholder="localizedField(field).placeholder"
               :required="field.required"
+              :aria-describedby="ariaDescribedFor(field)"
+              :aria-invalid="!!fieldErrors[field.name]"
               @input="values[field.name] = ($event.target as HTMLInputElement).value"
             >
 
             <p
               v-if="localizedField(field).help"
+              :id="`${field.id}-help`"
               class="mt-2 text-xs leading-5 text-muted"
             >
               {{ localizedField(field).help }}
             </p>
             <p
               v-if="fieldErrors[field.name]"
+              :id="`${field.id}-error`"
               class="mt-2 text-sm text-error"
             >
               {{ fieldErrors[field.name] }}
@@ -294,18 +313,32 @@ const submit = async () => {
         </div>
 
         <div class="md:col-span-6">
-          <UAlert
-            v-if="status !== 'idle'"
-            :color="status === 'success' ? 'success' : 'error'"
-            variant="soft"
-            :title="statusMessage"
-            class="mb-5"
-          />
+          <!--
+            role/aria-live wrapper so screen readers announce the
+            submission outcome the moment the alert appears, without
+            requiring focus to move. `polite` lets the announcement
+            queue behind other speech without interrupting.
+          -->
+          <div
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            <UAlert
+              v-if="status !== 'idle'"
+              :color="status === 'success' ? 'success' : 'error'"
+              variant="soft"
+              :title="statusMessage"
+              class="mb-5"
+            />
+          </div>
           <UButton
             type="submit"
             size="xl"
             icon="i-lucide-send"
             :loading="isSubmitting"
+            :disabled="isSubmitting"
+            :aria-busy="isSubmitting"
           >
             {{ isArabic && form.submitLabel === 'Send enquiry' ? 'إرسال الطلب' : form.submitLabel }}
           </UButton>
@@ -371,6 +404,8 @@ const submit = async () => {
             :name="field.name"
             :placeholder="localizedField(field).placeholder"
             :required="field.required"
+            :aria-describedby="ariaDescribedFor(field, 'compact')"
+            :aria-invalid="!!fieldErrors[field.name]"
             @input="values[field.name] = ($event.target as HTMLTextAreaElement).value"
           />
 
@@ -381,6 +416,8 @@ const submit = async () => {
             class="maan-form-input"
             :name="field.name"
             :required="field.required"
+            :aria-describedby="ariaDescribedFor(field, 'compact')"
+            :aria-invalid="!!fieldErrors[field.name]"
             @change="values[field.name] = ($event.target as HTMLSelectElement).value"
           >
             <option value="">
@@ -456,17 +493,21 @@ const submit = async () => {
             :name="field.name"
             :placeholder="localizedField(field).placeholder"
             :required="field.required"
+            :aria-describedby="ariaDescribedFor(field, 'compact')"
+            :aria-invalid="!!fieldErrors[field.name]"
             @input="values[field.name] = ($event.target as HTMLInputElement).value"
           >
 
           <p
             v-if="localizedField(field).help"
+            :id="`compact-${field.id}-help`"
             class="mt-2 text-xs leading-5 text-muted"
           >
             {{ localizedField(field).help }}
           </p>
           <p
             v-if="fieldErrors[field.name]"
+            :id="`compact-${field.id}-error`"
             class="mt-2 text-sm text-error"
           >
             {{ fieldErrors[field.name] }}
@@ -475,18 +516,26 @@ const submit = async () => {
       </div>
 
       <div class="md:col-span-6">
-        <UAlert
-          v-if="status !== 'idle'"
-          :color="status === 'success' ? 'success' : 'error'"
-          variant="soft"
-          :title="statusMessage"
-          class="mb-5"
-        />
+        <div
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <UAlert
+            v-if="status !== 'idle'"
+            :color="status === 'success' ? 'success' : 'error'"
+            variant="soft"
+            :title="statusMessage"
+            class="mb-5"
+          />
+        </div>
         <UButton
           type="submit"
           size="xl"
           icon="i-lucide-send"
           :loading="isSubmitting"
+          :disabled="isSubmitting"
+          :aria-busy="isSubmitting"
         >
           {{ isArabic && form.submitLabel === 'Send enquiry' ? 'إرسال الطلب' : form.submitLabel }}
         </UButton>

@@ -32,9 +32,12 @@ RUN pnpm db:generate
 ENV BETTER_AUTH_SECRET=build-time-placeholder-overridden-at-runtime-by-fly-secrets
 ENV BETTER_AUTH_URL=https://placeholder.invalid
 # Nitro's server build (Rollup + Vite + tree-shaking the entire Nuxt+Prisma+
-# better-auth surface) blows past Node's default 2 GB heap. 4 GB clears it
-# comfortably; Fly's build machines have plenty.
-ENV NODE_OPTIONS=--max-old-space-size=4096
+# better-auth surface) blows past Node's default 2 GB heap. We've watched it
+# creep up as the codebase grew (4 GB used to be comfortable, then OOM'd at
+# the redesign merge that added the CMS + forms + theme + staff layers).
+# 6 GB gives Nitro room to grow before the next time. Fly's default remote
+# builder has ~8 GB so this still fits.
+ENV NODE_OPTIONS=--max-old-space-size=6144
 RUN pnpm build
 
 FROM base AS runner

@@ -52,6 +52,7 @@ export default defineNuxtConfig({
     '/dashboard/posts/**': { auth: { user: { role: 'admin' } } },
     '/dashboard/pages/**': { auth: { user: { role: 'admin' } } },
     '/dashboard/blocks/**': { auth: { user: { role: 'admin' } } },
+    '/dashboard/forms/**': { auth: { user: { role: 'admin' } } },
     '/dashboard/settings/**': { auth: { user: { role: 'admin' } } },
     '/dashboard/submissions/**': { auth: { user: { role: 'admin' } } },
     '/ar/dashboard': { auth: { user: { role: 'admin' } } },
@@ -59,6 +60,7 @@ export default defineNuxtConfig({
     '/ar/dashboard/posts/**': { auth: { user: { role: 'admin' } } },
     '/ar/dashboard/pages/**': { auth: { user: { role: 'admin' } } },
     '/ar/dashboard/blocks/**': { auth: { user: { role: 'admin' } } },
+    '/ar/dashboard/forms/**': { auth: { user: { role: 'admin' } } },
     '/ar/dashboard/settings/**': { auth: { user: { role: 'admin' } } },
     '/ar/dashboard/submissions/**': { auth: { user: { role: 'admin' } } },
 

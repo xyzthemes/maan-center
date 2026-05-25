@@ -16,6 +16,16 @@ const postsSearch = ref('')
 const postsStatusFilter = ref<'all' | 'draft' | 'in_review' | 'published'>('all')
 const postsCategoryFilter = ref<string>('all')
 const postsPlacementFilter = ref<string>('all')
+const postsLocaleFilter = ref<'all' | 'en' | 'ar'>('all')
+
+// Mirrors the public-side detection in /api/public/posts so the
+// dashboard filter labels a post the same way the site does. The
+// Post model has no `locale` column today — adding one would be a
+// schema change; this heuristic is enough for triage.
+const inferLocale = (post: DashboardPost): 'en' | 'ar' =>
+  (post.slug?.startsWith('ar-') || /[؀-ۿ]/.test(post.title || ''))
+    ? 'ar'
+    : 'en'
 
 const lang = computed<'en' | 'ar'>(() => isArabic.value ? 'ar' : 'en')
 
@@ -28,11 +38,18 @@ const placementFilterOptions = computed(() => [
   ...taxonomyPlacements.map(p => ({ value: p.id, label: p.label[lang.value] }))
 ])
 
+const localeFilterOptions = computed(() => [
+  { value: 'all', label: t.value.filterByLocale },
+  { value: 'en', label: 'English' },
+  { value: 'ar', label: 'العربية' }
+])
+
 const filteredPosts = computed(() => {
   const q = postsSearch.value.trim().toLowerCase()
   const status = postsStatusFilter.value
   const category = postsCategoryFilter.value
   const placement = postsPlacementFilter.value
+  const locale = postsLocaleFilter.value
 
   return posts.value.filter((post) => {
     if (status !== 'all' && (post.status || 'draft') !== status) {
@@ -42,6 +59,9 @@ const filteredPosts = computed(() => {
       return false
     }
     if (placement !== 'all' && !(post.placements || []).includes(placement)) {
+      return false
+    }
+    if (locale !== 'all' && inferLocale(post) !== locale) {
       return false
     }
 
@@ -68,6 +88,10 @@ const categoryChipLabel = computed(() => {
   const opt = categoryFilterOptions.value.find(o => o.value === postsCategoryFilter.value)
   return opt?.label ?? postsCategoryFilter.value
 })
+const localeChipLabel = computed(() => {
+  const opt = localeFilterOptions.value.find(o => o.value === postsLocaleFilter.value)
+  return opt?.label ?? postsLocaleFilter.value
+})
 const placementChipLabel = computed(() => {
   const opt = placementFilterOptions.value.find(o => o.value === postsPlacementFilter.value)
   return opt?.label ?? postsPlacementFilter.value
@@ -78,6 +102,7 @@ const clearAllFilters = () => {
   postsCategoryFilter.value = 'all'
   postsPlacementFilter.value = 'all'
   postsStatusFilter.value = 'all'
+  postsLocaleFilter.value = 'all'
 }
 
 // `posts.length === 0 && !filterActive` is the genuine "create your
@@ -87,6 +112,7 @@ const hasActiveFilter = computed(() =>
   postsCategoryFilter.value !== 'all'
   || postsPlacementFilter.value !== 'all'
   || postsStatusFilter.value !== 'all'
+  || postsLocaleFilter.value !== 'all'
   || postsSearch.value !== ''
 )
 
@@ -136,13 +162,19 @@ onMounted(loadPosts)
             v-model="postsCategoryFilter"
             :items="categoryFilterOptions"
             size="sm"
-            class="hidden sm:flex w-44"
+            class="hidden sm:flex w-full"
           />
           <USelect
             v-model="postsPlacementFilter"
             :items="placementFilterOptions"
             size="sm"
-            class="hidden md:flex w-56"
+            class="hidden md:flex w-full"
+          />
+          <USelect
+            v-model="postsLocaleFilter"
+            :items="localeFilterOptions"
+            size="sm"
+            class="hidden lg:flex w-full"
           />
         </template>
         <template #right>
@@ -180,7 +212,7 @@ onMounted(loadPosts)
         chip appears but the list doesn't change, the filter logic is.
       -->
       <div
-        v-if="postsCategoryFilter !== 'all' || postsPlacementFilter !== 'all' || postsSearch"
+        v-if="hasActiveFilter"
         class="mb-4 flex flex-wrap items-center gap-2"
       >
         <span class="text-xs font-semibold uppercase tracking-wider text-muted">
@@ -221,6 +253,18 @@ onMounted(loadPosts)
           @click="postsPlacementFilter = 'all'"
         >
           <span>{{ placementChipLabel }}</span>
+          <UIcon
+            name="i-lucide-x"
+            class="size-3"
+          />
+        </button>
+        <button
+          v-if="postsLocaleFilter !== 'all'"
+          type="button"
+          class="maan-filter-chip"
+          @click="postsLocaleFilter = 'all'"
+        >
+          <span>{{ localeChipLabel }}</span>
           <UIcon
             name="i-lucide-x"
             class="size-3"

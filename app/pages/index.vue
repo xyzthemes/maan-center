@@ -17,7 +17,7 @@ const { data: pageSeo } = await useAsyncData<MaanSeo>('maan-page-seo-home', () =
   title: 'Maan Special Education Center | Bahrain',
   description: 'Maan Special Education Center in Bahrain — assessment, individualized education plans, and integrated therapy for autism spectrum, Down syndrome, and learning difficulties.'
 }))
-const { data: resourcesForm } = await useAsyncData<MaanFormBlock | undefined>('maan-home-resources-form', () => getFormBlockById('1419faec-e263-431c-bd5f-a57f394c39f6'))
+const { data: resourcesForm } = await useAsyncData<MaanFormBlock | undefined>('maan-home-resources-form', () => getFormBlockById('1419faec-e263-431c-bd5f-a57f394c39f6', 'en'))
 
 // ────────────────────────────────────────────────────────────────────
 const programs = [

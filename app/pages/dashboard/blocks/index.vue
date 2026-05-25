@@ -153,19 +153,19 @@ onMounted(loadBlocks)
             v-model="blocksTypeFilter"
             :items="typeFilterOptions"
             size="sm"
-            class="hidden sm:flex w-44"
+            class="hidden sm:flex w-full"
           />
           <USelect
             v-model="blocksLocaleFilter"
             :items="localeFilterOptions"
             size="sm"
-            class="hidden md:flex w-32"
+            class="hidden md:flex w-full"
           />
           <USelect
             v-model="blocksPlacementFilter"
             :items="placementFilterOptions"
             size="sm"
-            class="hidden lg:flex w-56"
+            class="hidden lg:flex w-full"
           />
         </template>
         <template #right>

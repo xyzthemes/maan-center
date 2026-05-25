@@ -22,47 +22,16 @@ const fieldWidthClass = (width: MaanFormField['width']) => ({
   33: 'md:col-span-2'
 })[width] || 'md:col-span-6'
 
-const localizedField = (field: MaanFormField) => {
-  if (!isArabic.value) {
-    return {
-      label: field.label,
-      placeholder: field.placeholder,
-      help: field.help,
-      choices: field.choices
-    }
-  }
-
-  const labels: Record<string, string> = {
-    'first-name': 'الاسم الأول',
-    'last-name': 'اسم العائلة',
-    'email': 'البريد الإلكتروني',
-    'department': 'ما نوع الدعم الذي تود السؤال عنه؟',
-    'comments': 'كيف يمكننا مساعدتك؟'
-  }
-  const placeholders: Record<string, string> = {
-    'first-name': 'الاسم الأول',
-    'last-name': 'اسم العائلة',
-    'email': 'name@example.com',
-    'comments': 'شارك عمر الطفل واحتياجاته والخطوة التي تود السؤال عنها.'
-  }
-  const choiceText: Record<string, string> = {
-    'assessment': 'التقييم',
-    'individualized-education': 'الخطة التعليمية الفردية',
-    'speech-communication': 'النطق والتواصل',
-    'occupational-therapy': 'العلاج الوظيفي',
-    'family-guidance': 'إرشاد الأسرة'
-  }
-
-  return {
-    label: labels[field.name] || field.label,
-    placeholder: placeholders[field.name] || field.placeholder,
-    help: field.help,
-    choices: field.choices.map(choice => ({
-      ...choice,
-      text: choiceText[choice.value] || choice.text
-    }))
-  }
-}
+// Bilingual labels are resolved at the API boundary (useMaanForms.ts
+// passes `locale` into the public endpoint, which returns labels /
+// placeholders / help / choices already flattened to that locale). The
+// component renders them straight without further mapping.
+const localizedField = (field: MaanFormField) => ({
+  label: field.label,
+  placeholder: field.placeholder,
+  help: field.help,
+  choices: field.choices
+})
 
 const inputType = (field: MaanFormField) => field.validation?.includes('email') || field.name === 'email'
   ? 'email'
@@ -110,7 +79,10 @@ const submit = async () => {
       body: {
         formId: form.value.id,
         values,
-        website: website.value
+        website: website.value,
+        // Tells the server which side of every bilingual envelope to
+        // snapshot into FormSubmissionValue.label.
+        locale: isArabic.value ? 'ar' : 'en'
       }
     })
 

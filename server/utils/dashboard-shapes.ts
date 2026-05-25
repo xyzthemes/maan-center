@@ -4,7 +4,7 @@
 // Phase 7 cleanup can rename these to camelCase (post/page interfaces) and
 // drop this layer.
 
-import type { Page, Post, FormSubmission, FormSubmissionValue, Form, ContentBlock } from './db/types'
+import type { Page, Post, FormSubmission, FormSubmissionValue, Form, FormField, ContentBlock } from './db/types'
 
 export type DashboardPostShape = {
   id: string
@@ -96,7 +96,14 @@ export const toDashboardBlock = (block: ContentBlock): DashboardBlockShape => ({
 export type DashboardSubmissionShape = {
   id: string
   timestamp: string
-  form: { id: string, title: string } | undefined
+  /** Locale the submitter used when filling the form. */
+  locale: string
+  /**
+   * Bilingual title passed through as-is; the dashboard resolves to one
+   * side via `pickLocale()` so the badge tracks the admin's locale, not
+   * the submitter's.
+   */
+  form: { id: string, slug: string, title: unknown } | undefined
   values: Array<{ id: string, name: string, label: string, value: string }>
 }
 
@@ -108,13 +115,96 @@ export const toDashboardSubmission = (
 ): DashboardSubmissionShape => ({
   id: submission.id,
   timestamp: submission.timestamp.toISOString(),
-  form: submission.form ? { id: submission.form.id, title: submission.form.title } : undefined,
+  locale: submission.locale,
+  form: submission.form
+    ? { id: submission.form.id, slug: submission.form.slug, title: submission.form.title }
+    : undefined,
   values: submission.values.map(v => ({
     id: v.id,
     name: v.name,
     label: v.label,
     value: v.value ?? ''
   }))
+})
+
+// ── Dashboard Form shape ─────────────────────────────────────────────────
+//
+// The form CRUD endpoints pass envelopes through unchanged (no
+// pickLocale) — the dashboard editor needs both sides to render the
+// bilingual input pairs.
+
+export type DashboardFormListShape = {
+  id: string
+  slug: string
+  title: unknown
+  isActive: boolean
+  fieldCount: number
+  submissionCount: number
+  updatedAt: string
+}
+
+export const toDashboardFormListRow = (
+  form: Form & { _count?: { fields: number, submissions: number } }
+): DashboardFormListShape => ({
+  id: form.id,
+  slug: form.slug,
+  title: form.title,
+  isActive: form.isActive,
+  fieldCount: form._count?.fields ?? 0,
+  submissionCount: form._count?.submissions ?? 0,
+  updatedAt: form.updatedAt.toISOString()
+})
+
+export type DashboardFormShape = {
+  id: string
+  slug: string
+  title: unknown
+  isActive: boolean
+  submitLabel: unknown
+  onSuccess: string
+  successMessage: unknown
+  successRedirectUrl: string | null
+  fields: Array<{
+    id: string
+    name: string
+    type: string
+    label: unknown
+    placeholder: unknown
+    help: unknown
+    width: string | null
+    validation: string | null
+    choices: unknown
+    required: boolean
+    sort: number | null
+  }>
+}
+
+export const toDashboardForm = (
+  form: Form & { fields: FormField[] }
+): DashboardFormShape => ({
+  id: form.id,
+  slug: form.slug,
+  title: form.title,
+  isActive: form.isActive,
+  submitLabel: form.submitLabel,
+  onSuccess: form.onSuccess,
+  successMessage: form.successMessage,
+  successRedirectUrl: form.successRedirectUrl,
+  fields: [...form.fields]
+    .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
+    .map(f => ({
+      id: f.id,
+      name: f.name,
+      type: f.type,
+      label: f.label,
+      placeholder: f.placeholder,
+      help: f.help,
+      width: f.width,
+      validation: f.validation,
+      choices: f.choices,
+      required: f.required,
+      sort: f.sort
+    }))
 })
 
 // Normalizers used by the create/patch endpoints. The dashboard editors send

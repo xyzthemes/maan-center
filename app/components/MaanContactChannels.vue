@@ -30,7 +30,8 @@ const t = computed(() => props.locale === 'ar'
       scientificHint: 'مقالات وأدلة متخصصة',
       programsLabel: 'برامجنا',
       programsHint: 'توحد · داون · صعوبات التعلم',
-      socialPending: 'سيتم إضافة الحسابات الرسمية للمركز هنا فور توفرها.'
+      connectLabel: 'كل قنواتنا',
+      connectHint: 'إنستغرام · فيسبوك · يوتيوب · لينكدإن'
     }
   : {
       whatsappLabel: 'WhatsApp chat',
@@ -43,7 +44,8 @@ const t = computed(() => props.locale === 'ar'
       scientificHint: 'In-depth articles & guides',
       programsLabel: 'Our programs',
       programsHint: 'Autism · Down · Learning Difficulties',
-      socialPending: 'Official social profiles will appear here once confirmed.'
+      connectLabel: 'All our channels',
+      connectHint: 'Instagram · Facebook · YouTube · LinkedIn'
     })
 
 const isAr = computed(() => props.locale === 'ar')
@@ -89,6 +91,14 @@ const channels = computed<Channel[]>(() => [
     href: isAr.value ? '/ar#programs' : '/#programs',
     icon: 'i-lucide-sparkles',
     variant: 'social'
+  },
+  {
+    id: 'connect',
+    label: t.value.connectLabel,
+    hint: t.value.connectHint,
+    href: isAr.value ? '/ar/connect' : '/connect',
+    icon: 'i-lucide-share-2',
+    variant: 'mail'
   }
 ])
 
@@ -201,14 +211,5 @@ const iconColor = (variant: Channel['variant']) => {
         </NuxtLink>
       </template>
     </div>
-
-    <!-- TODO_IMPLEMENTATION_REFERENCES: official social links (Instagram,
-         Facebook, YouTube, etc.) — do not invent. -->
-    <p
-      class="mt-4 text-center text-xs"
-      style="color: var(--maan-ink-muted);"
-    >
-      {{ t.socialPending }}
-    </p>
   </div>
 </template>

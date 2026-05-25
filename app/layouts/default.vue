@@ -40,6 +40,10 @@ const alternatePaths = computed(() => {
     return { en: '/about-us', ar: '/ar/about-us' }
   }
 
+  if (path === '/connect' || path === '/ar/connect') {
+    return { en: '/connect', ar: '/ar/connect' }
+  }
+
   if (path.startsWith('/blog/')) {
     const slug = path.split('/').pop()
 
@@ -425,6 +429,15 @@ const drawerT = computed(() => isArabic.value
                   style="color: var(--maan-ink-muted);"
                 >
                   {{ isArabic ? 'تواصل معنا' : 'Contact Us' }}
+                </NuxtLink>
+              </li>
+              <li>
+                <NuxtLink
+                  :to="isArabic ? '/ar/connect' : '/connect'"
+                  class="hover:underline"
+                  style="color: var(--maan-ink-muted);"
+                >
+                  {{ isArabic ? 'كل قنواتنا' : 'All our channels' }}
                 </NuxtLink>
               </li>
               <li>

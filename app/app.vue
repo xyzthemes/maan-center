@@ -49,6 +49,10 @@ const alternatePaths = computed(() => {
     return { en: '/about-us', ar: '/ar/about-us' }
   }
 
+  if (path === '/connect' || path === '/ar/connect') {
+    return { en: '/connect', ar: '/ar/connect' }
+  }
+
   if (path.startsWith('/blog/')) {
     const slug = path.split('/').pop()
 
@@ -163,9 +167,19 @@ useSchemaOrg([
         'closes': '13:00'
       }
       // Friday is closed — Schema.org convention is to omit it entirely.
+    ],
+    // Official Maan Center social profiles. Helps Google associate this
+    // business with its social graph. Dr. Osama's personal accounts and
+    // topic-specific outreach accounts are intentionally NOT included here
+    // (they're presented on /connect as separate entities).
+    sameAs: [
+      'https://www.instagram.com/maancenter/',
+      'https://www.facebook.com/maancenter.bh',
+      'https://x.com/maan_center_bh',
+      'https://www.linkedin.com/company/maancenter',
+      'https://www.pinterest.com/MaanCenter'
     ]
-    // TODO_IMPLEMENTATION_REFERENCES: geo (latitude, longitude),
-    // sameAs[] for social profiles.
+    // TODO_IMPLEMENTATION_REFERENCES: geo (latitude, longitude).
   }),
   // Educational organization profile sits alongside LocalBusiness — Google
   // happily indexes both for a service-oriented center.

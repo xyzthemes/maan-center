@@ -102,6 +102,45 @@ const testimonials = [
   }
 ]
 
+// Layer 2 — pull testimonial/FAQ/stat blocks from the DB if any are
+// published; otherwise fall back to the typed arrays above. Each
+// useAsyncData key is locale + type + placement-scoped so the SSR cache
+// buckets don't collide with the Arabic homepage.
+const { byType: getBlocks } = useMaanBlocks()
+
+const { data: testimonialBlocks } = await useAsyncData(
+  'home-testimonials-en',
+  () => getBlocks<{ quote: string, attribution: string }>('testimonial', 'en', { placement: 'homepage-featured', limit: 6 }),
+  { default: () => [] }
+)
+const resolvedTestimonials = computed(() =>
+  testimonialBlocks.value.length
+    ? testimonialBlocks.value.map(b => ({ quote: b.payload.quote, attribution: b.payload.attribution }))
+    : testimonials
+)
+
+const { data: faqBlocks } = await useAsyncData(
+  'home-faq-en',
+  () => getBlocks<{ q: string, a: string }>('faq_item', 'en', { placement: 'homepage-featured', limit: 10 }),
+  { default: () => [] }
+)
+const resolvedFaqs = computed(() =>
+  faqBlocks.value.length
+    ? faqBlocks.value.map(b => ({ q: b.payload.q, a: b.payload.a }))
+    : faqs
+)
+
+const { data: statBlocks } = await useAsyncData(
+  'home-stats-en',
+  () => getBlocks<{ value: string, label: string }>('stat_tile', 'en', { placement: 'homepage-featured', limit: 8 }),
+  { default: () => [] }
+)
+const resolvedStats = computed(() =>
+  statBlocks.value.length
+    ? statBlocks.value.map(b => ({ value: b.payload.value, label: b.payload.label }))
+    : stats
+)
+
 const resolvedSeo = useMaanSeo({
   seo: pageSeo.value || undefined,
   fallback: {
@@ -220,7 +259,7 @@ useSchemaOrg([
       style="border-color: var(--maan-line);"
     >
       <UContainer class="py-10 sm:py-14">
-        <MaanStats :items="stats" />
+        <MaanStats :items="resolvedStats" />
         <p
           class="mt-4 text-center text-xs"
           style="color: var(--maan-ink-muted);"
@@ -532,7 +571,7 @@ useSchemaOrg([
           </p>
         </div>
         <div class="mt-10">
-          <MaanTestimonials :items="testimonials" />
+          <MaanTestimonials :items="resolvedTestimonials" />
         </div>
       </UContainer>
     </section>
@@ -622,7 +661,7 @@ useSchemaOrg([
             Couldn’t find your answer? Reach out on WhatsApp — we’ll reply within one working day.
           </p>
         </div>
-        <MaanFaq :items="faqs" />
+        <MaanFaq :items="resolvedFaqs" />
       </UContainer>
     </section>
 

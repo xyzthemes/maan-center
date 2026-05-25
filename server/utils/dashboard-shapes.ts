@@ -4,7 +4,7 @@
 // Phase 7 cleanup can rename these to camelCase (post/page interfaces) and
 // drop this layer.
 
-import type { Page, Post, FormSubmission, FormSubmissionValue, Form } from './db/types'
+import type { Page, Post, FormSubmission, FormSubmissionValue, Form, ContentBlock } from './db/types'
 
 export type DashboardPostShape = {
   id: string
@@ -65,6 +65,32 @@ export const toDashboardPage = (page: Page): DashboardPageShape => ({
   date_updated: page.updatedAt.toISOString(),
   sort: page.sort,
   seo: page.seo
+})
+
+export type DashboardBlockShape = {
+  id: string
+  type: string
+  locale: string
+  status: string
+  payload: unknown
+  placements: string[]
+  sort: number | null
+  published_at: string | null
+  date_created: string
+  date_updated: string
+}
+
+export const toDashboardBlock = (block: ContentBlock): DashboardBlockShape => ({
+  id: block.id,
+  type: block.type,
+  locale: block.locale,
+  status: block.status,
+  payload: block.payload,
+  placements: block.placements ?? [],
+  sort: block.sort,
+  published_at: block.publishedAt?.toISOString() ?? null,
+  date_created: block.createdAt.toISOString(),
+  date_updated: block.updatedAt.toISOString()
 })
 
 export type DashboardSubmissionShape = {

@@ -66,3 +66,42 @@ model Page {
 
   @@index([status, sort])
 }
+
+// Layer 2 — Typed reusable content blocks that replace hardcoded
+// structural arrays (testimonials, FAQ entries, stat tiles, team
+// members, service cards). Each row owns a `type` discriminator and a
+// JSON `payload` whose shape matches the schemas defined in
+// `server/utils/content-block-schemas.ts`. The block is presented on
+// any surface whose id appears in `placements[]`; admin UI maps
+// placements onto the same taxonomy as Layer-1 Post placements where
+// it makes sense (homepage-featured, autism-program-related, etc.).
+enum ContentBlockType {
+  testimonial
+  faq_item
+  stat_tile
+  team_member
+  service_card
+}
+
+model ContentBlock {
+  id String @id @default(uuid(7))
+
+  type   ContentBlockType
+  // 'en' | 'ar' | '*' (locale-agnostic — used by team_member when the
+  // payload itself carries both languages, etc.)
+  locale String
+
+  // Type-specific fields; see server/utils/content-block-schemas.ts.
+  payload Json
+
+  placements String[]      @default([])
+  status     ContentStatus @default(draft)
+  sort       Int?
+
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([type, status, locale])
+  @@index([placements], type: Gin)
+}

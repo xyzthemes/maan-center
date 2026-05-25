@@ -122,6 +122,44 @@ const testimonials = [
   }
 ]
 
+// Layer 2 — DB-driven testimonials/FAQ/stats with the typed arrays
+// above as a graceful fallback when no blocks are published. See the EN
+// homepage for the same pattern + rationale.
+const { byType: getBlocks } = useMaanBlocks()
+
+const { data: testimonialBlocks } = await useAsyncData(
+  'home-testimonials-ar',
+  () => getBlocks<{ quote: string, attribution: string }>('testimonial', 'ar', { placement: 'homepage-featured', limit: 6 }),
+  { default: () => [] }
+)
+const resolvedTestimonials = computed(() =>
+  testimonialBlocks.value.length
+    ? testimonialBlocks.value.map(b => ({ quote: b.payload.quote, attribution: b.payload.attribution }))
+    : testimonials
+)
+
+const { data: faqBlocks } = await useAsyncData(
+  'home-faq-ar',
+  () => getBlocks<{ q: string, a: string }>('faq_item', 'ar', { placement: 'homepage-featured', limit: 10 }),
+  { default: () => [] }
+)
+const resolvedFaqs = computed(() =>
+  faqBlocks.value.length
+    ? faqBlocks.value.map(b => ({ q: b.payload.q, a: b.payload.a }))
+    : faqs
+)
+
+const { data: statBlocks } = await useAsyncData(
+  'home-stats-ar',
+  () => getBlocks<{ value: string, label: string }>('stat_tile', 'ar', { placement: 'homepage-featured', limit: 8 }),
+  { default: () => [] }
+)
+const resolvedStats = computed(() =>
+  statBlocks.value.length
+    ? statBlocks.value.map(b => ({ value: b.payload.value, label: b.payload.label }))
+    : stats
+)
+
 const resolvedSeo = useMaanSeo({
   seo: pageSeo.value || undefined,
   fallback: {
@@ -240,7 +278,7 @@ useSchemaOrg([
       style="border-color: var(--maan-line);"
     >
       <UContainer class="py-10 sm:py-14">
-        <MaanStats :items="stats" />
+        <MaanStats :items="resolvedStats" />
         <p
           class="mt-4 text-center text-xs"
           style="color: var(--maan-ink-muted);"
@@ -552,7 +590,7 @@ useSchemaOrg([
           </p>
         </div>
         <div class="mt-10">
-          <MaanTestimonials :items="testimonials" />
+          <MaanTestimonials :items="resolvedTestimonials" />
         </div>
       </UContainer>
     </section>
@@ -643,7 +681,7 @@ useSchemaOrg([
             لم تجد إجابتك؟ تواصلوا معنا مباشرة عبر واتساب وسنرد عليكم في يوم العمل.
           </p>
         </div>
-        <MaanFaq :items="faqs" />
+        <MaanFaq :items="resolvedFaqs" />
       </UContainer>
     </section>
 

@@ -31,6 +31,15 @@ const { data: posts } = await useAsyncData<MaanPost[]>(
   { default: () => [] }
 )
 
+// Layer 2 — admin-added FAQ blocks appended to structural FAQ.
+const { byType: getBlocks } = useMaanBlocks()
+const { data: faqBlocks } = await useAsyncData(
+  `program-faqs-${programId.value}-ar`,
+  () => getBlocks<{ q: string, a: string }>('faq_item', 'ar', { placement: relatedPlacement.value, limit: 10 }),
+  { default: () => [] }
+)
+const extraFaqs = computed(() => faqBlocks.value.map(b => ({ q: b.payload.q, a: b.payload.a })))
+
 const { data: pageSeo } = await useAsyncData<MaanSeo>(
   `program-page-seo-${programId.value}-ar`,
   () => getPageSeo(`/ar/programs/${programId.value}`, {
@@ -82,5 +91,6 @@ useSchemaOrg([
     :program="program"
     locale="ar"
     :posts="posts ?? []"
+    :extra-faqs="extraFaqs"
   />
 </template>

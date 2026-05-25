@@ -195,22 +195,6 @@ onMounted(loadBlocks)
       />
 
       <!--
-        TEMPORARY DEBUG STRIP — same diagnostic as posts/index.vue.
-        Lets us see live v-model + filter behaviour without a browser
-        console. Remove after the filter regression is fully resolved.
-      -->
-      <div
-        class="mb-4 rounded-md border border-dashed p-3 text-[11px] font-mono leading-relaxed"
-        style="border-color: var(--maan-line); color: var(--maan-ink-muted);"
-      >
-        <div><b>filter values:</b> status={{ JSON.stringify(blocksStatusFilter) }} · type={{ JSON.stringify(blocksTypeFilter) }} · locale={{ JSON.stringify(blocksLocaleFilter) }} · placement={{ JSON.stringify(blocksPlacementFilter) }} · search={{ JSON.stringify(blocksSearch) }}</div>
-        <div><b>counts:</b> loaded={{ blocks.length }} · filtered={{ filteredBlocks.length }}</div>
-        <div v-if="blocks.length">
-          <b>first loaded block:</b> type={{ blocks[0]?.type }} · locale={{ blocks[0]?.locale }} · status={{ blocks[0]?.status }} · placements={{ JSON.stringify(blocks[0]?.placements) }}
-        </div>
-      </div>
-
-      <!--
         Active-filter strip — see posts/index.vue for the rationale.
         Each chip is removable, plus a global Clear button.
       -->

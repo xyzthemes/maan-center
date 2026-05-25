@@ -161,30 +161,6 @@ onMounted(loadPosts)
       />
 
       <!--
-        TEMPORARY DEBUG STRIP — investigating filter behavior. Remove
-        after we've confirmed both v-model and filter logic are
-        firing correctly.
-
-        If the user picks "Family Support" in the category dropdown:
-        • category value should change from 'all' → 'family-support'
-        • first matching post's categories array should contain 'family-support'
-        • filtered should be > 0
-        If filtered=0 while loaded>0 and a category is selected, the
-        data doesn't match — either v-model emits the wrong shape, or
-        the loaded posts lack the categories field.
-      -->
-      <div
-        class="mb-4 rounded-md border border-dashed p-3 text-[11px] font-mono leading-relaxed"
-        style="border-color: var(--maan-line); color: var(--maan-ink-muted);"
-      >
-        <div><b>filter values:</b> status={{ JSON.stringify(postsStatusFilter) }} · category={{ JSON.stringify(postsCategoryFilter) }} · placement={{ JSON.stringify(postsPlacementFilter) }} · search={{ JSON.stringify(postsSearch) }}</div>
-        <div><b>counts:</b> loaded={{ posts.length }} · filtered={{ filteredPosts.length }}</div>
-        <div v-if="posts.length">
-          <b>first loaded post:</b> {{ posts[0]?.slug }} · status={{ posts[0]?.status }} · categories={{ JSON.stringify(posts[0]?.categories) }} · placements={{ JSON.stringify(posts[0]?.placements) }}
-        </div>
-      </div>
-
-      <!--
         Active-filter strip. Renders one chip per non-default filter,
         each clickable to clear it. Doubles as a visual sanity check
         that the v-model bindings are firing — if an admin selects

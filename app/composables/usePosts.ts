@@ -8,6 +8,8 @@ export type DashboardPost = {
   published_at?: string
   date_updated?: string
   date_created?: string
+  categories?: string[]
+  placements?: string[]
   seo?: {
     title?: string
     meta_description?: string

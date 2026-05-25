@@ -25,6 +25,15 @@ model Post {
   // SEO overrides — { title, meta_description, focus_keyphrase, no_index, no_follow, canonical_url, og_image }
   seo Json?
 
+  // Layer 1 taxonomy. `categories` describe what the post is ABOUT
+  // (subject-matter tags like "autism", "therapy"); `placements` describe
+  // WHERE the post should surface on the site (homepage-featured,
+  // autism-program-related, …). Both are typed by `useMaanTaxonomy.ts`
+  // on the client/server side — Postgres just stores the slugs.
+  // GIN indexes power the placement filters that every public page runs.
+  categories String[] @default([])
+  placements String[] @default([])
+
   // Author (optional — keeps the data model decoupled from a particular auth model
   // during the migration; once users exist, every new post should have one)
   authorId String?
@@ -35,6 +44,8 @@ model Post {
 
   @@index([status, publishedAt])
   @@index([authorId])
+  @@index([categories], type: Gin)
+  @@index([placements], type: Gin)
 }
 
 model Page {
@@ -54,4 +65,66 @@ model Page {
   updatedAt DateTime @updatedAt
 
   @@index([status, sort])
+}
+
+// Layer 2 — Typed reusable content blocks that replace hardcoded
+// structural arrays (testimonials, FAQ entries, stat tiles, team
+// members, service cards). Each row owns a `type` discriminator and a
+// JSON `payload` whose shape matches the schemas defined in
+// `server/utils/content-block-schemas.ts`. The block is presented on
+// any surface whose id appears in `placements[]`; admin UI maps
+// placements onto the same taxonomy as Layer-1 Post placements where
+// it makes sense (homepage-featured, autism-program-related, etc.).
+enum ContentBlockType {
+  testimonial
+  faq_item
+  stat_tile
+  team_member
+  service_card
+}
+
+model ContentBlock {
+  id String @id @default(uuid(7))
+
+  type   ContentBlockType
+  // 'en' | 'ar' | '*' (locale-agnostic — used by team_member when the
+  // payload itself carries both languages, etc.)
+  locale String
+
+  // Type-specific fields; see server/utils/content-block-schemas.ts.
+  payload Json
+
+  placements String[]      @default([])
+  status     ContentStatus @default(draft)
+  sort       Int?
+
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([type, status, locale])
+  @@index([placements], type: Gin)
+}
+
+// Layer 3 — Site-wide singleton settings keyed by string. Each row is
+// the truth for one named setting in one locale. `'*'` locale rows
+// match every locale and are the default fallback when no per-locale
+// row exists. Used for: working-hours (`'*'`), dr-osama-bio (per
+// locale), mission-vision (per locale), contact-info (`'*'`), stats
+// (per locale).
+//
+// Composite primary key `(key, locale)` means PUT can use upsert
+// without a separate id lookup.
+model SiteSetting {
+  key    String // e.g. 'working-hours'
+  locale String // 'en' | 'ar' | '*'
+
+  // Per-key shape — validated by server/utils/site-settings.ts.
+  value Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([key, locale])
+  @@index([key])
 }

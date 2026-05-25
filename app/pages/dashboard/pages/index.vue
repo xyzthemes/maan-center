@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DashboardPage } from '~/composables/usePagesAdmin'
+import { statusBadgeStyle, statusCardTopBorder } from '~/utils/status-badge'
 
 definePageMeta({
   alias: ['/ar/dashboard/pages'],
@@ -7,11 +8,15 @@ definePageMeta({
 })
 
 const { t, isArabic } = useDashboardI18n()
-const { pages, pagesError, loadPages } = usePagesAdmin()
+const { pages, pagesError, isLoading, loadPages } = usePagesAdmin()
 const { statusOptions, statusLabel } = usePageForm()
 
 const pagesSearch = ref('')
 const pagesStatusFilter = ref<'all' | 'draft' | 'in_review' | 'published'>('all')
+
+const hasActiveFilter = computed(() =>
+  pagesSearch.value !== '' || pagesStatusFilter.value !== 'all'
+)
 
 const filteredPages = computed(() => {
   const q = pagesSearch.value.trim().toLowerCase()
@@ -102,32 +107,43 @@ onMounted(loadPages)
         class="mb-4"
       />
 
+      <div
+        v-if="isLoading && pages.length === 0"
+        class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
+      >
+        <MaanSkeletonGrid :count="6" />
+      </div>
+
       <p
-        v-if="!pagesError && filteredPages.length === 0"
+        v-else-if="!pagesError && filteredPages.length === 0 && hasActiveFilter"
         class="text-sm text-muted"
       >
         {{ t.noPagesFound }}
       </p>
 
-      <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <MaanEmptyState
+        v-else-if="!pagesError && pages.length === 0"
+        icon="i-lucide-files"
+        :title="t.noPagesYet"
+        :description="t.createFirstPageHint"
+        :cta-label="t.newPage"
+        :cta-to="newHref"
+      />
+
+      <div
+        v-else
+        class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
+      >
         <NuxtLink
           v-for="page in filteredPages"
           :key="page.id"
           :to="editHref(page)"
           class="maan-card block p-5 text-start hover:no-underline"
-          :style="page.status === 'published'
-            ? 'border-top: 4px solid var(--maan-down);'
-            : page.status === 'in_review'
-              ? 'border-top: 4px solid var(--maan-autism);'
-              : 'border-top: 4px solid var(--maan-cta);'"
+          :style="statusCardTopBorder(page.status)"
         >
           <span
             class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-            :style="page.status === 'published'
-              ? 'background: color-mix(in srgb, var(--maan-down) 16%, transparent); color: var(--maan-down);'
-              : page.status === 'in_review'
-                ? 'background: color-mix(in srgb, var(--maan-autism) 16%, transparent); color: var(--maan-autism);'
-                : 'background: color-mix(in srgb, var(--maan-cta) 16%, transparent); color: var(--maan-cta);'"
+            :style="statusBadgeStyle(page.status)"
           >
             {{ statusLabel(page.status) }}
           </span>

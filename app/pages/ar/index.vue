@@ -2,8 +2,10 @@
 const { getPageSeo, getPosts } = useMaanContent()
 
 const { data: posts } = await useAsyncData<MaanPost[]>('maan-home-posts-ar', async () => {
+  // Layer 1 — placement-driven curation with graceful fallback (see EN homepage).
+  const featured = await getPosts('ar', { placement: 'homepage-featured', limit: 3 })
+  if (featured.length) return featured
   const items = await getPosts('ar')
-
   return items.slice(0, 3)
 }, {
   default: () => []
@@ -119,6 +121,78 @@ const testimonials = [
     attribution: 'أم من الرفاع'
   }
 ]
+
+// Layer 2 — DB-driven testimonials/FAQ/stats with the typed arrays
+// above as a graceful fallback when no blocks are published. See the EN
+// homepage for the same pattern + rationale.
+const { byType: getBlocks } = useMaanBlocks()
+
+const { data: testimonialBlocks } = await useAsyncData(
+  'home-testimonials-ar',
+  () => getBlocks<{ quote: string, attribution: string }>('testimonial', 'ar', { placement: 'homepage-featured', limit: 6 }),
+  { default: () => [] }
+)
+const resolvedTestimonials = computed(() =>
+  testimonialBlocks.value.length
+    ? testimonialBlocks.value.map(b => ({ quote: b.payload.quote, attribution: b.payload.attribution }))
+    : testimonials
+)
+
+const { data: faqBlocks } = await useAsyncData(
+  'home-faq-ar',
+  () => getBlocks<{ q: string, a: string }>('faq_item', 'ar', { placement: 'homepage-featured', limit: 10 }),
+  { default: () => [] }
+)
+const resolvedFaqs = computed(() =>
+  faqBlocks.value.length
+    ? faqBlocks.value.map(b => ({ q: b.payload.q, a: b.payload.a }))
+    : faqs
+)
+
+const { data: statBlocks } = await useAsyncData(
+  'home-stats-ar',
+  () => getBlocks<{ value: string, label: string }>('stat_tile', 'ar', { placement: 'homepage-featured', limit: 8 }),
+  { default: () => [] }
+)
+// Precedence: SiteSetting `stats` → stat_tile blocks → hardcoded fallback.
+const resolvedStats = computed(() => {
+  if (statsFromSettings.value) return statsFromSettings.value
+  if (statBlocks.value.length) return statBlocks.value.map(b => ({ value: b.payload.value, label: b.payload.label }))
+  return stats
+})
+
+// Layer 3 — All admin-editable singletons the AR homepage needs.
+type HomeSettings = {
+  'mission-vision'?: { value: { mission?: string, vision?: string } } | null
+  'dr-osama-bio'?: { value: { name?: string, headline?: string, bio?: string, tags?: string[] } } | null
+  'stats'?: { value: { items?: Array<{ value: string, label: string }> } } | null
+}
+const { getMany: getSettings } = useMaanSettings()
+const { data: homeSettings } = await useAsyncData<HomeSettings>(
+  'home-settings-ar',
+  () => getSettings(['mission-vision', 'dr-osama-bio', 'stats'], 'ar') as Promise<HomeSettings>,
+  { default: (): HomeSettings => ({}) }
+)
+const missionVision = computed(() => {
+  const v = homeSettings.value['mission-vision']?.value
+  return {
+    mission: v?.mission || '',
+    vision: v?.vision || ''
+  }
+})
+const drOsamaBio = computed(() => {
+  const v = homeSettings.value['dr-osama-bio']?.value
+  return {
+    name: v?.name || '',
+    headline: v?.headline || '',
+    bio: v?.bio || '',
+    tags: Array.isArray(v?.tags) ? v.tags : []
+  }
+})
+const statsFromSettings = computed(() => {
+  const items = homeSettings.value.stats?.value?.items
+  return Array.isArray(items) && items.length ? items : null
+})
 
 const resolvedSeo = useMaanSeo({
   seo: pageSeo.value || undefined,
@@ -238,7 +312,7 @@ useSchemaOrg([
       style="border-color: var(--maan-line);"
     >
       <UContainer class="py-10 sm:py-14">
-        <MaanStats :items="stats" />
+        <MaanStats :items="resolvedStats" />
         <p
           class="mt-4 text-center text-xs"
           style="color: var(--maan-ink-muted);"
@@ -428,7 +502,7 @@ useSchemaOrg([
             style="background: linear-gradient(135deg, var(--maan-autism-soft), var(--maan-down-soft));"
           >
             <div class="grid gap-3">
-              <div class="rounded-lg bg-white/80 p-4 shadow-sm">
+              <div class="maan-surface-soft rounded-lg p-4 shadow-sm">
                 <p
                   class="text-xs font-semibold"
                   style="color: var(--maan-autism);"
@@ -448,7 +522,7 @@ useSchemaOrg([
                   ٤ جلسات منزلية / ١٠ دقائق
                 </p>
               </div>
-              <div class="rounded-lg bg-white/80 p-4 shadow-sm">
+              <div class="maan-surface-soft rounded-lg p-4 shadow-sm">
                 <p
                   class="text-xs font-semibold"
                   style="color: var(--maan-down);"
@@ -468,7 +542,7 @@ useSchemaOrg([
                   ٣ تمارين قابلة للتنفيذ يومياً
                 </p>
               </div>
-              <div class="rounded-lg bg-white/80 p-4 shadow-sm">
+              <div class="maan-surface-soft rounded-lg p-4 shadow-sm">
                 <p
                   class="text-xs font-semibold"
                   style="color: var(--maan-ld);"
@@ -494,7 +568,13 @@ useSchemaOrg([
       class="maan-section maan-band"
     >
       <UContainer>
-        <MaanDrOsamaCard locale="ar" />
+        <MaanDrOsamaCard
+          locale="ar"
+          :name="drOsamaBio.name"
+          :headline="drOsamaBio.headline"
+          :bio="drOsamaBio.bio"
+          :tags="drOsamaBio.tags"
+        />
       </UContainer>
     </section>
 
@@ -533,7 +613,11 @@ useSchemaOrg([
     <!-- ─────────── MISSION & VISION ─────────── -->
     <section class="maan-section maan-band maan-band--autism">
       <UContainer>
-        <MaanMissionVision locale="ar" />
+        <MaanMissionVision
+          locale="ar"
+          :mission="missionVision.mission"
+          :vision="missionVision.vision"
+        />
       </UContainer>
     </section>
 
@@ -550,7 +634,7 @@ useSchemaOrg([
           </p>
         </div>
         <div class="mt-10">
-          <MaanTestimonials :items="testimonials" />
+          <MaanTestimonials :items="resolvedTestimonials" />
         </div>
       </UContainer>
     </section>
@@ -641,7 +725,7 @@ useSchemaOrg([
             لم تجد إجابتك؟ تواصلوا معنا مباشرة عبر واتساب وسنرد عليكم في يوم العمل.
           </p>
         </div>
-        <MaanFaq :items="faqs" />
+        <MaanFaq :items="resolvedFaqs" />
       </UContainer>
     </section>
 

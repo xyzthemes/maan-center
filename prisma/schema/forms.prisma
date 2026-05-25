@@ -3,14 +3,20 @@
 // form_submission_values collections so Phase 3's seed is a straight copy.
 
 model Form {
-  id          String  @id @default(uuid(7))
-  title       String
+  id   String @id @default(uuid(7))
+  // Stable public slug for `/forms/<slug>` (and `/ar/forms/<slug>`).
+  // Admin chooses it in the dashboard; uniqueness enforced at the DB level.
+  slug String @unique
+
+  // Bilingual envelope: { en, ar }. Stored as JSONB; resolved per
+  // request locale via `pickLocale` (see app/utils/i18n-text.ts).
+  title       Json
   isActive    Boolean @default(true)
-  submitLabel String?
+  submitLabel Json? // { en, ar }
 
   // Behavior after a successful submit: show a message inline, or redirect.
   onSuccess          String  @default("message")
-  successMessage     String?
+  successMessage     Json? // { en, ar }
   successRedirectUrl String?
 
   createdAt DateTime @default(now())
@@ -25,11 +31,12 @@ model Form {
 // a form with a localized headline/tagline. Mirrors Directus's block_form
 // collection so editors can change copy without a code deploy.
 model FormBlock {
-  id       String  @id @default(uuid(7))
-  formId   String
-  form     Form    @relation(fields: [formId], references: [id], onDelete: Cascade)
-  headline String?
-  tagline  String?
+  id     String @id @default(uuid(7))
+  formId String
+  form   Form   @relation(fields: [formId], references: [id], onDelete: Cascade)
+  // Bilingual envelopes: { en, ar }.
+  headline Json?
+  tagline  Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -49,9 +56,10 @@ model FormField {
   // Kept loose to match Directus and avoid migrations every time editors add a field type.
   type String
 
-  label       String?
-  placeholder String?
-  help        String?
+  // Bilingual envelopes: { en, ar }.
+  label       Json?
+  placeholder Json?
+  help        Json?
 
   // Layout width ("full" | "half" | etc.) — UI hint, not enforced.
   width String?
@@ -59,7 +67,8 @@ model FormField {
   // Validation rule string (regex, or a built-in name like "email"). Loose by design.
   validation String?
 
-  // Choices for select/radio fields: [{ label, value }, ...]
+  // Choices for select/radio fields. Bilingual shape: [{ value, text: { en, ar } }].
+  // Legacy rows with [{ value, text: "..." }] still resolve via pickLocale().
   choices Json?
 
   required Boolean @default(false)
@@ -76,6 +85,11 @@ model FormSubmission {
   form   Form   @relation(fields: [formId], references: [id], onDelete: Cascade)
 
   timestamp DateTime @default(now())
+
+  // Locale the submitter used. Drives which side of every bilingual
+  // field label gets snapshot into FormSubmissionValue.label, so an
+  // Arabic admin reading an Arabic submission sees Arabic labels.
+  locale String @default("en")
 
   // Optional context captured at submit time (IP, user-agent, referer) — useful for spam triage
   ipAddress String?

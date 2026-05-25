@@ -3,7 +3,7 @@
 import { createError, getRouterParam } from 'h3'
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event, { user: { role: 'admin' } })
+  await requirePermission(event, 'posts')
   const id = getRouterParam(event, 'id')
 
   if (!id) {

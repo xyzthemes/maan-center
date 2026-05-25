@@ -9,7 +9,7 @@ const { data: pageSeo } = await useAsyncData<MaanSeo>('maan-page-seo-blog', () =
   title: 'Blog',
   description: 'Family guidance, center updates, and practical learning resources from Maan Special Education Center.'
 }))
-const { data: resourcesForm } = await useAsyncData<MaanFormBlock | undefined>('maan-blog-resources-form', () => getFormBlockById('3e262b2d-48fc-4816-b5e8-c991817d56fc'))
+const { data: resourcesForm } = await useAsyncData<MaanFormBlock | undefined>('maan-blog-resources-form', () => getFormBlockById('3e262b2d-48fc-4816-b5e8-c991817d56fc', 'en'))
 
 const resolvedSeo = useMaanSeo({
   seo: pageSeo.value || undefined,

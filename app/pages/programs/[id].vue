@@ -16,14 +16,34 @@ const programId = computed(() => isProgramId(String(route.params.id))
 
 const program = computed(() => getProgram(programId.value, 'en'))
 
+// Layer 1 — related articles are admin-curated via post placement. The
+// placement id follows the convention `<programId>-program-related`,
+// matching POST_PLACEMENTS in useMaanTaxonomy. Falls back to "latest 3"
+// only when no posts are tagged, so a freshly-installed program page
+// still shows something meaningful.
+const relatedPlacement = computed(() => `${programId.value}-program-related`)
+
 const { data: posts } = await useAsyncData<MaanPost[]>(
   `program-posts-${programId.value}-en`,
   async () => {
+    const tagged = await getPosts('en', { placement: relatedPlacement.value, limit: 3 })
+    if (tagged.length) return tagged
     const items = await getPosts('en')
     return items.slice(0, 3)
   },
   { default: () => [] }
 )
+
+// Layer 2 — admin-added FAQ blocks tagged with this program's placement
+// are appended below the structural FAQ from useMaanPrograms (which
+// keeps methodology-specific items always visible).
+const { byType: getBlocks } = useMaanBlocks()
+const { data: faqBlocks } = await useAsyncData(
+  `program-faqs-${programId.value}-en`,
+  () => getBlocks<{ q: string, a: string }>('faq_item', 'en', { placement: relatedPlacement.value, limit: 10 }),
+  { default: () => [] }
+)
+const extraFaqs = computed(() => faqBlocks.value.map(b => ({ q: b.payload.q, a: b.payload.a })))
 
 const { data: pageSeo } = await useAsyncData<MaanSeo>(
   `program-page-seo-${programId.value}-en`,
@@ -77,5 +97,6 @@ useSchemaOrg([
     :program="program"
     locale="en"
     :posts="posts ?? []"
+    :extra-faqs="extraFaqs"
   />
 </template>

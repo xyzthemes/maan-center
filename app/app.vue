@@ -49,6 +49,10 @@ const alternatePaths = computed(() => {
     return { en: '/about-us', ar: '/ar/about-us' }
   }
 
+  if (path === '/connect' || path === '/ar/connect') {
+    return { en: '/connect', ar: '/ar/connect' }
+  }
+
   if (path.startsWith('/blog/')) {
     const slug = path.split('/').pop()
 
@@ -120,16 +124,13 @@ useSeoMeta({
   twitterCard: 'summary_large_image'
 })
 
-// LocalBusiness schema — exact address, geo coordinates, working hours, and
-// social profile URLs are pending from the client (see
-// TODO_IMPLEMENTATION_REFERENCES.md). We emit the parts we KNOW are accurate
-// and intentionally omit fabricated fields. Google tolerates partial
-// LocalBusiness records and prefers them over invented ones.
-// LocalBusiness schema — exact address, geo coordinates, working hours, and
-// social profile URLs are pending from the client (see
-// TODO_IMPLEMENTATION_REFERENCES.md). We emit only the fields we KNOW are
-// accurate; Google tolerates partial LocalBusiness records and prefers them
-// over invented ones.
+// LocalBusiness schema. Working hours + map link confirmed by the client and
+// emitted as structured data. Exact street address, geo coordinates, and
+// social profile URLs are still pending (see TODO_IMPLEMENTATION_REFERENCES.md).
+// Schedule (Bahrain time):
+//   Sun–Thu: 08:00–12:00 and 16:00–20:00
+//   Fri: closed
+//   Sat: 09:00–13:00
 useSchemaOrg([
   defineLocalBusiness({
     name: 'Maan Special Education Center',
@@ -139,14 +140,46 @@ useSchemaOrg([
     image: () => `${siteUrl.value}/logo-transparent.png`,
     description: 'Individualized education, therapy, and family support for children with autism spectrum disorder, Down syndrome, and learning difficulties.',
     telephone: '+97332055666',
+    hasMap: 'https://maps.app.goo.gl/GNB7VK94az3Wcrrq8',
     address: {
       '@type': 'PostalAddress',
       'addressCountry': 'BH',
       'addressRegion': 'Kingdom of Bahrain'
       // TODO_IMPLEMENTATION_REFERENCES: streetAddress, postalCode, addressLocality.
-    }
-    // TODO_IMPLEMENTATION_REFERENCES: geo (latitude, longitude),
-    // openingHoursSpecification, sameAs[] for social profiles, hasMap link.
+    },
+    openingHoursSpecification: [
+      {
+        '@type': 'OpeningHoursSpecification',
+        'dayOfWeek': ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'],
+        'opens': '08:00',
+        'closes': '12:00'
+      },
+      {
+        '@type': 'OpeningHoursSpecification',
+        'dayOfWeek': ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'],
+        'opens': '16:00',
+        'closes': '20:00'
+      },
+      {
+        '@type': 'OpeningHoursSpecification',
+        'dayOfWeek': 'Saturday',
+        'opens': '09:00',
+        'closes': '13:00'
+      }
+      // Friday is closed — Schema.org convention is to omit it entirely.
+    ],
+    // Official Maan Center social profiles. Helps Google associate this
+    // business with its social graph. Dr. Osama's personal accounts and
+    // topic-specific outreach accounts are intentionally NOT included here
+    // (they're presented on /connect as separate entities).
+    sameAs: [
+      'https://www.instagram.com/maancenter/',
+      'https://www.facebook.com/maancenter.bh',
+      'https://x.com/maan_center_bh',
+      'https://www.linkedin.com/company/maancenter',
+      'https://www.pinterest.com/MaanCenter'
+    ]
+    // TODO_IMPLEMENTATION_REFERENCES: geo (latitude, longitude).
   }),
   // Educational organization profile sits alongside LocalBusiness — Google
   // happily indexes both for a service-oriented center.

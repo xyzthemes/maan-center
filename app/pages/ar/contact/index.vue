@@ -11,10 +11,10 @@ const { data: pageSeo } = await useAsyncData<MaanSeo>('maan-page-seo-contact-ar'
   description: 'تواصلوا مع مركز معاً للتربية الخاصة في البحرين عبر واتساب أو الهاتف أو نموذج الاستفسار.'
 }))
 const { data: contactForm } = await useAsyncData<MaanFormBlock>('maan-contact-form-ar', async () => {
-  const block = await getFormBlockById(contactBlockId)
+  const block = await getFormBlockById(contactBlockId, 'ar')
   if (block) return block
 
-  const form = await getFormById(contactFormId)
+  const form = await getFormById(contactFormId, 'ar')
   return form
     ? {
         id: 'maan-contact-form-fallback-ar',

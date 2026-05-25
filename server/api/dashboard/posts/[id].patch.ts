@@ -1,6 +1,7 @@
 // Phase 5: update a post via Prisma. Auth required.
 
 import { createError, getRouterParam, readBody } from 'h3'
+import { sanitizeCategories, sanitizePlacements } from '~/composables/useMaanTaxonomy'
 
 type DashboardPostBody = {
   title?: string
@@ -9,6 +10,8 @@ type DashboardPostBody = {
   content?: string
   status?: string
   published_at?: string
+  categories?: unknown
+  placements?: unknown
   seo?: {
     title?: string
     meta_description?: string
@@ -17,7 +20,7 @@ type DashboardPostBody = {
 }
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event, { user: { role: 'admin' } })
+  await requirePermission(event, 'posts')
   const id = getRouterParam(event, 'id')
 
   if (!id) {
@@ -44,6 +47,8 @@ export default defineEventHandler(async (event) => {
         content: body.content?.trim() || '<p></p>',
         status,
         publishedAt: normalizePublishedAt(status, body.published_at),
+        categories: sanitizeCategories(body.categories),
+        placements: sanitizePlacements(body.placements),
         seo: {
           title: body.seo?.title?.trim() || title,
           meta_description: body.seo?.meta_description?.trim() || description,

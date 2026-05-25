@@ -1,11 +1,24 @@
 <script setup lang="ts">
 import type { ProgramContent } from '~/composables/useMaanPrograms'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   program: ProgramContent
   locale: 'en' | 'ar'
   posts: MaanPost[]
-}>()
+  /**
+   * Layer 2 — admin-added FAQ items appended to the structural FAQ from
+   * useMaanPrograms. Optional + empty by default so the component stays
+   * back-compat with callers that don't yet fetch them.
+   */
+  extraFaqs?: Array<{ q: string, a: string }>
+}>(), {
+  extraFaqs: () => []
+})
+
+const resolvedFaqs = computed(() => [
+  ...props.program.faqs.map(f => ({ q: f.q, a: f.a })),
+  ...props.extraFaqs
+])
 
 const isAr = computed(() => props.locale === 'ar')
 
@@ -246,7 +259,7 @@ const whatsappHref = computed(() => isAr.value
             {{ program.faqHeading }}
           </h2>
         </div>
-        <MaanFaq :items="program.faqs.map(f => ({ q: f.q, a: f.a }))" />
+        <MaanFaq :items="resolvedFaqs" />
       </UContainer>
     </section>
 

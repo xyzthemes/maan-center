@@ -16,6 +16,8 @@ const staticUrls: SitemapUrlInput[] = [
   { loc: '/ar', changefreq: 'weekly', priority: 1 },
   { loc: '/contact', changefreq: 'monthly', priority: 0.9 },
   { loc: '/ar/contact', changefreq: 'monthly', priority: 0.9 },
+  { loc: '/connect', changefreq: 'monthly', priority: 0.7 },
+  { loc: '/ar/connect', changefreq: 'monthly', priority: 0.7 },
   { loc: '/blog', changefreq: 'weekly', priority: 0.8 },
   { loc: '/ar/blog', changefreq: 'weekly', priority: 0.8 },
   ...programUrls

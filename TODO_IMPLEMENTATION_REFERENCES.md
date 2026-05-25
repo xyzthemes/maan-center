@@ -34,10 +34,12 @@ Branch: `redesign`
 
 - [ ] **Exact business address** (building, road, block, area) — currently
       shows "Kingdom of Bahrain" only in the footer.
-- [ ] **Google Maps embed / geo coordinates** (latitude/longitude) — for the
-      contact page map and LocalBusiness schema.
-- [ ] **Official working hours** — currently footer shows
-      "Working hours: to be announced".
+- [ ] **Geo coordinates** (latitude/longitude) — for LocalBusiness `geo` schema.
+- [x] **Google Maps link** — `https://maps.app.goo.gl/GNB7VK94az3Wcrrq8`,
+      wired into the footer + LocalBusiness `hasMap`.
+- [x] **Official working hours** — Sun–Thu 08:00–12:00 + 16:00–20:00,
+      Fri closed, Sat 09:00–13:00. Rendered in footer + LocalBusiness
+      `openingHoursSpecification`.
 - [ ] **Licenses and accreditations** — footer line + LocalBusiness schema.
 - [ ] **Commercial Registration (CR) number** — for the footer / legal page.
 - [ ] **Privacy policy + terms of service** — needed before launch.
@@ -53,19 +55,29 @@ Branch: `redesign`
 ## Social & Contact (Phase 3 — HeyLink replacement)
 
 WhatsApp number `+97332055666` is already wired everywhere (FAB, mobile bar,
-hero CTAs, final CTA). Other channels remain unconfirmed:
+hero CTAs, final CTA). The full social network is on `/connect` (and
+`/ar/connect`), driven by the typed link directory in
+`app/composables/useMaanSocialLinks.ts`.
 
-- [ ] **Instagram URL**
-- [ ] **Facebook URL**
-- [ ] **YouTube URL**
-- [ ] **TikTok URL** (if used)
-- [ ] **Snapchat handle** (if used)
-- [ ] **LinkedIn profile** (for Dr. Osama)
-- [ ] **Public email address** — currently absent from footer.
-- [ ] **Direct landline** (in addition to mobile/WhatsApp).
+- [x] **Instagram** — `@maancenter` + Dr. Osama's outreach accounts
+- [x] **Facebook** — `maancenter.bh` + topical pages
+- [x] **YouTube** — `madboolyzm` + `tafaol2012` archive
+- [x] **TikTok** — `@osama.madbooly`
+- [x] **LinkedIn** — Company `maancenter` + Dr. Osama personal
+- [x] **X / Twitter** — `maan_center_bh` + `maanforspecial` + Dr. Osama
+- [x] **Pinterest** — `MaanCenter` + Dr. Osama
+- [x] **Telegram, Threads, Blogger, VK, Tumblr, Flickr** — Dr. Osama
+- [x] **Center email** — `maancenter.bh@gmail.com`
+- [x] **Dr. Osama email** — `oam2002@hotmail.com`
+- [x] **Dr. Osama WhatsApp** — `+97339960623`
+- [ ] **Snapchat handle** — not in the provided list; still unconfirmed
+- [ ] **Direct landline** — not provided (mobile/WhatsApp only).
 
-Until provided, do **not** add invented profile links in the footer or the
-internal contact hub.
+The center's `sameAs[]` in LocalBusiness schema lists only the **official
+center** profiles (Instagram, Facebook, X, LinkedIn, Pinterest) so Google
+associates them with the business entity; Dr. Osama's personal accounts
+and topical-community accounts are presented on `/connect` but kept out
+of the business schema (they belong to separate entities).
 
 ## Forms & Notifications (Phase 8)
 

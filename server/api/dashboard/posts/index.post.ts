@@ -2,6 +2,7 @@
 // Returns the response envelope `{ data: { ... } }` the dashboard composables expect.
 
 import { createError, readBody } from 'h3'
+import { sanitizeCategories, sanitizePlacements } from '~/composables/useMaanTaxonomy'
 
 type DashboardPostBody = {
   title?: string
@@ -10,6 +11,8 @@ type DashboardPostBody = {
   content?: string
   status?: string
   published_at?: string
+  categories?: unknown
+  placements?: unknown
   seo?: {
     title?: string
     meta_description?: string
@@ -18,7 +21,7 @@ type DashboardPostBody = {
 }
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event, { user: { role: 'admin' } })
+  await requirePermission(event, 'posts')
   const body = await readBody<DashboardPostBody>(event)
 
   const title = body.title?.trim()
@@ -38,6 +41,12 @@ export default defineEventHandler(async (event) => {
       content: body.content?.trim() || '<p></p>',
       status,
       publishedAt: normalizePublishedAt(status, body.published_at),
+      // sanitize* drops any slug not in the taxonomy — admin UI uses a
+      // multi-select so the dashboard never sends unknown ids; defensive
+      // here in case future taxonomy changes leave stale strings in old
+      // payloads.
+      categories: sanitizeCategories(body.categories),
+      placements: sanitizePlacements(body.placements),
       seo: {
         title: body.seo?.title?.trim() || title,
         meta_description: body.seo?.meta_description?.trim() || description,

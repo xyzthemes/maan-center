@@ -8,6 +8,16 @@ const { isArabic, dashboardHome, t } = useDashboardI18n()
 const signInEmail = useSignIn('email')
 const route = useRoute()
 
+// Same recovery trick as /dashboard/index.vue: if the visitor was bounced
+// here from an `/ar/dashboard/*` page (Better Auth strips the locale on
+// unauth redirects because `auth.redirects.login` is hardcoded), bring
+// them to the Arabic login so the form copy + post-login destination
+// stay in their chosen language.
+const localeCookie = useCookie<'ar' | 'en' | null>('maan-locale')
+if (!route.path.startsWith('/ar') && localeCookie.value === 'ar') {
+  await navigateTo({ path: '/ar/dashboard/login', query: route.query }, { replace: true })
+}
+
 // Safe redirect (must start with `/`, not `//`) — prevents open redirects
 // via protocol-relative URLs in the ?redirect= query param.
 const safeRedirect = () => {

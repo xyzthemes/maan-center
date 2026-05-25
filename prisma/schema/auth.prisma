@@ -15,6 +15,13 @@ model User {
   banReason  String?
   banExpires DateTime?
 
+  // Maan staff permissions — array of section scope keys (see
+  // app/utils/permissions.ts for the source of truth). Admins bypass
+  // this check unconditionally; staff users must have the relevant
+  // scope to reach a section's pages or APIs. Empty by default so
+  // newly-created staff have no access until the admin grants it.
+  permissions String[]  @default([])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

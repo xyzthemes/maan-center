@@ -46,17 +46,29 @@ export default defineNuxtConfig({
   },
 
   routeRules: {
-    // Dashboard pages — admins only. Non-admin signed-in users hit 403.
-    '/dashboard': { auth: { user: { role: 'admin' } } },
-    '/dashboard/overview': { auth: { user: { role: 'admin' } } },
-    '/dashboard/posts/**': { auth: { user: { role: 'admin' } } },
-    '/dashboard/pages/**': { auth: { user: { role: 'admin' } } },
-    '/dashboard/submissions/**': { auth: { user: { role: 'admin' } } },
-    '/ar/dashboard': { auth: { user: { role: 'admin' } } },
-    '/ar/dashboard/overview': { auth: { user: { role: 'admin' } } },
-    '/ar/dashboard/posts/**': { auth: { user: { role: 'admin' } } },
-    '/ar/dashboard/pages/**': { auth: { user: { role: 'admin' } } },
-    '/ar/dashboard/submissions/**': { auth: { user: { role: 'admin' } } },
+    // Dashboard pages — admins + staff. Per-section access is enforced
+    // by app/middleware/dashboard-permission.global.ts (client-side
+    // redirect to /dashboard/overview when the staff user lacks the
+    // section's scope) and by `requirePermission` on every API call.
+    // The Staff section keeps `role: 'admin'` — staff never manage staff.
+    '/dashboard': { auth: { user: { role: ['admin', 'staff'] } } },
+    '/dashboard/overview': { auth: { user: { role: ['admin', 'staff'] } } },
+    '/dashboard/posts/**': { auth: { user: { role: ['admin', 'staff'] } } },
+    '/dashboard/pages/**': { auth: { user: { role: ['admin', 'staff'] } } },
+    '/dashboard/blocks/**': { auth: { user: { role: ['admin', 'staff'] } } },
+    '/dashboard/forms/**': { auth: { user: { role: ['admin', 'staff'] } } },
+    '/dashboard/settings/**': { auth: { user: { role: ['admin', 'staff'] } } },
+    '/dashboard/submissions/**': { auth: { user: { role: ['admin', 'staff'] } } },
+    '/dashboard/staff/**': { auth: { user: { role: 'admin' } } },
+    '/ar/dashboard': { auth: { user: { role: ['admin', 'staff'] } } },
+    '/ar/dashboard/overview': { auth: { user: { role: ['admin', 'staff'] } } },
+    '/ar/dashboard/posts/**': { auth: { user: { role: ['admin', 'staff'] } } },
+    '/ar/dashboard/pages/**': { auth: { user: { role: ['admin', 'staff'] } } },
+    '/ar/dashboard/blocks/**': { auth: { user: { role: ['admin', 'staff'] } } },
+    '/ar/dashboard/forms/**': { auth: { user: { role: ['admin', 'staff'] } } },
+    '/ar/dashboard/settings/**': { auth: { user: { role: ['admin', 'staff'] } } },
+    '/ar/dashboard/submissions/**': { auth: { user: { role: ['admin', 'staff'] } } },
+    '/ar/dashboard/staff/**': { auth: { user: { role: 'admin' } } },
 
     // Guest-only flows — already-signed-in users get bounced to the dashboard.
     '/dashboard/login': { auth: 'guest' },

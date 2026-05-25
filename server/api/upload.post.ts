@@ -34,7 +34,9 @@ const slugifyStem = (stem: string) => stem
 export default defineEventHandler(async (event) => {
   // Phase 7 cleanup will tighten this to `{ user: { role: ['admin', 'writer'] } }`
   // once the seed elevates the appropriate users via Better Auth's admin plugin.
-  await requireUserSession(event, { user: { role: 'admin' } })
+  // Uploads serve every editing surface, so allow any staff member
+  // with a content-editing scope. Admins bypass via the helper.
+  await requireAnyPermission(event, ['posts', 'pages', 'blocks', 'forms'])
 
   const parts = await readMultipartFormData(event)
   const file = parts?.find(p => p.name === 'file' && p.filename && p.data)

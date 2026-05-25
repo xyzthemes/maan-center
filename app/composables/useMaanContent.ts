@@ -44,6 +44,21 @@ type ApiPost = {
   publishedAt: string | null
   createdAt: string
   seo: StoredSeo | null
+  // Layer 1 taxonomy — present on every response since the migration.
+  // Optional in the type so we don't break callers compiled against the
+  // older shape while server endpoints catch up in a hot-reloaded dev
+  // window.
+  categories?: string[]
+  placements?: string[]
+}
+
+export type GetPostsOptions = {
+  /** Limit returned items (server clamps to [1, 50]). Defaults to 6. */
+  limit?: number
+  /** Filter to posts that include this placement id (e.g. 'homepage-featured'). */
+  placement?: string
+  /** Filter to posts that include this category id (e.g. 'autism'). */
+  category?: string
 }
 
 const fallbackPostsEn: MaanPost[] = [
@@ -192,14 +207,39 @@ const toMaanPost = (p: ApiPost, locale: 'en' | 'ar'): MaanPost => {
 }
 
 export const useMaanContent = () => {
-  const getPosts = async (locale: 'en' | 'ar' = 'en'): Promise<MaanPost[]> => {
+  // `getPosts` accepts either (locale) — legacy positional signature, kept
+  // for the dozen existing call sites — or (locale, { placement, category,
+  // limit }) for Layer-1 surface filtering.
+  //
+  // When a placement is requested but the DB returns nothing, we do NOT
+  // fall back to the local fallback array, because the fallback isn't
+  // tagged: it would surface unrelated posts on a "Down Syndrome
+  // related articles" slot. Empty placement → empty result is the right
+  // behaviour and the calling component can render a graceful empty
+  // state.
+  const getPosts = async (
+    locale: 'en' | 'ar' = 'en',
+    opts: GetPostsOptions = {}
+  ): Promise<MaanPost[]> => {
+    const { limit = 6, placement, category } = opts
     try {
       const res = await $fetch<{ posts: ApiPost[] }>('/api/public/posts', {
-        query: { locale, limit: 6 }
+        query: {
+          locale,
+          limit,
+          ...(placement ? { placement } : {}),
+          ...(category ? { category } : {})
+        }
       })
       const mapped = res.posts.map(p => toMaanPost(p, locale))
-      return mapped.length ? mapped : (locale === 'ar' ? fallbackPostsAr : fallbackPostsEn)
+      if (mapped.length) return mapped
+      // Only fall back to typed fallbacks when no taxonomy was requested —
+      // a placement query that hit zero rows means "this slot is empty",
+      // not "show me anything".
+      if (placement || category) return []
+      return locale === 'ar' ? fallbackPostsAr : fallbackPostsEn
     } catch {
+      if (placement || category) return []
       return locale === 'ar' ? fallbackPostsAr : fallbackPostsEn
     }
   }

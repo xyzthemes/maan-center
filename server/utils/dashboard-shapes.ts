@@ -4,7 +4,7 @@
 // Phase 7 cleanup can rename these to camelCase (post/page interfaces) and
 // drop this layer.
 
-import type { Page, Post, FormSubmission, FormSubmissionValue, Form } from './db/types'
+import type { Page, Post, FormSubmission, FormSubmissionValue, Form, FormField, ContentBlock, User, Session } from './db/types'
 
 export type DashboardPostShape = {
   id: string
@@ -18,6 +18,11 @@ export type DashboardPostShape = {
   date_created: string
   date_updated: string
   seo: unknown
+  // Layer 1 taxonomy. Always serialised as arrays (never null) so the
+  // dashboard editor's multi-select bindings don't need a defensive
+  // `?? []` fallback at every use-site.
+  categories: string[]
+  placements: string[]
 }
 
 export const toDashboardPost = (post: Post): DashboardPostShape => ({
@@ -31,7 +36,9 @@ export const toDashboardPost = (post: Post): DashboardPostShape => ({
   published_at: post.publishedAt?.toISOString() ?? null,
   date_created: post.createdAt.toISOString(),
   date_updated: post.updatedAt.toISOString(),
-  seo: post.seo
+  seo: post.seo,
+  categories: post.categories ?? [],
+  placements: post.placements ?? []
 })
 
 export type DashboardPageShape = {
@@ -60,10 +67,43 @@ export const toDashboardPage = (page: Page): DashboardPageShape => ({
   seo: page.seo
 })
 
+export type DashboardBlockShape = {
+  id: string
+  type: string
+  locale: string
+  status: string
+  payload: unknown
+  placements: string[]
+  sort: number | null
+  published_at: string | null
+  date_created: string
+  date_updated: string
+}
+
+export const toDashboardBlock = (block: ContentBlock): DashboardBlockShape => ({
+  id: block.id,
+  type: block.type,
+  locale: block.locale,
+  status: block.status,
+  payload: block.payload,
+  placements: block.placements ?? [],
+  sort: block.sort,
+  published_at: block.publishedAt?.toISOString() ?? null,
+  date_created: block.createdAt.toISOString(),
+  date_updated: block.updatedAt.toISOString()
+})
+
 export type DashboardSubmissionShape = {
   id: string
   timestamp: string
-  form: { id: string, title: string } | undefined
+  /** Locale the submitter used when filling the form. */
+  locale: string
+  /**
+   * Bilingual title passed through as-is; the dashboard resolves to one
+   * side via `pickLocale()` so the badge tracks the admin's locale, not
+   * the submitter's.
+   */
+  form: { id: string, slug: string, title: unknown } | undefined
   values: Array<{ id: string, name: string, label: string, value: string }>
 }
 
@@ -75,7 +115,10 @@ export const toDashboardSubmission = (
 ): DashboardSubmissionShape => ({
   id: submission.id,
   timestamp: submission.timestamp.toISOString(),
-  form: submission.form ? { id: submission.form.id, title: submission.form.title } : undefined,
+  locale: submission.locale,
+  form: submission.form
+    ? { id: submission.form.id, slug: submission.form.slug, title: submission.form.title }
+    : undefined,
   values: submission.values.map(v => ({
     id: v.id,
     name: v.name,
@@ -83,6 +126,123 @@ export const toDashboardSubmission = (
     value: v.value ?? ''
   }))
 })
+
+// ── Dashboard Form shape ─────────────────────────────────────────────────
+//
+// The form CRUD endpoints pass envelopes through unchanged (no
+// pickLocale) — the dashboard editor needs both sides to render the
+// bilingual input pairs.
+
+export type DashboardFormListShape = {
+  id: string
+  slug: string
+  title: unknown
+  isActive: boolean
+  fieldCount: number
+  submissionCount: number
+  updatedAt: string
+}
+
+export const toDashboardFormListRow = (
+  form: Form & { _count?: { fields: number, submissions: number } }
+): DashboardFormListShape => ({
+  id: form.id,
+  slug: form.slug,
+  title: form.title,
+  isActive: form.isActive,
+  fieldCount: form._count?.fields ?? 0,
+  submissionCount: form._count?.submissions ?? 0,
+  updatedAt: form.updatedAt.toISOString()
+})
+
+export type DashboardFormShape = {
+  id: string
+  slug: string
+  title: unknown
+  isActive: boolean
+  submitLabel: unknown
+  onSuccess: string
+  successMessage: unknown
+  successRedirectUrl: string | null
+  fields: Array<{
+    id: string
+    name: string
+    type: string
+    label: unknown
+    placeholder: unknown
+    help: unknown
+    width: string | null
+    validation: string | null
+    choices: unknown
+    required: boolean
+    sort: number | null
+  }>
+}
+
+export const toDashboardForm = (
+  form: Form & { fields: FormField[] }
+): DashboardFormShape => ({
+  id: form.id,
+  slug: form.slug,
+  title: form.title,
+  isActive: form.isActive,
+  submitLabel: form.submitLabel,
+  onSuccess: form.onSuccess,
+  successMessage: form.successMessage,
+  successRedirectUrl: form.successRedirectUrl,
+  fields: [...form.fields]
+    .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
+    .map(f => ({
+      id: f.id,
+      name: f.name,
+      type: f.type,
+      label: f.label,
+      placeholder: f.placeholder,
+      help: f.help,
+      width: f.width,
+      validation: f.validation,
+      choices: f.choices,
+      required: f.required,
+      sort: f.sort
+    }))
+})
+
+// ── Dashboard Staff shape ────────────────────────────────────────────────
+
+export type DashboardStaffShape = {
+  id: string
+  name: string
+  email: string
+  role: string
+  permissions: string[]
+  banned: boolean
+  banReason: string | null
+  banExpires: string | null
+  emailVerified: boolean
+  createdAt: string
+  lastSignInAt: string | null
+}
+
+export const toDashboardStaff = (
+  user: User & { sessions?: Pick<Session, 'createdAt'>[] }
+): DashboardStaffShape => {
+  // Latest session timestamp ≈ "last active". Newer sessions sort first
+  // when the query includes `orderBy: { createdAt: 'desc' }, take: 1`.
+  const latestSession = user.sessions?.[0]?.createdAt
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role || 'user',
+    permissions: user.permissions || [],
+    banned: !!user.banned,
+    banReason: user.banReason || null,
+    banExpires: user.banExpires ? user.banExpires.toISOString() : null,
+    emailVerified: !!user.emailVerified,
+    createdAt: user.createdAt.toISOString(),
+    lastSignInAt: latestSession ? new Date(latestSession).toISOString() : null
+  }
+}
 
 // Normalizers used by the create/patch endpoints. The dashboard editors send
 // snake_case payloads (legacy from the Directus shape); these helpers turn that

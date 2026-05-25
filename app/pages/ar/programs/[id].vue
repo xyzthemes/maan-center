@@ -16,14 +16,29 @@ const programId = computed(() => isProgramId(String(route.params.id))
 
 const program = computed(() => getProgram(programId.value, 'ar'))
 
+// Layer 1 — admin-curated related articles per program. See EN mirror
+// for the placement-id convention.
+const relatedPlacement = computed(() => `${programId.value}-program-related`)
+
 const { data: posts } = await useAsyncData<MaanPost[]>(
   `program-posts-${programId.value}-ar`,
   async () => {
+    const tagged = await getPosts('ar', { placement: relatedPlacement.value, limit: 3 })
+    if (tagged.length) return tagged
     const items = await getPosts('ar')
     return items.slice(0, 3)
   },
   { default: () => [] }
 )
+
+// Layer 2 — admin-added FAQ blocks appended to structural FAQ.
+const { byType: getBlocks } = useMaanBlocks()
+const { data: faqBlocks } = await useAsyncData(
+  `program-faqs-${programId.value}-ar`,
+  () => getBlocks<{ q: string, a: string }>('faq_item', 'ar', { placement: relatedPlacement.value, limit: 10 }),
+  { default: () => [] }
+)
+const extraFaqs = computed(() => faqBlocks.value.map(b => ({ q: b.payload.q, a: b.payload.a })))
 
 const { data: pageSeo } = await useAsyncData<MaanSeo>(
   `program-page-seo-${programId.value}-ar`,
@@ -76,5 +91,6 @@ useSchemaOrg([
     :program="program"
     locale="ar"
     :posts="posts ?? []"
+    :extra-faqs="extraFaqs"
   />
 </template>

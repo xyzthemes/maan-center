@@ -3,8 +3,12 @@ const { getPageSeo, getPosts } = useMaanContent()
 const { getFormBlockById } = useMaanForms()
 
 const { data: posts } = await useAsyncData<MaanPost[]>('maan-home-posts', async () => {
+  // Layer 1 — only surface posts that admins explicitly placed here.
+  // Fallback: when zero are tagged, show the latest published instead so
+  // the homepage isn't visibly empty during the transition window.
+  const featured = await getPosts('en', { placement: 'homepage-featured', limit: 3 })
+  if (featured.length) return featured
   const items = await getPosts()
-
   return items.slice(0, 3)
 }, {
   default: () => []
@@ -13,7 +17,7 @@ const { data: pageSeo } = await useAsyncData<MaanSeo>('maan-page-seo-home', () =
   title: 'Maan Special Education Center | Bahrain',
   description: 'Maan Special Education Center in Bahrain — assessment, individualized education plans, and integrated therapy for autism spectrum, Down syndrome, and learning difficulties.'
 }))
-const { data: resourcesForm } = await useAsyncData<MaanFormBlock | undefined>('maan-home-resources-form', () => getFormBlockById('1419faec-e263-431c-bd5f-a57f394c39f6'))
+const { data: resourcesForm } = await useAsyncData<MaanFormBlock | undefined>('maan-home-resources-form', () => getFormBlockById('1419faec-e263-431c-bd5f-a57f394c39f6', 'en'))
 
 // ────────────────────────────────────────────────────────────────────
 const programs = [
@@ -97,6 +101,89 @@ const testimonials = [
     attribution: 'Parent, Riffa'
   }
 ]
+
+// Layer 2 — pull testimonial/FAQ/stat blocks from the DB if any are
+// published; otherwise fall back to the typed arrays above. Each
+// useAsyncData key is locale + type + placement-scoped so the SSR cache
+// buckets don't collide with the Arabic homepage.
+const { byType: getBlocks } = useMaanBlocks()
+
+const { data: testimonialBlocks } = await useAsyncData(
+  'home-testimonials-en',
+  () => getBlocks<{ quote: string, attribution: string }>('testimonial', 'en', { placement: 'homepage-featured', limit: 6 }),
+  { default: () => [] }
+)
+const resolvedTestimonials = computed(() =>
+  testimonialBlocks.value.length
+    ? testimonialBlocks.value.map(b => ({ quote: b.payload.quote, attribution: b.payload.attribution }))
+    : testimonials
+)
+
+const { data: faqBlocks } = await useAsyncData(
+  'home-faq-en',
+  () => getBlocks<{ q: string, a: string }>('faq_item', 'en', { placement: 'homepage-featured', limit: 10 }),
+  { default: () => [] }
+)
+const resolvedFaqs = computed(() =>
+  faqBlocks.value.length
+    ? faqBlocks.value.map(b => ({ q: b.payload.q, a: b.payload.a }))
+    : faqs
+)
+
+const { data: statBlocks } = await useAsyncData(
+  'home-stats-en',
+  () => getBlocks<{ value: string, label: string }>('stat_tile', 'en', { placement: 'homepage-featured', limit: 8 }),
+  { default: () => [] }
+)
+// Precedence: SiteSetting `stats` (singleton) → Layer-2 stat_tile blocks
+// → hardcoded fallback array. The singleton wins because it's the
+// canonical "four numbers" surface; the block path is here for future
+// flexibility.
+const resolvedStats = computed(() => {
+  if (statsFromSettings.value) return statsFromSettings.value
+  if (statBlocks.value.length) return statBlocks.value.map(b => ({ value: b.payload.value, label: b.payload.label }))
+  return stats
+})
+
+// Layer 3 — All admin-editable singletons the EN homepage needs:
+// mission/vision, Dr Osama bio, stats list. One batched fetch keeps the
+// SSR cache to a single key per locale. Empty values let downstream
+// components fall back to their structural copy.
+type HomeSettings = {
+  'mission-vision'?: { value: { mission?: string, vision?: string } } | null
+  'dr-osama-bio'?: { value: { name?: string, headline?: string, bio?: string, tags?: string[] } } | null
+  'stats'?: { value: { items?: Array<{ value: string, label: string }> } } | null
+}
+const { getMany: getSettings } = useMaanSettings()
+const { data: homeSettings } = await useAsyncData<HomeSettings>(
+  'home-settings-en',
+  () => getSettings(['mission-vision', 'dr-osama-bio', 'stats'], 'en') as Promise<HomeSettings>,
+  { default: (): HomeSettings => ({}) }
+)
+const missionVision = computed(() => {
+  const v = homeSettings.value['mission-vision']?.value
+  return {
+    mission: v?.mission || '',
+    vision: v?.vision || ''
+  }
+})
+const drOsamaBio = computed(() => {
+  const v = homeSettings.value['dr-osama-bio']?.value
+  return {
+    name: v?.name || '',
+    headline: v?.headline || '',
+    bio: v?.bio || '',
+    tags: Array.isArray(v?.tags) ? v.tags : []
+  }
+})
+// Stats singleton — takes precedence over Layer-2 stat_tile blocks. A
+// single setting row is the right shape for "the four numbers at the
+// top of the homepage"; blocks remain useful if admins want a more
+// modular structure later.
+const statsFromSettings = computed(() => {
+  const items = homeSettings.value.stats?.value?.items
+  return Array.isArray(items) && items.length ? items : null
+})
 
 const resolvedSeo = useMaanSeo({
   seo: pageSeo.value || undefined,
@@ -216,7 +303,7 @@ useSchemaOrg([
       style="border-color: var(--maan-line);"
     >
       <UContainer class="py-10 sm:py-14">
-        <MaanStats :items="stats" />
+        <MaanStats :items="resolvedStats" />
         <p
           class="mt-4 text-center text-xs"
           style="color: var(--maan-ink-muted);"
@@ -406,7 +493,7 @@ useSchemaOrg([
             style="background: linear-gradient(135deg, var(--maan-autism-soft), var(--maan-down-soft));"
           >
             <div class="grid gap-3">
-              <div class="rounded-lg bg-white/80 p-4 shadow-sm">
+              <div class="maan-surface-soft rounded-lg p-4 shadow-sm">
                 <p
                   class="text-xs font-semibold"
                   style="color: var(--maan-autism);"
@@ -426,7 +513,7 @@ useSchemaOrg([
                   4 home sessions / 10 minutes
                 </p>
               </div>
-              <div class="rounded-lg bg-white/80 p-4 shadow-sm">
+              <div class="maan-surface-soft rounded-lg p-4 shadow-sm">
                 <p
                   class="text-xs font-semibold"
                   style="color: var(--maan-down);"
@@ -446,7 +533,7 @@ useSchemaOrg([
                   3 daily, doable exercises
                 </p>
               </div>
-              <div class="rounded-lg bg-white/80 p-4 shadow-sm">
+              <div class="maan-surface-soft rounded-lg p-4 shadow-sm">
                 <p
                   class="text-xs font-semibold"
                   style="color: var(--maan-ld);"
@@ -472,7 +559,13 @@ useSchemaOrg([
       class="maan-section maan-band"
     >
       <UContainer>
-        <MaanDrOsamaCard locale="en" />
+        <MaanDrOsamaCard
+          locale="en"
+          :name="drOsamaBio.name"
+          :headline="drOsamaBio.headline"
+          :bio="drOsamaBio.bio"
+          :tags="drOsamaBio.tags"
+        />
       </UContainer>
     </section>
 
@@ -511,7 +604,11 @@ useSchemaOrg([
     <!-- MISSION & VISION -->
     <section class="maan-section maan-band maan-band--autism">
       <UContainer>
-        <MaanMissionVision locale="en" />
+        <MaanMissionVision
+          locale="en"
+          :mission="missionVision.mission"
+          :vision="missionVision.vision"
+        />
       </UContainer>
     </section>
 
@@ -528,7 +625,7 @@ useSchemaOrg([
           </p>
         </div>
         <div class="mt-10">
-          <MaanTestimonials :items="testimonials" />
+          <MaanTestimonials :items="resolvedTestimonials" />
         </div>
       </UContainer>
     </section>
@@ -618,7 +715,7 @@ useSchemaOrg([
             Couldn’t find your answer? Reach out on WhatsApp — we’ll reply within one working day.
           </p>
         </div>
-        <MaanFaq :items="faqs" />
+        <MaanFaq :items="resolvedFaqs" />
       </UContainer>
     </section>
 

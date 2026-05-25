@@ -8,7 +8,7 @@
 export { PrismaClient } from '~~/prisma/generated/client'
 
 // Enums are both runtime values (the keyed object) and types
-export { ContentStatus } from '~~/prisma/generated/client'
+export { ContentStatus, ContentBlockType } from '~~/prisma/generated/client'
 
 // Model types — add as routes start consuming them
 export type {
@@ -18,6 +18,8 @@ export type {
   Verification,
   Post,
   Page,
+  ContentBlock,
+  SiteSetting,
   Form,
   FormField,
   FormBlock,

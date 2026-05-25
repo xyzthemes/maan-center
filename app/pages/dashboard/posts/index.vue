@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DashboardPost } from '~/composables/usePosts'
+import { statusBadgeStyle, statusCardTopBorder } from '~/utils/status-badge'
 
 definePageMeta({
   alias: ['/ar/dashboard/posts'],
@@ -7,18 +8,60 @@ definePageMeta({
 })
 
 const { t, isArabic } = useDashboardI18n()
-const { posts, postsError, loadPosts } = usePosts()
+const { posts, postsError, isLoading, loadPosts } = usePosts()
 const { statusOptions, statusLabel } = usePostForm()
+const { categories: taxonomyCategories, placements: taxonomyPlacements } = useMaanTaxonomy()
 
 const postsSearch = ref('')
 const postsStatusFilter = ref<'all' | 'draft' | 'in_review' | 'published'>('all')
+const postsCategoryFilter = ref<string>('all')
+const postsPlacementFilter = ref<string>('all')
+const postsLocaleFilter = ref<'all' | 'en' | 'ar'>('all')
+
+// Mirrors the public-side detection in /api/public/posts so the
+// dashboard filter labels a post the same way the site does. The
+// Post model has no `locale` column today — adding one would be a
+// schema change; this heuristic is enough for triage.
+const inferLocale = (post: DashboardPost): 'en' | 'ar' =>
+  (post.slug?.startsWith('ar-') || /[؀-ۿ]/.test(post.title || ''))
+    ? 'ar'
+    : 'en'
+
+const lang = computed<'en' | 'ar'>(() => isArabic.value ? 'ar' : 'en')
+
+const categoryFilterOptions = computed(() => [
+  { value: 'all', label: t.value.filterCategory },
+  ...taxonomyCategories.map(c => ({ value: c.id, label: c.label[lang.value] }))
+])
+const placementFilterOptions = computed(() => [
+  { value: 'all', label: t.value.filterPlacement },
+  ...taxonomyPlacements.map(p => ({ value: p.id, label: p.label[lang.value] }))
+])
+
+const localeFilterOptions = computed(() => [
+  { value: 'all', label: t.value.filterByLocale },
+  { value: 'en', label: 'English' },
+  { value: 'ar', label: 'العربية' }
+])
 
 const filteredPosts = computed(() => {
   const q = postsSearch.value.trim().toLowerCase()
   const status = postsStatusFilter.value
+  const category = postsCategoryFilter.value
+  const placement = postsPlacementFilter.value
+  const locale = postsLocaleFilter.value
 
   return posts.value.filter((post) => {
     if (status !== 'all' && (post.status || 'draft') !== status) {
+      return false
+    }
+    if (category !== 'all' && !(post.categories || []).includes(category)) {
+      return false
+    }
+    if (placement !== 'all' && !(post.placements || []).includes(placement)) {
+      return false
+    }
+    if (locale !== 'all' && inferLocale(post) !== locale) {
       return false
     }
 
@@ -37,6 +80,41 @@ const editHref = (post: DashboardPost) => isArabic.value
   : `/dashboard/posts/${post.id}`
 
 const newHref = computed(() => isArabic.value ? '/ar/dashboard/posts/new' : '/dashboard/posts/new')
+
+// Chip labels — look the slug up in the same option lists driving the
+// filter dropdowns so the chip always matches the active selection's
+// visible label (including locale).
+const categoryChipLabel = computed(() => {
+  const opt = categoryFilterOptions.value.find(o => o.value === postsCategoryFilter.value)
+  return opt?.label ?? postsCategoryFilter.value
+})
+const localeChipLabel = computed(() => {
+  const opt = localeFilterOptions.value.find(o => o.value === postsLocaleFilter.value)
+  return opt?.label ?? postsLocaleFilter.value
+})
+const placementChipLabel = computed(() => {
+  const opt = placementFilterOptions.value.find(o => o.value === postsPlacementFilter.value)
+  return opt?.label ?? postsPlacementFilter.value
+})
+
+const clearAllFilters = () => {
+  postsSearch.value = ''
+  postsCategoryFilter.value = 'all'
+  postsPlacementFilter.value = 'all'
+  postsStatusFilter.value = 'all'
+  postsLocaleFilter.value = 'all'
+}
+
+// `posts.length === 0 && !filterActive` is the genuine "create your
+// first post" state. The status filter defaults to 'all' so we don't
+// gate the empty-state UI on it here.
+const hasActiveFilter = computed(() =>
+  postsCategoryFilter.value !== 'all'
+  || postsPlacementFilter.value !== 'all'
+  || postsStatusFilter.value !== 'all'
+  || postsLocaleFilter.value !== 'all'
+  || postsSearch.value !== ''
+)
 
 onMounted(loadPosts)
 </script>
@@ -74,6 +152,30 @@ onMounted(loadPosts)
             size="sm"
             class="w-full max-w-xs"
           />
+          <!--
+            Category + placement filter dropdowns. USelect with the
+            documented pattern: items are `{ value, label }` objects,
+            `value-key` defaults to `'value'` so we don't repeat it,
+            and the model binds to the selected option's value.
+          -->
+          <USelect
+            v-model="postsCategoryFilter"
+            :items="categoryFilterOptions"
+            size="sm"
+            class="hidden sm:flex w-full"
+          />
+          <USelect
+            v-model="postsPlacementFilter"
+            :items="placementFilterOptions"
+            size="sm"
+            class="hidden md:flex w-full"
+          />
+          <USelect
+            v-model="postsLocaleFilter"
+            :items="localeFilterOptions"
+            size="sm"
+            class="hidden lg:flex w-full"
+          />
         </template>
         <template #right>
           <UFieldGroup>
@@ -102,32 +204,123 @@ onMounted(loadPosts)
         class="mb-4"
       />
 
+      <!--
+        Active-filter strip. Renders one chip per non-default filter,
+        each clickable to clear it. Doubles as a visual sanity check
+        that the v-model bindings are firing — if an admin selects
+        "Autism" and no chip appears, the dropdown is broken; if the
+        chip appears but the list doesn't change, the filter logic is.
+      -->
+      <div
+        v-if="hasActiveFilter"
+        class="mb-4 flex flex-wrap items-center gap-2"
+      >
+        <span class="text-xs font-semibold uppercase tracking-wider text-muted">
+          {{ t.activeFilters }}
+        </span>
+        <button
+          v-if="postsSearch"
+          type="button"
+          class="maan-filter-chip"
+          @click="postsSearch = ''"
+        >
+          <UIcon
+            name="i-lucide-search"
+            class="size-3"
+          />
+          <span>{{ postsSearch }}</span>
+          <UIcon
+            name="i-lucide-x"
+            class="size-3"
+          />
+        </button>
+        <button
+          v-if="postsCategoryFilter !== 'all'"
+          type="button"
+          class="maan-filter-chip"
+          @click="postsCategoryFilter = 'all'"
+        >
+          <span>{{ categoryChipLabel }}</span>
+          <UIcon
+            name="i-lucide-x"
+            class="size-3"
+          />
+        </button>
+        <button
+          v-if="postsPlacementFilter !== 'all'"
+          type="button"
+          class="maan-filter-chip"
+          @click="postsPlacementFilter = 'all'"
+        >
+          <span>{{ placementChipLabel }}</span>
+          <UIcon
+            name="i-lucide-x"
+            class="size-3"
+          />
+        </button>
+        <button
+          v-if="postsLocaleFilter !== 'all'"
+          type="button"
+          class="maan-filter-chip"
+          @click="postsLocaleFilter = 'all'"
+        >
+          <span>{{ localeChipLabel }}</span>
+          <UIcon
+            name="i-lucide-x"
+            class="size-3"
+          />
+        </button>
+        <UButton
+          color="neutral"
+          variant="ghost"
+          size="xs"
+          icon="i-lucide-x-circle"
+          @click="clearAllFilters"
+        >
+          {{ t.clearFilters }}
+        </UButton>
+      </div>
+
+      <!-- Loading: skeleton grid until the first fetch resolves. -->
+      <div
+        v-if="isLoading && posts.length === 0"
+        class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
+      >
+        <MaanSkeletonGrid :count="6" />
+      </div>
+
+      <!-- Filtered-empty: keep terse copy + nudge to clear. -->
       <p
-        v-if="!postsError && filteredPosts.length === 0"
+        v-else-if="!postsError && filteredPosts.length === 0 && hasActiveFilter"
         class="text-sm text-muted"
       >
-        {{ t.noPostsFound }}
+        {{ t.noMatchingFilters }}
       </p>
 
-      <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <!-- Genuinely empty (no posts yet) + no filter active → CTA panel. -->
+      <MaanEmptyState
+        v-else-if="!postsError && posts.length === 0"
+        icon="i-lucide-file-pen-line"
+        :title="t.noPostsYet"
+        :description="t.createFirstPostHint"
+        :cta-label="t.newPost"
+        :cta-to="newHref"
+      />
+
+      <div
+        v-else
+        class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
+      >
         <NuxtLink
           v-for="post in filteredPosts"
           :key="post.id"
           :to="editHref(post)"
           class="maan-card block p-5 text-start hover:no-underline"
-          :style="post.status === 'published'
-            ? 'border-top: 4px solid var(--maan-down);'
-            : post.status === 'in_review'
-              ? 'border-top: 4px solid var(--maan-autism);'
-              : 'border-top: 4px solid var(--maan-cta);'"
+          :style="statusCardTopBorder(post.status)"
         >
           <span
             class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-            :style="post.status === 'published'
-              ? 'background: color-mix(in srgb, var(--maan-down) 16%, transparent); color: var(--maan-down);'
-              : post.status === 'in_review'
-                ? 'background: color-mix(in srgb, var(--maan-autism) 16%, transparent); color: var(--maan-autism);'
-                : 'background: color-mix(in srgb, var(--maan-cta) 16%, transparent); color: var(--maan-cta);'"
+            :style="statusBadgeStyle(post.status)"
           >
             {{ statusLabel(post.status) }}
           </span>

@@ -1,3 +1,5 @@
+import { pickLocale } from '~/utils/i18n-text'
+
 export type MaanFormChoice = {
   text: string
   value: string
@@ -6,7 +8,7 @@ export type MaanFormChoice = {
 export type MaanFormField = {
   id: string
   name: string
-  type: 'text' | 'textarea' | 'checkbox' | 'checkbox_group' | 'radio' | 'select' | 'hidden' | 'file'
+  type: 'text' | 'textarea' | 'email' | 'phone' | 'number' | 'date' | 'checkbox' | 'checkbox_group' | 'radio' | 'select' | 'hidden' | 'file'
   label: string
   placeholder?: string
   help?: string
@@ -135,40 +137,47 @@ export const createMaanContactFormFallback = (locale: 'en' | 'ar' = 'en'): MaanF
 }
 
 // Phase 5: internal API shapes returned by /api/public/forms/[id] and
-// /api/public/form-blocks/[id]. JSON serialization turns Prisma's `null`s into
-// nulls (not undefined), so the optional fields are `T | null` not `T | undefined`.
+// /api/public/form-blocks/[id]. Bilingual columns arrive as `{ en, ar }`
+// objects (or null for unset optional fields). `unknown` keeps the
+// boundary tolerant of both the new shape and legacy plain-string rows.
+
+type ApiChoice = {
+  value: string
+  text: unknown
+}
 
 type ApiFormField = {
   id: string
   name: string
   type: string
-  label: string | null
-  placeholder: string | null
-  help: string | null
+  label: unknown
+  placeholder: unknown
+  help: unknown
   validation: string | null
   width: string | null
-  choices: MaanFormChoice[] | null
+  choices: ApiChoice[] | null
   required: boolean
   sort: number | null
 }
 
 type ApiForm = {
   id: string
-  title: string
+  slug?: string
+  title: unknown
   isActive: boolean
-  submitLabel: string | null
+  submitLabel: unknown
   onSuccess: string
-  successMessage: string | null
+  successMessage: unknown
   successRedirectUrl: string | null
   fields: ApiFormField[]
 }
 
 const VALID_FIELD_TYPES: ReadonlySet<MaanFormField['type']> = new Set([
-  'text', 'textarea', 'checkbox', 'checkbox_group', 'radio', 'select', 'hidden', 'file'
+  'text', 'textarea', 'email', 'phone', 'number', 'date', 'checkbox', 'checkbox_group', 'radio', 'select', 'hidden', 'file'
 ])
 const VALID_WIDTHS: ReadonlySet<MaanFormField['width']> = new Set(['100', '67', '50', '33'])
 
-const toMaanField = (field: ApiFormField): MaanFormField | undefined => {
+const toMaanField = (field: ApiFormField, locale: 'en' | 'ar'): MaanFormField | undefined => {
   if (!field.id || !field.name) return undefined
   const type = VALID_FIELD_TYPES.has(field.type as MaanFormField['type'])
     ? field.type as MaanFormField['type']
@@ -176,68 +185,100 @@ const toMaanField = (field: ApiFormField): MaanFormField | undefined => {
   const width = VALID_WIDTHS.has(field.width as MaanFormField['width'])
     ? field.width as MaanFormField['width']
     : '100'
+  const choices = (field.choices ?? []).map(c => ({
+    value: c.value,
+    text: pickLocale(c.text, locale) || c.value
+  }))
   return {
     id: field.id,
     name: field.name,
     type,
-    label: field.label || field.name,
-    placeholder: field.placeholder || undefined,
-    help: field.help || undefined,
+    label: pickLocale(field.label, locale) || field.name,
+    placeholder: pickLocale(field.placeholder, locale) || undefined,
+    help: pickLocale(field.help, locale) || undefined,
     validation: field.validation || undefined,
     width,
-    choices: field.choices || [],
+    choices,
     required: Boolean(field.required),
     sort: field.sort ?? undefined
   }
 }
 
-const toMaanForm = (form: ApiForm): MaanForm | undefined => {
+const toMaanForm = (form: ApiForm, locale: 'en' | 'ar'): MaanForm | undefined => {
   if (!form.id || !form.isActive) return undefined
   return {
     id: form.id,
-    title: form.title || 'Form',
+    title: pickLocale(form.title, locale) || 'Form',
     isActive: true,
-    submitLabel: form.submitLabel || 'Submit',
+    submitLabel: pickLocale(form.submitLabel, locale) || (locale === 'ar' ? 'إرسال' : 'Submit'),
     onSuccess: form.onSuccess === 'redirect' ? 'redirect' : 'message',
-    successMessage: form.successMessage || 'Thank you. Your submission has been received.',
+    successMessage: pickLocale(form.successMessage, locale)
+      || (locale === 'ar' ? 'تم استلام الطلب.' : 'Thank you. Your submission has been received.'),
     successRedirectUrl: form.successRedirectUrl || undefined,
     fields: (form.fields
-      .map(toMaanField)
+      .map(f => toMaanField(f, locale))
       .filter(Boolean) as MaanFormField[])
       .sort((a, b) => (a.sort || 0) - (b.sort || 0))
   }
 }
 
 export const useMaanForms = () => {
-  const getFormById = async (formId: string): Promise<MaanForm | undefined> => {
+  const getFormById = async (formId: string, locale: 'en' | 'ar' = 'en'): Promise<MaanForm | undefined> => {
     if (!formId) return undefined
     try {
       const res = await $fetch<{ form: ApiForm | null }>(`/api/public/forms/${formId}`)
-      return res.form ? toMaanForm(res.form) : undefined
+      return res.form ? toMaanForm(res.form, locale) : undefined
     } catch {
       return undefined
     }
   }
 
-  const getFormBlockById = async (blockId: string): Promise<MaanFormBlock | undefined> => {
+  const getFormBlockById = async (blockId: string, locale: 'en' | 'ar' = 'en'): Promise<MaanFormBlock | undefined> => {
     if (!blockId) return undefined
     try {
       const res = await $fetch<{
         block: {
           id: string
-          headline: string | null
-          tagline: string | null
+          headline: unknown
+          tagline: unknown
           form: ApiForm
         } | null
       }>(`/api/public/form-blocks/${blockId}`)
       const block = res.block
       if (!block) return undefined
-      const form = toMaanForm(block.form)
+      const form = toMaanForm(block.form, locale)
       return form
         ? {
             id: block.id,
-            headline: block.headline || undefined,
-            tagline: block.tagline || undefined,
+            headline: pickLocale(block.headline, locale) || undefined,
+            tagline: pickLocale(block.tagline, locale) || undefined,
+            form
+          }
+        : undefined
+    } catch {
+      return undefined
+    }
+  }
+
+  const getFormBySlug = async (slug: string, locale: 'en' | 'ar' = 'en'): Promise<MaanFormBlock | undefined> => {
+    if (!slug) return undefined
+    try {
+      const res = await $fetch<{
+        block: {
+          id: string
+          headline: unknown
+          tagline: unknown
+          form: ApiForm
+        } | null
+      }>(`/api/public/forms/by-slug/${slug}`)
+      const block = res.block
+      if (!block) return undefined
+      const form = toMaanForm(block.form, locale)
+      return form
+        ? {
+            id: block.id,
+            headline: pickLocale(block.headline, locale) || undefined,
+            tagline: pickLocale(block.tagline, locale) || undefined,
             form
           }
         : undefined
@@ -248,6 +289,7 @@ export const useMaanForms = () => {
 
   return {
     getFormById,
-    getFormBlockById
+    getFormBlockById,
+    getFormBySlug
   }
 }

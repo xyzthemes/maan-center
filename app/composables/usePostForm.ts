@@ -8,6 +8,10 @@ export type PostForm = {
   content: string
   status: string
   published_at: string
+  // Layer 1 taxonomy. Bound to multi-select chips in PostEditorForm.
+  // Server sanitises against useMaanTaxonomy before persisting.
+  categories: string[]
+  placements: string[]
   seo: {
     title: string
     meta_description: string
@@ -22,6 +26,8 @@ export const emptyPostForm = (): PostForm => ({
   content: '<p></p>',
   status: 'draft',
   published_at: '',
+  categories: [],
+  placements: [],
   seo: {
     title: '',
     meta_description: '',
@@ -64,6 +70,8 @@ export const usePostForm = (onSaved?: () => unknown | Promise<unknown>) => {
       content: post.content || '<p></p>',
       status: post.status || 'draft',
       published_at: post.published_at || '',
+      categories: Array.isArray(post.categories) ? [...post.categories] : [],
+      placements: Array.isArray(post.placements) ? [...post.placements] : [],
       seo: {
         title: post.seo?.title || post.title || '',
         meta_description: post.seo?.meta_description || post.description || '',

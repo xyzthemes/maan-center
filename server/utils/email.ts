@@ -16,13 +16,20 @@ const globalForMail = globalThis as unknown as {
 
 const port = Number(process.env.MAIL_PORT ?? 587)
 
+const secure = process.env.MAIL_SECURE === 'true'
+
 export const mailer = globalForMail.mail ?? nodemailer.createTransport({
   host: process.env.MAIL_HOST,
   port,
   // `secure: true` is TLS-from-the-start (port 465 default). For 587 the
   // transport upgrades via STARTTLS; nodemailer handles that when secure=false.
   // We respect the MAIL_SECURE flag as configured per provider.
-  secure: process.env.MAIL_SECURE === 'true',
+  secure,
+  // When NOT using implicit TLS, force a STARTTLS upgrade rather than
+  // letting Nodemailer fall back to plaintext if the server doesn't
+  // advertise STARTTLS. Defends against silent plaintext leakage if
+  // MAIL_HOST is ever reconfigured.
+  requireTLS: !secure,
   auth: {
     user: process.env.MAIL_USER,
     pass: process.env.MAIL_PASSWORD

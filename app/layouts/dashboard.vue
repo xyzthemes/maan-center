@@ -146,6 +146,8 @@ const userMenuItems = computed(() => [
   ]
 ])
 
+const searchLabel = computed(() => isArabic.value ? 'البحث...' : 'Search...')
+
 useSeoMeta({
   title: () => t.value.title,
   robots: 'noindex, nofollow'
@@ -194,7 +196,7 @@ onMounted(() => {
       </template>
 
       <template #default="{ collapsed }">
-        <UDashboardSearchButton :collapsed="collapsed" />
+        <UDashboardSearchButton :collapsed="collapsed" :label="searchLabel" />
         <USeparator class="my-3" />
         <UNavigationMenu
           orientation="vertical"
@@ -224,7 +226,7 @@ onMounted(() => {
       </template>
     </UDashboardSidebar>
 
-    <UDashboardSearch :groups="searchGroups" />
+    <UDashboardSearch :groups="searchGroups" :placeholder="searchLabel" />
 
     <slot />
   </UDashboardGroup>

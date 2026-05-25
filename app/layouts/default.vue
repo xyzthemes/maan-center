@@ -121,16 +121,12 @@ const phoneHref = 'tel:+97332055666'
 const localeLabel = computed(() => isArabic.value ? 'English' : 'عربي')
 const developedByLabel = computed(() => isArabic.value ? 'صمم بواسطة' : 'Developed by')
 
-// Mobile drawer state. Closes on route change so navigating from inside it
-// doesn't leave the slideover open over the new page.
-const mobileMenuOpen = ref(false)
-watch(() => route.path, () => {
-  mobileMenuOpen.value = false
-})
-
+// Drawer copy. UHeader auto-renders its own hamburger + slideover below the
+// `menu` breakpoint and exposes its content via the #body slot — no separate
+// state to manage.
 const drawerT = computed(() => isArabic.value
-  ? { open: 'فتح القائمة', close: 'إغلاق', menu: 'القائمة', theme: 'المظهر', language: 'اللغة' }
-  : { open: 'Open menu', close: 'Close', menu: 'Menu', theme: 'Theme', language: 'Language' })
+  ? { menu: 'القائمة' }
+  : { menu: 'Menu' })
 </script>
 
 <template>
@@ -163,8 +159,8 @@ const drawerT = computed(() => isArabic.value
     <template #right>
       <!--
         Always-visible CTA. Below sm the label collapses to icon-only so it
-        fits on a 320px viewport next to the locale + theme + hamburger.
-        From sm upward the full label shows.
+        fits on a 320px viewport next to the locale + theme + UHeader's
+        built-in hamburger. From sm upward the full label shows.
       -->
       <NuxtLink
         :to="contactPath"
@@ -178,42 +174,42 @@ const drawerT = computed(() => isArabic.value
         <span class="maan-header-cta-label">{{ headerCtaLabel }}</span>
       </NuxtLink>
       <UColorModeButton class="maan-tap-target" />
+      <!--
+        Language toggle as an icon. The button's accessible name uses the
+        target language (so screen readers say "Switch to English" while
+        the user is on the Arabic site) — this matches the
+        always-visible-target-language convention used by Wikipedia/Twitter.
+      -->
       <UButton
         :href="isArabic ? alternatePaths.en : alternatePaths.ar"
         color="neutral"
         variant="ghost"
         size="sm"
+        icon="i-lucide-languages"
         class="maan-tap-target"
+        :aria-label="isArabic ? 'Switch to English' : 'التبديل إلى العربية'"
+        :title="localeLabel"
         @click.prevent="switchLocale(isArabic ? alternatePaths.en : alternatePaths.ar)"
-      >
-        {{ localeLabel }}
-      </UButton>
-      <!-- Hamburger only visible below lg, where the inline nav disappears. -->
-      <UButton
-        color="neutral"
-        variant="ghost"
-        size="sm"
-        icon="i-lucide-menu"
-        class="lg:hidden maan-tap-target"
-        :aria-label="drawerT.open"
-        :aria-expanded="mobileMenuOpen"
-        aria-controls="maan-mobile-drawer"
-        @click="mobileMenuOpen = true"
       />
+      <!--
+        Locale code inside the drawer (so users can see which language they
+        are about to switch to without hover). Hidden inline on the header
+        bar itself — keeps the bar compact.
+      -->
+      <span class="sr-only">{{ localeLabel }}</span>
+      <!--
+        UHeader auto-renders its own hamburger toggle below the `menu`
+        breakpoint (lg by default) — we don't add our own here.
+      -->
     </template>
-  </UHeader>
 
-  <!-- Mobile menu drawer — nav + locale + theme + primary CTA. Closes on
-       navigation via the watch on route.path above. -->
-  <USlideover
-    v-model:open="mobileMenuOpen"
-    :side="isArabic ? 'right' : 'left'"
-    :title="drawerT.menu"
-    :ui="{ content: 'maan-mobile-drawer-content' }"
-  >
+    <!--
+      Mobile drawer content. UHeader puts this inside a built-in slideover
+      that opens via its auto-rendered hamburger. Closes on navigation
+      automatically.
+    -->
     <template #body>
       <nav
-        id="maan-mobile-drawer"
         class="grid gap-1"
         :aria-label="drawerT.menu"
       >
@@ -225,7 +221,6 @@ const drawerT = computed(() => isArabic.value
             v-if="!item.children"
             :to="item.to"
             class="maan-mobile-link"
-            @click="mobileMenuOpen = false"
           >
             {{ item.label }}
           </NuxtLink>
@@ -245,7 +240,6 @@ const drawerT = computed(() => isArabic.value
               :key="child.to"
               :to="child.to"
               class="maan-mobile-link maan-mobile-link--child"
-              @click="mobileMenuOpen = false"
             >
               {{ child.label }}
             </NuxtLink>
@@ -257,7 +251,6 @@ const drawerT = computed(() => isArabic.value
           <NuxtLink
             :to="contactPath"
             class="maan-cta-btn justify-center"
-            @click="mobileMenuOpen = false"
           >
             <UIcon
               name="i-lucide-calendar-check"
@@ -280,7 +273,7 @@ const drawerT = computed(() => isArabic.value
         </div>
       </nav>
     </template>
-  </USlideover>
+  </UHeader>
 
   <UMain class="maan-main">
     <slot />

@@ -721,8 +721,10 @@ const onSave = () => emit('save')
                     <span class="choice-index">#{{ cIdx + 1 }}</span>
                     <div class="choice-fields">
                       <label class="choice-value-label">
-                        <span class="mb-1 block text-[11px] font-semibold uppercase tracking-wider"
-                              :style="{ color: 'var(--maan-ink-muted)' }">
+                        <span
+                          class="mb-1 block text-[11px] font-semibold uppercase tracking-wider"
+                          :style="{ color: 'var(--maan-ink-muted)' }"
+                        >
                           {{ t.choiceValue }}
                         </span>
                         <input

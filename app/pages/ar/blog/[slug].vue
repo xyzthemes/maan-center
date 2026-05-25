@@ -107,10 +107,13 @@ useSchemaOrg([
             :alt="post.title"
             class="mb-10 aspect-video w-full rounded-2xl object-cover"
           >
+          <!-- v-html: admin-authored rich text from dashboard editor; sanitize at source if XSS becomes a concern -->
+          <!-- eslint-disable vue/no-v-html -->
           <div
             class="maan-prose"
             v-html="post.content"
           />
+          <!-- eslint-enable vue/no-v-html -->
 
           <div
             class="mt-10 border-t pt-6"

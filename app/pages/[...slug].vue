@@ -103,11 +103,14 @@ useSchemaOrg([
     <!-- BODY -->
     <UContainer class="py-12 sm:py-16">
       <article class="maan-prose-card mx-auto max-w-3xl">
+        <!-- v-html: admin-authored rich text from dashboard editor; sanitize at source if XSS becomes a concern -->
+        <!-- eslint-disable vue/no-v-html -->
         <div
           v-if="page.content"
           class="maan-prose"
           v-html="page.content"
         />
+        <!-- eslint-enable vue/no-v-html -->
         <p
           v-else
           class="text-sm"

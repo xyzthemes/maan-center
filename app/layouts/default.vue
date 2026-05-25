@@ -12,6 +12,68 @@ const { data: cmsPagesData } = await useFetch<{ pages: NavPage[] }>('/api/pages/
 })
 const cmsPages = computed(() => cmsPagesData.value?.pages || [])
 
+// Layer 3 — Working hours from SiteSettings (locale-agnostic; '*' row).
+// Falls back to the hardcoded Sun–Thu / Sat schedule below when no row
+// is published. Each day row may have an optional second shift.
+type WorkingHoursDay = {
+  day: number
+  closed?: boolean
+  opens?: string
+  closes?: string
+  secondOpens?: string
+  secondCloses?: string
+}
+const FALLBACK_HOURS: WorkingHoursDay[] = [
+  { day: 0, opens: '08:00', closes: '12:00', secondOpens: '16:00', secondCloses: '20:00' },
+  { day: 1, opens: '08:00', closes: '12:00', secondOpens: '16:00', secondCloses: '20:00' },
+  { day: 2, opens: '08:00', closes: '12:00', secondOpens: '16:00', secondCloses: '20:00' },
+  { day: 3, opens: '08:00', closes: '12:00', secondOpens: '16:00', secondCloses: '20:00' },
+  { day: 4, opens: '08:00', closes: '12:00', secondOpens: '16:00', secondCloses: '20:00' },
+  { day: 5, closed: true },
+  { day: 6, opens: '09:00', closes: '13:00' }
+]
+const { getOne: getSetting } = useMaanSettings()
+const { data: workingHoursSetting } = await useFetch('/api/public/settings', {
+  key: 'public-working-hours',
+  query: { key: 'working-hours' },
+  default: () => ({ settings: {} as Record<string, { value: { days?: WorkingHoursDay[] } } | null> })
+})
+const workingHours = computed<WorkingHoursDay[]>(() => {
+  const raw = workingHoursSetting.value?.settings?.['working-hours']?.value?.days
+  return Array.isArray(raw) && raw.length ? raw : FALLBACK_HOURS
+})
+// Avoid `getSetting` being flagged unused while keeping the import available
+// to callers that don't need batch reads.
+void getSetting
+
+// Format HH:mm → "8 AM" using the visitor's locale.
+const formatTime = (hhmm?: string): string => {
+  if (!hhmm) return ''
+  const [hStr, mStr] = hhmm.split(':')
+  const h = Number(hStr)
+  const m = Number(mStr)
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return hhmm
+  const d = new Date()
+  d.setHours(h, m, 0, 0)
+  return d.toLocaleTimeString(isArabic.value ? 'ar-BH' : 'en-US', {
+    hour: 'numeric',
+    minute: m === 0 ? undefined : '2-digit',
+    hour12: !isArabic.value
+  })
+}
+
+const DAY_LABELS_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
+const DAY_LABELS_AR = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'] as const
+
+const dayLabel = (idx: number) => isArabic.value ? DAY_LABELS_AR[idx] : DAY_LABELS_EN[idx]
+const dayHoursText = (d: WorkingHoursDay): string => {
+  if (d.closed) return isArabic.value ? 'مغلق' : 'Closed'
+  const parts: string[] = []
+  if (d.opens && d.closes) parts.push(`${formatTime(d.opens)} – ${formatTime(d.closes)}`)
+  if (d.secondOpens && d.secondCloses) parts.push(`${formatTime(d.secondOpens)} – ${formatTime(d.secondCloses)}`)
+  return parts.join(' · ') || (isArabic.value ? 'مغلق' : 'Closed')
+}
+
 const alternatePaths = computed(() => {
   const path = canonicalPath.value
   const withoutArPrefix = path.replace(/^\/ar(?=\/|$)/, '') || '/'
@@ -506,25 +568,19 @@ const drawerT = computed(() => isArabic.value
                     {{ isArabic ? 'ساعات العمل' : 'Working hours' }}
                   </p>
                   <!--
-                  Two-column grid (day → hours). The `dd` cells get
-                  `min-w-0` so long hour ranges can wrap instead of
-                  pushing the whole footer column wider than its track.
-                -->
+                    Layer 3 — Working hours from the `working-hours`
+                    SiteSetting (admin-editable). Falls back to
+                    FALLBACK_HOURS when no row is published. The day
+                    indices match Schema.org's day numbering (0=Sun).
+                  -->
                   <dl class="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs *:min-w-0">
-                    <dt>{{ isArabic ? 'الأحد' : 'Sun' }}</dt>
-                    <dd>8 AM – 12 PM · 4 – 8 PM</dd>
-                    <dt>{{ isArabic ? 'الإثنين' : 'Mon' }}</dt>
-                    <dd>8 AM – 12 PM · 4 – 8 PM</dd>
-                    <dt>{{ isArabic ? 'الثلاثاء' : 'Tue' }}</dt>
-                    <dd>8 AM – 12 PM · 4 – 8 PM</dd>
-                    <dt>{{ isArabic ? 'الأربعاء' : 'Wed' }}</dt>
-                    <dd>8 AM – 12 PM · 4 – 8 PM</dd>
-                    <dt>{{ isArabic ? 'الخميس' : 'Thu' }}</dt>
-                    <dd>8 AM – 12 PM · 4 – 8 PM</dd>
-                    <dt>{{ isArabic ? 'الجمعة' : 'Fri' }}</dt>
-                    <dd>{{ isArabic ? 'مغلق' : 'Closed' }}</dd>
-                    <dt>{{ isArabic ? 'السبت' : 'Sat' }}</dt>
-                    <dd>9 AM – 1 PM</dd>
+                    <template
+                      v-for="d in workingHours"
+                      :key="d.day"
+                    >
+                      <dt>{{ dayLabel(d.day) }}</dt>
+                      <dd>{{ dayHoursText(d) }}</dd>
+                    </template>
                   </dl>
                 </div>
               </li>

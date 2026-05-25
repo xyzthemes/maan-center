@@ -19,6 +19,7 @@ export type {
   Post,
   Page,
   ContentBlock,
+  SiteSetting,
   Form,
   FormField,
   FormBlock,

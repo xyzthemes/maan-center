@@ -160,6 +160,21 @@ const resolvedStats = computed(() =>
     : stats
 )
 
+// Layer 3 — Mission + Vision from SiteSettings (Arabic locale).
+const { getMany: getSettings } = useMaanSettings()
+const { data: homeSettings } = await useAsyncData(
+  'home-settings-ar',
+  () => getSettings<{ mission?: string, vision?: string }>(['mission-vision'], 'ar'),
+  { default: () => ({} as Record<string, { value: { mission?: string, vision?: string } } | null>) }
+)
+const missionVision = computed(() => {
+  const v = homeSettings.value['mission-vision']?.value
+  return {
+    mission: v?.mission || '',
+    vision: v?.vision || ''
+  }
+})
+
 const resolvedSeo = useMaanSeo({
   seo: pageSeo.value || undefined,
   fallback: {
@@ -573,7 +588,11 @@ useSchemaOrg([
     <!-- ─────────── MISSION & VISION ─────────── -->
     <section class="maan-section maan-band maan-band--autism">
       <UContainer>
-        <MaanMissionVision locale="ar" />
+        <MaanMissionVision
+          locale="ar"
+          :mission="missionVision.mission"
+          :vision="missionVision.vision"
+        />
       </UContainer>
     </section>
 

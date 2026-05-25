@@ -141,6 +141,23 @@ const resolvedStats = computed(() =>
     : stats
 )
 
+// Layer 3 — Mission + Vision (and any other admin-editable singletons
+// the homepage cares about) come from SiteSettings. Empty strings make
+// MaanMissionVision fall back to the structural copy it ships with.
+const { getMany: getSettings } = useMaanSettings()
+const { data: homeSettings } = await useAsyncData(
+  'home-settings-en',
+  () => getSettings<{ mission?: string, vision?: string }>(['mission-vision'], 'en'),
+  { default: () => ({} as Record<string, { value: { mission?: string, vision?: string } } | null>) }
+)
+const missionVision = computed(() => {
+  const v = homeSettings.value['mission-vision']?.value
+  return {
+    mission: v?.mission || '',
+    vision: v?.vision || ''
+  }
+})
+
 const resolvedSeo = useMaanSeo({
   seo: pageSeo.value || undefined,
   fallback: {
@@ -554,7 +571,11 @@ useSchemaOrg([
     <!-- MISSION & VISION -->
     <section class="maan-section maan-band maan-band--autism">
       <UContainer>
-        <MaanMissionVision locale="en" />
+        <MaanMissionVision
+          locale="en"
+          :mission="missionVision.mission"
+          :vision="missionVision.vision"
+        />
       </UContainer>
     </section>
 

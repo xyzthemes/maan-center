@@ -45,6 +45,11 @@ const navItems = computed(() => [[
     label: t.value.contactResponses,
     icon: 'i-lucide-inbox',
     to: isArabic.value ? '/ar/dashboard/submissions' : '/dashboard/submissions'
+  },
+  {
+    label: t.value.siteSettings,
+    icon: 'i-lucide-settings',
+    to: isArabic.value ? '/ar/dashboard/settings' : '/dashboard/settings'
   }
 ]])
 
@@ -77,6 +82,11 @@ const searchGroups = computed(() => [
         label: t.value.contactResponses,
         icon: 'i-lucide-inbox',
         to: isArabic.value ? '/ar/dashboard/submissions' : '/dashboard/submissions'
+      },
+      {
+        label: t.value.siteSettings,
+        icon: 'i-lucide-settings',
+        to: isArabic.value ? '/ar/dashboard/settings' : '/dashboard/settings'
       },
       {
         label: t.value.site,

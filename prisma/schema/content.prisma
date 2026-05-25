@@ -105,3 +105,26 @@ model ContentBlock {
   @@index([type, status, locale])
   @@index([placements], type: Gin)
 }
+
+// Layer 3 — Site-wide singleton settings keyed by string. Each row is
+// the truth for one named setting in one locale. `'*'` locale rows
+// match every locale and are the default fallback when no per-locale
+// row exists. Used for: working-hours (`'*'`), dr-osama-bio (per
+// locale), mission-vision (per locale), contact-info (`'*'`), stats
+// (per locale).
+//
+// Composite primary key `(key, locale)` means PUT can use upsert
+// without a separate id lookup.
+model SiteSetting {
+  key    String // e.g. 'working-hours'
+  locale String // 'en' | 'ar' | '*'
+
+  // Per-key shape — validated by server/utils/site-settings.ts.
+  value Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([key, locale])
+  @@index([key])
+}

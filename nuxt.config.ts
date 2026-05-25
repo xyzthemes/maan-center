@@ -52,12 +52,14 @@ export default defineNuxtConfig({
     '/dashboard/posts/**': { auth: { user: { role: 'admin' } } },
     '/dashboard/pages/**': { auth: { user: { role: 'admin' } } },
     '/dashboard/blocks/**': { auth: { user: { role: 'admin' } } },
+    '/dashboard/settings/**': { auth: { user: { role: 'admin' } } },
     '/dashboard/submissions/**': { auth: { user: { role: 'admin' } } },
     '/ar/dashboard': { auth: { user: { role: 'admin' } } },
     '/ar/dashboard/overview': { auth: { user: { role: 'admin' } } },
     '/ar/dashboard/posts/**': { auth: { user: { role: 'admin' } } },
     '/ar/dashboard/pages/**': { auth: { user: { role: 'admin' } } },
     '/ar/dashboard/blocks/**': { auth: { user: { role: 'admin' } } },
+    '/ar/dashboard/settings/**': { auth: { user: { role: 'admin' } } },
     '/ar/dashboard/submissions/**': { auth: { user: { role: 'admin' } } },
 
     // Guest-only flows — already-signed-in users get bounced to the dashboard.

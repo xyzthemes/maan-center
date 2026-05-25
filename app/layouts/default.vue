@@ -257,10 +257,25 @@ const drawerT = computed(() => isArabic.value
       </NuxtLink>
     </template>
 
+    <!--
+      Header dropdown overrides — bind the viewport panel + child links
+      to `--maan-*` tokens so the dropdown reacts to admin theme edits
+      (the Reka portal teleports content out of .maan-header, so the
+      tokens must be applied via slot classes, not nested CSS).
+    -->
     <UNavigationMenu
       :items="navigation"
       variant="link"
       class="hidden lg:flex"
+      :ui="{
+        viewport: 'bg-[var(--maan-surface-alt)] ring-[var(--maan-line)] shadow-lg',
+        link: 'text-[var(--maan-ink-muted)] hover:text-[var(--maan-autism)] data-[state=open]:text-[var(--maan-autism)]',
+        childLink: 'text-[var(--maan-ink)] hover:text-[var(--maan-autism)] hover:before:bg-[var(--maan-autism-soft)]',
+        childLinkLabel: 'text-[var(--maan-ink)]',
+        childLinkDescription: 'text-[var(--maan-ink-muted)]',
+        childLinkIcon: 'text-[var(--maan-autism)]',
+        arrow: 'bg-[var(--maan-surface-alt)] border-[var(--maan-line)]'
+      }"
     />
 
     <template #right>

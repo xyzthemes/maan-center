@@ -196,7 +196,10 @@ onMounted(() => {
       </template>
 
       <template #default="{ collapsed }">
-        <UDashboardSearchButton :collapsed="collapsed" :label="searchLabel" />
+        <UDashboardSearchButton
+          :collapsed="collapsed"
+          :label="searchLabel"
+        />
         <USeparator class="my-3" />
         <UNavigationMenu
           orientation="vertical"
@@ -226,7 +229,10 @@ onMounted(() => {
       </template>
     </UDashboardSidebar>
 
-    <UDashboardSearch :groups="searchGroups" :placeholder="searchLabel" />
+    <UDashboardSearch
+      :groups="searchGroups"
+      :placeholder="searchLabel"
+    />
 
     <slot />
   </UDashboardGroup>

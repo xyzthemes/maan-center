@@ -502,7 +502,7 @@ useSchemaOrg([
             style="background: linear-gradient(135deg, var(--maan-autism-soft), var(--maan-down-soft));"
           >
             <div class="grid gap-3">
-              <div class="rounded-lg bg-white/80 p-4 shadow-sm">
+              <div class="maan-surface-soft rounded-lg p-4 shadow-sm">
                 <p
                   class="text-xs font-semibold"
                   style="color: var(--maan-autism);"
@@ -522,7 +522,7 @@ useSchemaOrg([
                   ٤ جلسات منزلية / ١٠ دقائق
                 </p>
               </div>
-              <div class="rounded-lg bg-white/80 p-4 shadow-sm">
+              <div class="maan-surface-soft rounded-lg p-4 shadow-sm">
                 <p
                   class="text-xs font-semibold"
                   style="color: var(--maan-down);"
@@ -542,7 +542,7 @@ useSchemaOrg([
                   ٣ تمارين قابلة للتنفيذ يومياً
                 </p>
               </div>
-              <div class="rounded-lg bg-white/80 p-4 shadow-sm">
+              <div class="maan-surface-soft rounded-lg p-4 shadow-sm">
                 <p
                   class="text-xs font-semibold"
                   style="color: var(--maan-ld);"

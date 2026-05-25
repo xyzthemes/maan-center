@@ -49,6 +49,14 @@ const settingCards = computed(() => [
       ? 'الإحصائيات الأربعة على الصفحة الرئيسية.'
       : 'The four stat tiles on the homepage.',
     icon: 'i-lucide-bar-chart'
+  },
+  {
+    key: 'theme',
+    title: t.value.settingTheme,
+    description: isArabic.value
+      ? 'تخصيص ألوان الموقع للوضعين الفاتح والداكن.'
+      : 'Tune site colors for light and dark modes.',
+    icon: 'i-lucide-palette'
   }
 ])
 

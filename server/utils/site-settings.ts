@@ -54,6 +54,31 @@ export type StatsListValue = {
   items: Array<{ value: string, label: string }>
 }
 
+export type ThemeColorMap = {
+  surface: string
+  surfaceAlt: string
+  ink: string
+  inkMuted: string
+  line: string // rgba allowed
+  cta: string
+  ctaHover: string
+  autism: string
+  autismSoft: string // rgba allowed
+  down: string
+  downSoft: string // rgba allowed
+  ld: string
+  ldSoft: string // rgba allowed
+}
+
+export type ThemeValue = {
+  light: ThemeColorMap
+  dark: ThemeColorMap
+}
+
+/** Keys that may be stored as rgba (the rest are opaque hex). */
+export const THEME_ALPHA_KEYS = ['line', 'autismSoft', 'downSoft', 'ldSoft'] as const
+export type ThemeTokenKey = keyof ThemeColorMap
+
 // ── Per-key registry ──────────────────────────────────────────────────────
 
 const bad = (msg: string): never => {
@@ -148,6 +173,42 @@ const parseStatsList = (raw: unknown): StatsListValue => {
   return { items }
 }
 
+// CSS color: 6-digit hex, or rgb()/rgba() with integer channels + optional 0-1 alpha.
+const HEX_RE = /^#[0-9a-fA-F]{6}$/
+const RGBA_RE = /^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(,\s*(0|1|0?\.\d+))?\s*\)$/
+
+const THEME_TOKEN_KEYS: ThemeTokenKey[] = [
+  'surface', 'surfaceAlt', 'ink', 'inkMuted', 'line',
+  'cta', 'ctaHover',
+  'autism', 'autismSoft', 'down', 'downSoft', 'ld', 'ldSoft'
+]
+
+const parseColor = (raw: unknown, field: string): string => {
+  if (typeof raw !== 'string') return bad(`Color "${field}" must be a string.`)
+  const v = raw.trim()
+  if (!HEX_RE.test(v) && !RGBA_RE.test(v)) {
+    return bad(`Color "${field}" must be #RRGGBB or rgb()/rgba(): got "${v}".`)
+  }
+  return v
+}
+
+const parseColorMap = (raw: unknown, side: 'light' | 'dark'): ThemeColorMap => {
+  const r = (raw ?? {}) as Record<string, unknown>
+  const map = {} as ThemeColorMap
+  for (const key of THEME_TOKEN_KEYS) {
+    map[key] = parseColor(r[key], `${side}.${key}`)
+  }
+  return map
+}
+
+const parseTheme = (raw: unknown): ThemeValue => {
+  const r = (raw ?? {}) as Record<string, unknown>
+  return {
+    light: parseColorMap(r.light, 'light'),
+    dark: parseColorMap(r.dark, 'dark')
+  }
+}
+
 // ── Registry ──────────────────────────────────────────────────────────────
 
 export type SettingKey
@@ -156,6 +217,7 @@ export type SettingKey
     | 'mission-vision'
     | 'contact-info'
     | 'stats'
+    | 'theme'
 
 export type SettingSpec = {
   key: SettingKey
@@ -169,7 +231,8 @@ export const SETTING_REGISTRY: Record<SettingKey, SettingSpec> = {
   'dr-osama-bio': { key: 'dr-osama-bio', locales: ['en', 'ar'], parse: parseDrOsamaBio },
   'mission-vision': { key: 'mission-vision', locales: ['en', 'ar'], parse: parseMissionVision },
   'contact-info': { key: 'contact-info', locales: ['*'], parse: parseContactInfo },
-  'stats': { key: 'stats', locales: ['en', 'ar'], parse: parseStatsList }
+  'stats': { key: 'stats', locales: ['en', 'ar'], parse: parseStatsList },
+  'theme': { key: 'theme', locales: ['*'], parse: parseTheme }
 }
 
 const SETTING_KEYS = Object.keys(SETTING_REGISTRY) as SettingKey[]

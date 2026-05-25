@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { cloneThemeDefaults, THEME_DEFAULTS } from '~/utils/theme-defaults'
+import type { ThemeValue } from '~/utils/theme-defaults'
+
 definePageMeta({
   alias: ['/ar/dashboard/settings/:key'],
   layout: 'dashboard'
@@ -18,6 +21,7 @@ const title = computed(() => {
     case 'mission-vision': return t.value.settingMissionVision
     case 'contact-info': return t.value.settingContactInfo
     case 'stats': return t.value.settingStats
+    case 'theme': return t.value.settingTheme
     default: return key.value
   }
 })
@@ -58,6 +62,8 @@ const blankValue = (k: string): AnyValue => {
       return { phone: '', whatsapp: '', email: '', mapsUrl: '', address: '' }
     case 'stats':
       return { items: [{ value: '', label: '' }] }
+    case 'theme':
+      return cloneThemeDefaults() as unknown as AnyValue
     default:
       return {}
   }
@@ -388,6 +394,14 @@ watch(() => route.params.key, refresh)
               {{ t.addStat }}
             </UButton>
           </div>
+
+          <!-- ───── theme editor ───── -->
+          <MaanThemeEditor
+            v-else-if="key === 'theme'"
+            :model-value="(values[locale] as unknown as ThemeValue)"
+            :defaults="THEME_DEFAULTS"
+            @update:model-value="(v: ThemeValue) => { values[locale] = v as unknown as AnyValue }"
+          />
 
           <div class="mt-5">
             <UButton

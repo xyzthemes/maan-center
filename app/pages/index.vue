@@ -3,8 +3,12 @@ const { getPageSeo, getPosts } = useMaanContent()
 const { getFormBlockById } = useMaanForms()
 
 const { data: posts } = await useAsyncData<MaanPost[]>('maan-home-posts', async () => {
+  // Layer 1 — only surface posts that admins explicitly placed here.
+  // Fallback: when zero are tagged, show the latest published instead so
+  // the homepage isn't visibly empty during the transition window.
+  const featured = await getPosts('en', { placement: 'homepage-featured', limit: 3 })
+  if (featured.length) return featured
   const items = await getPosts()
-
   return items.slice(0, 3)
 }, {
   default: () => []

@@ -16,9 +16,18 @@ const programId = computed(() => isProgramId(String(route.params.id))
 
 const program = computed(() => getProgram(programId.value, 'en'))
 
+// Layer 1 — related articles are admin-curated via post placement. The
+// placement id follows the convention `<programId>-program-related`,
+// matching POST_PLACEMENTS in useMaanTaxonomy. Falls back to "latest 3"
+// only when no posts are tagged, so a freshly-installed program page
+// still shows something meaningful.
+const relatedPlacement = computed(() => `${programId.value}-program-related`)
+
 const { data: posts } = await useAsyncData<MaanPost[]>(
   `program-posts-${programId.value}-en`,
   async () => {
+    const tagged = await getPosts('en', { placement: relatedPlacement.value, limit: 3 })
+    if (tagged.length) return tagged
     const items = await getPosts('en')
     return items.slice(0, 3)
   },

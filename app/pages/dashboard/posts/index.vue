@@ -9,16 +9,38 @@ definePageMeta({
 const { t, isArabic } = useDashboardI18n()
 const { posts, postsError, loadPosts } = usePosts()
 const { statusOptions, statusLabel } = usePostForm()
+const { categories: taxonomyCategories, placements: taxonomyPlacements } = useMaanTaxonomy()
 
 const postsSearch = ref('')
 const postsStatusFilter = ref<'all' | 'draft' | 'in_review' | 'published'>('all')
+const postsCategoryFilter = ref<string>('all')
+const postsPlacementFilter = ref<string>('all')
+
+const lang = computed<'en' | 'ar'>(() => isArabic.value ? 'ar' : 'en')
+
+const categoryFilterOptions = computed(() => [
+  { value: 'all', label: t.value.filterCategory },
+  ...taxonomyCategories.map(c => ({ value: c.id, label: c.label[lang.value] }))
+])
+const placementFilterOptions = computed(() => [
+  { value: 'all', label: t.value.filterPlacement },
+  ...taxonomyPlacements.map(p => ({ value: p.id, label: p.label[lang.value] }))
+])
 
 const filteredPosts = computed(() => {
   const q = postsSearch.value.trim().toLowerCase()
   const status = postsStatusFilter.value
+  const category = postsCategoryFilter.value
+  const placement = postsPlacementFilter.value
 
   return posts.value.filter((post) => {
     if (status !== 'all' && (post.status || 'draft') !== status) {
+      return false
+    }
+    if (category !== 'all' && !(post.categories || []).includes(category)) {
+      return false
+    }
+    if (placement !== 'all' && !(post.placements || []).includes(placement)) {
       return false
     }
 
@@ -74,6 +96,26 @@ onMounted(loadPosts)
             size="sm"
             class="w-full max-w-xs"
           />
+          <!--
+            Category + placement filter dropdowns. Single-select (filter
+            by ONE taxonomy id at a time) keeps the UI simple — the
+            common admin workflow is "show me what's on the autism
+            page" or "show me all autism content".
+          -->
+          <USelect
+            v-model="postsCategoryFilter"
+            :items="categoryFilterOptions"
+            value-key="value"
+            size="sm"
+            class="hidden sm:block w-44"
+          />
+          <USelect
+            v-model="postsPlacementFilter"
+            :items="placementFilterOptions"
+            value-key="value"
+            size="sm"
+            class="hidden md:block w-56"
+          />
         </template>
         <template #right>
           <UFieldGroup>
@@ -106,7 +148,9 @@ onMounted(loadPosts)
         v-if="!postsError && filteredPosts.length === 0"
         class="text-sm text-muted"
       >
-        {{ t.noPostsFound }}
+        {{ postsCategoryFilter !== 'all' || postsPlacementFilter !== 'all' || postsSearch
+          ? t.noMatchingFilters
+          : t.noPostsFound }}
       </p>
 
       <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">

@@ -25,6 +25,15 @@ model Post {
   // SEO overrides — { title, meta_description, focus_keyphrase, no_index, no_follow, canonical_url, og_image }
   seo Json?
 
+  // Layer 1 taxonomy. `categories` describe what the post is ABOUT
+  // (subject-matter tags like "autism", "therapy"); `placements` describe
+  // WHERE the post should surface on the site (homepage-featured,
+  // autism-program-related, …). Both are typed by `useMaanTaxonomy.ts`
+  // on the client/server side — Postgres just stores the slugs.
+  // GIN indexes power the placement filters that every public page runs.
+  categories String[] @default([])
+  placements String[] @default([])
+
   // Author (optional — keeps the data model decoupled from a particular auth model
   // during the migration; once users exist, every new post should have one)
   authorId String?
@@ -35,6 +44,8 @@ model Post {
 
   @@index([status, publishedAt])
   @@index([authorId])
+  @@index([categories], type: Gin)
+  @@index([placements], type: Gin)
 }
 
 model Page {

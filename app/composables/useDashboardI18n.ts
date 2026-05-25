@@ -95,6 +95,16 @@ export const useDashboardI18n = () => {
         deletePageConfirmDescription: 'سيتم حذف الصفحة نهائياً. لا يمكن التراجع عن هذا الإجراء.',
         deletePageError: 'دورك لا يسمح بحذف هذه الصفحة.',
         confirmDelete: 'تأكيد الحذف',
+        // Layer 1 — Post taxonomy.
+        categories: 'التصنيفات',
+        placements: 'مواقع الظهور',
+        pickCategories: 'اختر تصنيفاً أو أكثر…',
+        pickPlacements: 'اختر مكان الظهور على الموقع…',
+        categoriesHint: 'لتنظيم المحتوى بحسب المجال (طيف التوحد، متلازمة داون، …).',
+        placementsHint: 'يحدد أين يظهر المنشور — الصفحة الرئيسية، صفحات البرامج، أو المرجع العلمي.',
+        filterCategory: 'كل التصنيفات',
+        filterPlacement: 'كل المواقع',
+        noMatchingFilters: 'لا توجد منشورات مطابقة لهذه الفلاتر.',
         cancel: 'إلغاء'
       }
     : {
@@ -172,7 +182,17 @@ export const useDashboardI18n = () => {
         deletePageConfirmDescription: 'The page will be permanently removed. This cannot be undone.',
         deletePageError: 'Your role cannot delete this page.',
         confirmDelete: 'Confirm delete',
-        cancel: 'Cancel'
+        cancel: 'Cancel',
+        // Layer 1 — Post taxonomy.
+        categories: 'Categories',
+        placements: 'Placements',
+        pickCategories: 'Pick one or more categories…',
+        pickPlacements: 'Pick where this post should appear…',
+        categoriesHint: 'Organises content by subject (autism, Down syndrome, …).',
+        placementsHint: 'Controls where the post surfaces — homepage, program pages, scientific reference.',
+        filterCategory: 'All categories',
+        filterPlacement: 'All placements',
+        noMatchingFilters: 'No posts match these filters.'
       })
 
   return {

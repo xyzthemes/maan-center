@@ -18,6 +18,11 @@ export type DashboardPostShape = {
   date_created: string
   date_updated: string
   seo: unknown
+  // Layer 1 taxonomy. Always serialised as arrays (never null) so the
+  // dashboard editor's multi-select bindings don't need a defensive
+  // `?? []` fallback at every use-site.
+  categories: string[]
+  placements: string[]
 }
 
 export const toDashboardPost = (post: Post): DashboardPostShape => ({
@@ -31,7 +36,9 @@ export const toDashboardPost = (post: Post): DashboardPostShape => ({
   published_at: post.publishedAt?.toISOString() ?? null,
   date_created: post.createdAt.toISOString(),
   date_updated: post.updatedAt.toISOString(),
-  seo: post.seo
+  seo: post.seo,
+  categories: post.categories ?? [],
+  placements: post.placements ?? []
 })
 
 export type DashboardPageShape = {

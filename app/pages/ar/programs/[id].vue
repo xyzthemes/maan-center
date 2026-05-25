@@ -16,9 +16,15 @@ const programId = computed(() => isProgramId(String(route.params.id))
 
 const program = computed(() => getProgram(programId.value, 'ar'))
 
+// Layer 1 — admin-curated related articles per program. See EN mirror
+// for the placement-id convention.
+const relatedPlacement = computed(() => `${programId.value}-program-related`)
+
 const { data: posts } = await useAsyncData<MaanPost[]>(
   `program-posts-${programId.value}-ar`,
   async () => {
+    const tagged = await getPosts('ar', { placement: relatedPlacement.value, limit: 3 })
+    if (tagged.length) return tagged
     const items = await getPosts('ar')
     return items.slice(0, 3)
   },

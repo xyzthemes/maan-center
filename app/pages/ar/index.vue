@@ -2,8 +2,10 @@
 const { getPageSeo, getPosts } = useMaanContent()
 
 const { data: posts } = await useAsyncData<MaanPost[]>('maan-home-posts-ar', async () => {
+  // Layer 1 — placement-driven curation with graceful fallback (see EN homepage).
+  const featured = await getPosts('ar', { placement: 'homepage-featured', limit: 3 })
+  if (featured.length) return featured
   const items = await getPosts('ar')
-
   return items.slice(0, 3)
 }, {
   default: () => []

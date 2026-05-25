@@ -14,12 +14,30 @@ const emit = defineEmits<{
   'clear': []
 }>()
 
-const { t } = useDashboardI18n()
+const { t, isArabic } = useDashboardI18n()
+const { categories: taxonomyCategories, placements: taxonomyPlacements } = useMaanTaxonomy()
 
 const form = computed({
   get: () => props.modelValue,
   set: (value: PostForm) => emit('update:modelValue', value)
 })
+
+// Dashboard locale drives label rendering inside USelectMenu so an
+// Arabic-side editor sees Arabic option labels even though the slug
+// stored in the DB stays canonical.
+const lang = computed<'en' | 'ar'>(() => isArabic.value ? 'ar' : 'en')
+
+// Coerce option `value` back to plain `string` so USelectMenu's inferred
+// option type doesn't narrow to the literal union — keeps form.categories
+// typed as `string[]` (which matches the DB column shape) and avoids a
+// pile of `as PostCategoryId[]` casts at every binding site. Validation
+// of unknown ids still happens server-side via sanitizeCategories.
+const categoryOptions = computed<Array<{ value: string, label: string }>>(() =>
+  taxonomyCategories.map(c => ({ value: c.id, label: c.label[lang.value] }))
+)
+const placementOptions = computed<Array<{ value: string, label: string }>>(() =>
+  taxonomyPlacements.map(p => ({ value: p.id, label: p.label[lang.value] }))
+)
 </script>
 
 <template>
@@ -85,6 +103,51 @@ const form = computed({
         class="maan-form-input min-h-24"
       />
     </label>
+
+    <!--
+      Layer 1 taxonomy — categories describe WHAT the post is about,
+      placements describe WHERE on the site it surfaces. Both validate
+      server-side against useMaanTaxonomy, so admins can only pick from
+      the canonical list — typos can't silently disable a placement.
+    -->
+    <div class="grid gap-5 md:grid-cols-2">
+      <div>
+        <label
+          for="post-categories"
+          class="mb-2 block text-sm font-semibold text-highlighted"
+        >{{ t.categories }}</label>
+        <USelectMenu
+          id="post-categories"
+          v-model="form.categories"
+          :items="categoryOptions"
+          value-key="value"
+          multiple
+          :placeholder="t.pickCategories"
+          class="w-full"
+        />
+        <p class="mt-1 text-xs leading-5 text-muted">
+          {{ t.categoriesHint }}
+        </p>
+      </div>
+      <div>
+        <label
+          for="post-placements"
+          class="mb-2 block text-sm font-semibold text-highlighted"
+        >{{ t.placements }}</label>
+        <USelectMenu
+          id="post-placements"
+          v-model="form.placements"
+          :items="placementOptions"
+          value-key="value"
+          multiple
+          :placeholder="t.pickPlacements"
+          class="w-full"
+        />
+        <p class="mt-1 text-xs leading-5 text-muted">
+          {{ t.placementsHint }}
+        </p>
+      </div>
+    </div>
 
     <div>
       <span class="mb-2 block text-sm font-semibold text-highlighted">{{ t.content }}</span>

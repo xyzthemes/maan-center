@@ -46,7 +46,11 @@ jobs:
       - name: Setup flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
 
+      # Build the Docker image on the Blacksmith runner instead of Fly's remote
+      # builder. The default Fly remote builder OOM-kills `pnpm build` (exit
+      # 137) while bundling the Nuxt app; the 4 vCPU Blacksmith runner has
+      # plenty of memory for the Vite build and Docker is preinstalled.
       - name: Deploy
-        run: flyctl deploy --remote-only --app maan-app
+        run: flyctl deploy --local-only --app maan-app
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

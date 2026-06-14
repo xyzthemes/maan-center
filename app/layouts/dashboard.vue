@@ -244,7 +244,7 @@ onMounted(() => {
             variant="ghost"
             :block="!collapsed"
             :square="collapsed"
-            trailing-icon="i-lucide-chevron-up"
+            trailing-icon="i-lucide-chevrons-up-down"
             class="justify-between"
           />
         </UDropdownMenu>

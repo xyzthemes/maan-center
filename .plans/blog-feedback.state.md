@@ -4,7 +4,7 @@
 Plan: `blog-feedback.md` · Briefs: `blog-feedback.sessions.md` ·
 Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 
-## Next up: C5 (Phase 5 — checkpoint review)
+## Next up: S12 (Phase 6 — performance)
 
 ## Session checklist
 
@@ -31,10 +31,10 @@ Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 
 ### Phase 5 — Search & filter · branch `blog-feedback/p5-search` (from p4 head)
 - [x] S10 — Search bar + category filter on blog index
-- [ ] **C5** checkpoint review
+- [x] **C5** checkpoint review — **APPROVE** (lint+build green; no dep/CI/schema changes). `q` is parameterized Prisma `contains` (no injection); `status:'published'` always enforced (no draft leak); `total` correct under q/category/locale/pagination combos; new public `categories.get.ts` exposes only slug+names; `take:500` window is a documented/acceptable limit (R2/Q1). Live smoke → Human-verification checklist.
 
 ### Phase 6 — Performance · branch `blog-feedback/p6-perf` (from p5 head)
-- [ ] S11 — Server-side WebP on upload (sharp)
+- [x] S11 — Server-side WebP on upload (sharp)
 - [ ] S12 — @nuxt/image + responsive + mobile/RTL audit
 - [ ] **C6** checkpoint review
 
@@ -67,6 +67,28 @@ _Live UI smoke can't run in the agent environment (Fly Postgres unreachable with
 - [ ] Phase 3: `prisma migrate deploy` applies `add_category` on a fresh/staging DB + 6 seed rows present; existing posts' slugs still resolve to labels; category CRUD reflects in editor select + list filter + public `?category=` filter; deleting an in-use category → post keeps slug + shows raw-slug fallback; creating a post with a DB-only category persists. (Run `pnpm db:seed:categories` locally if seeding a dev DB by hand.)
 
 ## Handoff log (newest first)
+
+### S11 — Server-side WebP on upload (sharp) (2026-06-14, branch p6-perf)
+- `pnpm add sharp` → 0.35.1 as a REGULAR dependency (not dev). Lockfile updated;
+  `pnpm install --frozen-lockfile` clean. Minor peer note: `nuxt-og-image` wants
+  sharp `^0.34.0`, found 0.35.1 — backward-compatible, warning only.
+- `upload.post.ts`: FILE_SPEC images now carry `image: true` (png/jpeg/webp/avif).
+  In-handler, image types pipe through `sharp().rotate().resize(2048² inside,
+  withoutEnlargement).webp({quality:80})` → stored as `.webp`, content-type
+  `image/webp`. Transparency preserved (libvips carries alpha PNG/WebP/AVIF→WebP).
+  Returned `size` is the CONVERTED byte length. Size cap still gates the ORIGINAL.
+- GIF: deliberately NOT flagged `image` → passes through unconverted (safe option;
+  avoids dropping animation). PDF/doc/video/audio untouched. Auth guard intact.
+- R1 (Docker/sharp linux binary): NOT run here (Docker build is expensive). The
+  runner stage does `pnpm install --frozen-lockfile --prod` on the linux Blacksmith
+  runner (`node:22-bookworm-slim`), which resolves sharp's `@img/sharp-linux-x64`
+  prebuilt at build → structurally satisfied. REAL R1 verification = Docker/Fly
+  build at C6. Dockerfile NOT modified (no change needed).
+- Verify: `pnpm lint` clean, `pnpm build` green (upload.post chunk emitted),
+  `pnpm install --frozen-lockfile` clean. sharp loads locally (vips 8.18.3).
+- Deferred to C6: live smoke — upload a big JPEG/PNG → stored object is smaller
+  WebP + URL ends `.webp`; PNG transparency preserved; GIF stays GIF.
+- No deviations.
 
 ### S10 — Search bar + category filter (2026-06-14, branch p5-search)
 - Server `public/posts.get.ts`: added `q` param — case-insensitive Prisma

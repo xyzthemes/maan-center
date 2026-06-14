@@ -4,6 +4,7 @@
 
 import { createError, readMultipartFormData, setResponseStatus } from 'h3'
 import { randomUUID } from 'node:crypto'
+import sharp from 'sharp'
 
 // Per-type size caps (Q3): images stay small, documents 25 MB, A/V 50 MB.
 const MB = 1024 * 1024
@@ -14,12 +15,15 @@ const AV_MAX = 50 * MB
 // Single source of truth for what we accept: MIME → file extension + cap. Any
 // MIME not in this table is rejected (the auth guard + this allow-list are the
 // only gate before an object lands in the public bucket — keep it tight).
-const FILE_SPEC: Record<string, { ext: string, maxBytes: number }> = {
-  // Images
-  'image/png': { ext: 'png', maxBytes: IMAGE_MAX },
-  'image/jpeg': { ext: 'jpg', maxBytes: IMAGE_MAX },
-  'image/webp': { ext: 'webp', maxBytes: IMAGE_MAX },
-  'image/avif': { ext: 'avif', maxBytes: IMAGE_MAX },
+const FILE_SPEC: Record<string, { ext: string, maxBytes: number, image?: boolean }> = {
+  // Images — flagged `image` so the handler can transcode them to WebP (S11).
+  // Animated GIFs are deliberately NOT flagged: converting them risks losing
+  // animation (sharp needs `{ animated: true }` + libvips animation support),
+  // so we pass GIF through untouched as the safe option.
+  'image/png': { ext: 'png', maxBytes: IMAGE_MAX, image: true },
+  'image/jpeg': { ext: 'jpg', maxBytes: IMAGE_MAX, image: true },
+  'image/webp': { ext: 'webp', maxBytes: IMAGE_MAX, image: true },
+  'image/avif': { ext: 'avif', maxBytes: IMAGE_MAX, image: true },
   'image/gif': { ext: 'gif', maxBytes: IMAGE_MAX },
   // Documents (downloadable attachments)
   'application/pdf': { ext: 'pdf', maxBytes: DOC_MAX },
@@ -82,15 +86,36 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // S11: transcode raster images to WebP before storing — smaller payloads,
+  // single modern format. Non-image types (PDF/doc/video/audio) and animated
+  // GIFs pass through untouched. Transparency is preserved (libvips carries the
+  // alpha channel from PNG/WebP/AVIF into the WebP output). A cheap max-dimension
+  // downscale keeps oversized source images from ballooning the bucket; the
+  // size cap above already gated the ORIGINAL upload.
   const stem = file.filename.replace(/\.[^.]+$/, '')
-  const key = `posts/${randomUUID().slice(0, 8)}-${slugifyStem(stem)}.${spec.ext}`
+
+  let body: Buffer | Uint8Array = file.data
+  let storedExt = spec.ext
+  let storedContentType = contentType
+
+  if (spec.image) {
+    body = await sharp(file.data)
+      .rotate() // honour EXIF orientation before stripping metadata
+      .resize({ width: 2048, height: 2048, fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toBuffer()
+    storedExt = 'webp'
+    storedContentType = 'image/webp'
+  }
+
+  const key = `posts/${randomUUID().slice(0, 8)}-${slugifyStem(stem)}.${storedExt}`
 
   const url = await uploadObject({
     key,
-    body: file.data,
-    contentType
+    body,
+    contentType: storedContentType
   })
 
   setResponseStatus(event, 201)
-  return { url, key, size: file.data.length, contentType }
+  return { url, key, size: body.length, contentType: storedContentType }
 })

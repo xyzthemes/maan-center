@@ -13,6 +13,10 @@ const props = defineProps<{
   dirty: boolean
   /** Persists the form. Returns a truthy id on success, falsy on failure. */
   save: () => Promise<unknown>
+  /** Freeze auto-save while the modal is open (so it can't save/toast mid-decision). */
+  pause?: () => void
+  /** Re-arm auto-save when the user chooses to keep editing. */
+  resume?: () => void
 }>()
 
 const { t } = useDashboardI18n()
@@ -28,6 +32,9 @@ onBeforeRouteLeave((to) => {
   if (bypass.value || !props.dirty) return true
   pendingPath.value = to.fullPath
   open.value = true
+  // Stop the pending debounced auto-save from firing (and toasting "saved")
+  // while the user decides.
+  props.pause?.()
   return false
 })
 
@@ -55,6 +62,7 @@ const discardAndLeave = () => proceed()
 const keepEditing = () => {
   open.value = false
   pendingPath.value = null
+  props.resume?.()
 }
 
 // Browser-level guard. Native dialog text isn't customisable; presence is what

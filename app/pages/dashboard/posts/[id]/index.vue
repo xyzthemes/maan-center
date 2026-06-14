@@ -14,6 +14,8 @@ const {
   isSaving,
   autoSaveStatus,
   isDirty,
+  pauseAutoSave,
+  resumeAutoSave,
   statusLabel,
   editPost,
   newPost,
@@ -147,6 +149,8 @@ watch(() => route.params.id, () => {
       <DashboardUnsavedGuard
         :dirty="isDirty"
         :save="savePost"
+        :pause="pauseAutoSave"
+        :resume="resumeAutoSave"
       />
 
       <UAlert

@@ -4,7 +4,7 @@
 Plan: `blog-feedback.md` · Briefs: `blog-feedback.sessions.md` ·
 Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 
-## Next up: C3 (Phase 3 checkpoint review)
+## Next up: C3-rereview
 
 ## Session checklist
 
@@ -64,6 +64,16 @@ _Live UI smoke can't run in the agent environment (Fly Postgres unreachable with
 - [ ] Phase 2: editor link add/edit/remove + font-size persist on the public article; PDF upload → inserted download link works; mp4/mp3 embed plays on the public article; oversized (>cap) + unknown-MIME upload rejected with clear message; auto-save fires ONE PATCH on pause (no storm while typing) + new post gains id & URL updates once.
 
 ## Handoff log (newest first)
+
+### S8-fix — category page scope guard (newest first)
+- C3 corrective: `/dashboard/categories` had no `URL_TO_SCOPE` entry, so
+  `scopeForUrl` returned undefined → page shell was always-accessible to staff
+  lacking `posts`. Added `'/dashboard/categories': 'posts'` to `URL_TO_SCOPE`
+  (`app/utils/permissions.ts`). No `/ar/` alias — `scopeForUrl` strips the `/ar/`
+  prefix at runtime, matching the `/dashboard/posts` pattern (no `/ar/` keys exist).
+- Fixed the now-inaccurate "reachable only through the sidebar" comment in
+  `categories/index.vue` to state the middleware guards direct nav via URL_TO_SCOPE.
+- Verify: `pnpm lint` clean, `pnpm build` green. No prod/CI/schema changes.
 
 ### S8 — Category management UI + wire selects (2026-06-14, branch p3-categories)
 - New page `app/pages/dashboard/categories/index.vue`: list + create/edit/delete

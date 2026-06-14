@@ -34,6 +34,7 @@ export const sanitizePermissions = (raw: unknown): PermissionScope[] => {
  *  so `/dashboard/posts/123` resolves to `posts`. */
 export const URL_TO_SCOPE: Record<string, PermissionScope> = {
   '/dashboard/posts': 'posts',
+  '/dashboard/categories': 'posts',
   '/dashboard/pages': 'pages',
   '/dashboard/blocks': 'blocks',
   '/dashboard/forms': 'forms',

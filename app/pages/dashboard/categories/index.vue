@@ -4,9 +4,10 @@
 // editing a name only changes the display label, editing a slug does NOT
 // rewrite existing posts (they fall back to the raw slug — see useCategories).
 //
-// Gated by the same `posts` permission scope as the posts list (the route is
-// reachable only through the sidebar entry which filters on that scope, and
-// every API call is server-side requirePermission('posts')).
+// Gated by the same `posts` permission scope as the posts list: the route is
+// mapped to `posts` in URL_TO_SCOPE so the global dashboard-permission
+// middleware guards direct navigation (the sidebar entry also filters on that
+// scope), and every API call is server-side requirePermission('posts').
 
 import type { DashboardCategory } from '~/composables/useCategories'
 

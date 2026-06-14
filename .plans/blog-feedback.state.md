@@ -4,17 +4,17 @@
 Plan: `blog-feedback.md` · Briefs: `blog-feedback.sessions.md` ·
 Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 
-## Next up: C1 (checkpoint review)
+## Next up: S4 (Phase 2 — editor)
 
 ## Session checklist
 
 ### Phase 1 — Critical bugs · branch `blog-feedback/p1-bugs` (from `main`)
 - [x] S1 — Fix detail-page freeze + dedicated single-post API
 - [x] S2 — Pagination / "Load More"
-- [ ] **C1** checkpoint review
+- [x] **C1** checkpoint review — **APPROVE** (lint+build re-verified green; code review clean; no prod-safety changes). Live UI smoke un-run: dev DB is Fly Postgres reachable only via `fly proxy` tunnel (not available here) → added to Human-verification checklist below.
 
 ### Phase 2 — Editor · branch `blog-feedback/p2-editor` (from p1 head)
-- [ ] S3 — Insert link + font sizing
+- [x] S3 — Insert link + font sizing
 - [ ] S4 — Attachment (PDF) + media upload & insert
 - [ ] S5 — Auto-save drafts
 - [ ] **C2** checkpoint review
@@ -53,8 +53,34 @@ Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 - 2026-06-14 (orchestrator): Q1–Q4 locked to their recommended options for the
   autonomous run rather than pausing for the user. Reversible if the user
   objects at the final PR.
+- 2026-06-14 (S1/S2 agent): committed `.plans/` and `.codegraph/` into branch
+  `p1-bugs` (protocol treats these as untracked working files). CLEANUP AT PR
+  ASSEMBLY (C7): add both to `.gitignore` and drop from the stack, or filter
+  from the final PR so they don't ship. Not worth rewriting stacked history now.
+
+## Human-verification checklist (live smoke; needs `fly proxy` DB tunnel + `pnpm dev`)
+_Live UI smoke can't run in the agent environment (Fly Postgres unreachable without the tunnel). Run these before merging the final PR:_
+- [ ] Phase 1: `/blog` + `/ar/blog` show >6 posts with working "Load More" to the end; a post ranked >6th opens (no freeze); an Arabic post opens; `/blog/does-not-exist` → clean 404.
 
 ## Handoff log (newest first)
+
+### S3 — Insert link + font sizing (2026-06-14, branch p2-editor)
+- R4 finding: `link` IS a built-in UEditor handler (default StarterKit) — added
+  `{ kind: 'link', icon: 'i-lucide-link' }` to the toolbar, no dep. Font size is
+  NOT exposed; added one direct dep `@tiptap/extension-text-style@3.22.4`
+  (pinned to installed @tiptap core ver) and registered `[TextStyle, FontSize]`
+  via UEditor `:extensions`. Both are SSR-safe schema extensions.
+- `DashboardEditor.vue`: wrapped toolbar in a flex row + a `USelectMenu`
+  font-size dropdown (Default/Small/Normal/Large/X-Large/Heading) calling
+  `applyFontSize` → `chain().setFontSize(px)`/`unsetFontSize()`. Inserts inline
+  `style="font-size:…"` on selection; renders on the public article HTML.
+- Did NOT touch nuxt.config: TextStyle/FontSize add no prosemirror plugin, build
+  green, so the documented `optimizeDeps.include` keyed-plugin mitigation isn't
+  needed. Watch at C2 smoke just in case.
+- Verify: `pnpm lint` clean, `pnpm build` green.
+- Deferred to C2: live smoke — add/edit/remove a link, resize text, save, view
+  on public article (link href + inline font-size persist).
+- No deviations.
 
 ### S2 — Pagination / "Load More" (2026-06-14, branch p1-bugs)
 - `public/posts.get.ts`: accepts `page` (1-based) + `offset` escape hatch; DB

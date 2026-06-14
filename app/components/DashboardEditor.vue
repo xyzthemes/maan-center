@@ -5,11 +5,31 @@
 // image upload is the same flow.
 
 import type { EditorToolbarItem, EditorCustomHandlers } from '@nuxt/ui'
+// FontSize lives in @tiptap/extension-text-style (it requires the TextStyle
+// mark). Neither is in UEditor's default extension set, so we register both
+// via the `extensions` prop below. This is the one direct @tiptap dep we add.
+import { TextStyle, FontSize } from '@tiptap/extension-text-style'
 
 // Structural alias: the Editor type lives in @tiptap/vue-3 (a transitive of
 // @nuxt/ui, not a direct dep). Pulling it through the handler signature keeps
 // us from depending on @tiptap directly while still getting the correct API.
 type EditorArg = Parameters<EditorCustomHandlers[string]['execute']>[0]
+
+// TextStyle + FontSize are SSR-safe (pure ProseMirror schema extensions, no
+// browser-only globals at import or construct time), so registering them
+// statically is fine under Nuxt's SSR.
+const editorExtensions = [TextStyle, FontSize]
+
+// Font-size choices offered in the toolbar dropdown. The empty value clears any
+// inline size back to the stylesheet default.
+const fontSizeItems = [
+  { label: 'Default', value: '' },
+  { label: 'Small', value: '0.875rem' },
+  { label: 'Normal', value: '1rem' },
+  { label: 'Large', value: '1.25rem' },
+  { label: 'X-Large', value: '1.5rem' },
+  { label: 'Heading', value: '2rem' }
+]
 
 const props = defineProps<{
   modelValue: string
@@ -65,12 +85,26 @@ const editorToolbarItems: EditorToolbarItem<typeof handlers>[][] = [
     { kind: 'orderedList', icon: 'i-lucide-list-ordered', tooltip: { text: 'Numbered list' } }
   ],
   [
+    // `link` is a built-in UEditor handler — it prompts for a URL when none is
+    // provided, and toggles/removes the link on the current selection.
+    { kind: 'link', icon: 'i-lucide-link', tooltip: { text: 'Insert link' } },
     { kind: 'image', icon: 'i-lucide-image', tooltip: { text: 'Insert image' } },
     { kind: 'undo', icon: 'i-lucide-undo-2', tooltip: { text: 'Undo' } },
     { kind: 'redo', icon: 'i-lucide-redo-2', tooltip: { text: 'Redo' } },
     { kind: 'clearFormatting', icon: 'i-lucide-eraser', tooltip: { text: 'Clear formatting' } }
   ]
 ]
+
+// Apply (or clear) an inline font size on the current selection via the
+// FontSize extension. Empty value → unset back to the stylesheet default.
+function applyFontSize(editor: EditorArg, size: string) {
+  const chain = editor.chain().focus()
+  if (size) {
+    chain.setFontSize(size).run()
+  } else {
+    chain.unsetFontSize().run()
+  }
+}
 
 const ACCEPT = 'image/png,image/jpeg,image/webp,image/avif,image/gif'
 
@@ -110,16 +144,31 @@ async function onFilePicked(e: Event) {
       content-type="html"
       :placeholder="placeholder"
       :handlers="handlers"
+      :extensions="editorExtensions"
       :mention="false"
       class="maan-dashboard-editor"
       :ui="{ content: 'min-h-72 px-4 py-3 focus:outline-none' }"
     >
       <template #default="{ editor }">
-        <UEditorToolbar
-          :editor="editor"
-          :items="editorToolbarItems"
-          class="border-b border-default px-2 py-2"
-        />
+        <div class="flex flex-wrap items-center gap-1 border-b border-default px-2 py-2">
+          <UEditorToolbar
+            :editor="editor"
+            :items="editorToolbarItems"
+            class="border-0 p-0"
+          />
+          <USelectMenu
+            :model-value="undefined"
+            :items="fontSizeItems"
+            :search-input="false"
+            value-key="value"
+            placeholder="Font size"
+            icon="i-lucide-type"
+            size="sm"
+            class="w-36"
+            :ui="{ base: 'rounded-md' }"
+            @update:model-value="(value: string) => applyFontSize(editor, value)"
+          />
+        </div>
       </template>
     </UEditor>
 

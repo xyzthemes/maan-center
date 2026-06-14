@@ -1,29 +1,81 @@
 <script setup lang="ts">
-const { getPageSeo, getPostsPage } = useMaanContent()
+const { getPageSeo, getPostsPage, getCategoryOptions } = useMaanContent()
 const { getFormBlockById } = useMaanForms()
 
 const PAGE_SIZE = 6
+
+// Search + category filter (S10). `q`/`category` compose with the server
+// pagination — every fetch passes the active filters, so `total` reflects
+// the filtered set and "Load More" stops at the right place.
+const search = ref('')
+const debouncedQ = ref('')
+const category = ref<string | undefined>(undefined)
+
+const filters = () => ({
+  q: debouncedQ.value || undefined,
+  category: category.value || undefined
+})
+
 const { data: firstPage } = await useAsyncData('maan-blog-posts', () => getPostsPage('en', { page: 1, limit: PAGE_SIZE }), {
   default: () => ({ posts: [] as MaanPost[], total: 0 })
+})
+
+const { data: categoryOptions } = await useAsyncData('maan-blog-categories', () => getCategoryOptions('en'), {
+  default: () => [] as Array<{ value: string, label: string }>
 })
 
 const posts = ref<MaanPost[]>(firstPage.value?.posts ?? [])
 const total = ref(firstPage.value?.total ?? 0)
 const page = ref(1)
 const loadingMore = ref(false)
+const reloading = ref(false)
 const hasMore = computed(() => posts.value.length < total.value)
+const isEmpty = computed(() => !reloading.value && posts.value.length === 0)
+const hasActiveFilter = computed(() => Boolean(debouncedQ.value || category.value))
 
 const loadMore = async () => {
   if (loadingMore.value || !hasMore.value) return
   loadingMore.value = true
   try {
-    const next = await getPostsPage('en', { page: page.value + 1, limit: PAGE_SIZE })
+    const next = await getPostsPage('en', { page: page.value + 1, limit: PAGE_SIZE, ...filters() })
     posts.value = [...posts.value, ...next.posts]
     total.value = next.total
     page.value += 1
   } finally {
     loadingMore.value = false
   }
+}
+
+// Re-run from page 1 whenever a filter changes. Debounce the typed query so
+// we don't fire a request per keystroke.
+let debounceTimer: ReturnType<typeof setTimeout> | undefined
+watch(search, (value) => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    debouncedQ.value = value.trim()
+  }, 350)
+})
+onScopeDispose(() => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+})
+
+const reload = async () => {
+  reloading.value = true
+  try {
+    const first = await getPostsPage('en', { page: 1, limit: PAGE_SIZE, ...filters() })
+    posts.value = first.posts
+    total.value = first.total
+    page.value = 1
+  } finally {
+    reloading.value = false
+  }
+}
+watch([debouncedQ, category], reload)
+
+const clearFilters = () => {
+  search.value = ''
+  debouncedQ.value = ''
+  category.value = undefined
 }
 const { data: pageSeo } = await useAsyncData<MaanSeo>('maan-page-seo-blog', () => getPageSeo('/blog', {
   title: 'Blog',
@@ -80,7 +132,46 @@ useSchemaOrg([
     </section>
 
     <UContainer class="py-14 sm:py-18">
-      <div class="grid gap-6 md:grid-cols-3">
+      <div class="mb-10 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <UInput
+          v-model="search"
+          icon="i-lucide-search"
+          size="lg"
+          class="w-full sm:max-w-sm"
+          placeholder="Search articles…"
+          :aria-label="'Search articles'"
+        />
+        <USelectMenu
+          v-model="category"
+          :items="categoryOptions"
+          value-key="value"
+          label-key="label"
+          size="lg"
+          class="w-full sm:w-56"
+          placeholder="All categories"
+        />
+        <UButton
+          v-if="hasActiveFilter"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-x"
+          @click="clearFilters"
+        >
+          Clear
+        </UButton>
+      </div>
+
+      <div
+        v-if="isEmpty"
+        class="py-16 text-center text-muted"
+      >
+        No articles match your search.
+      </div>
+
+      <div
+        v-else
+        class="grid gap-6 md:grid-cols-3"
+      >
         <article
           v-for="post in posts"
           :key="post.slug"

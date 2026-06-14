@@ -59,6 +59,8 @@ export type GetPostsOptions = {
   placement?: string
   /** Filter to posts that include this category id (e.g. 'autism'). */
   category?: string
+  /** Free-text search over title + description (case-insensitive). */
+  q?: string
   /** 1-based page index for "Load More" pagination. Defaults to 1. */
   page?: number
 }
@@ -223,7 +225,7 @@ export const useMaanContent = () => {
     locale: 'en' | 'ar' = 'en',
     opts: GetPostsOptions = {}
   ): Promise<MaanPost[]> => {
-    const { limit = 6, placement, category, page = 1 } = opts
+    const { limit = 6, placement, category, q, page = 1 } = opts
     try {
       const res = await $fetch<{ posts: ApiPost[], total?: number }>('/api/public/posts', {
         query: {
@@ -231,18 +233,19 @@ export const useMaanContent = () => {
           limit,
           page,
           ...(placement ? { placement } : {}),
-          ...(category ? { category } : {})
+          ...(category ? { category } : {}),
+          ...(q ? { q } : {})
         }
       })
       const mapped = res.posts.map(p => toMaanPost(p, locale))
       if (mapped.length) return mapped
-      // Only fall back to typed fallbacks when no taxonomy was requested —
-      // a placement query that hit zero rows means "this slot is empty",
-      // not "show me anything".
-      if (placement || category) return []
+      // Only fall back to typed fallbacks when no taxonomy/search was
+      // requested — a placement/category/search query that hit zero rows
+      // means "nothing matched", not "show me anything".
+      if (placement || category || q) return []
       return locale === 'ar' ? fallbackPostsAr : fallbackPostsEn
     } catch {
-      if (placement || category) return []
+      if (placement || category || q) return []
       return locale === 'ar' ? fallbackPostsAr : fallbackPostsEn
     }
   }
@@ -255,7 +258,7 @@ export const useMaanContent = () => {
     locale: 'en' | 'ar' = 'en',
     opts: GetPostsOptions = {}
   ): Promise<{ posts: MaanPost[], total: number }> => {
-    const { limit = 6, placement, category, page = 1 } = opts
+    const { limit = 6, placement, category, q, page = 1 } = opts
     try {
       const res = await $fetch<{ posts: ApiPost[], total: number }>('/api/public/posts', {
         query: {
@@ -263,7 +266,8 @@ export const useMaanContent = () => {
           limit,
           page,
           ...(placement ? { placement } : {}),
-          ...(category ? { category } : {})
+          ...(category ? { category } : {}),
+          ...(q ? { q } : {})
         }
       })
       return { posts: res.posts.map(p => toMaanPost(p, locale)), total: res.total ?? 0 }
@@ -283,6 +287,25 @@ export const useMaanContent = () => {
       return toMaanPost(res.post, locale)
     } catch {
       return undefined
+    }
+  }
+
+  // S10: DB-backed category options for the public blog filter. Hits the
+  // public, read-only categories route (NOT the auth-gated dashboard one)
+  // so the public filter tracks admin-managed categories. Returns localized
+  // `{ value: slug, label }` options; degrades to [] on any failure so the
+  // filter just disappears rather than crashing the page.
+  const getCategoryOptions = async (
+    locale: 'en' | 'ar' = 'en'
+  ): Promise<Array<{ value: string, label: string }>> => {
+    try {
+      const res = await $fetch<{ categories: Array<{ slug: string, name_en: string, name_ar: string }> }>('/api/public/categories')
+      return res.categories.map(c => ({
+        value: c.slug,
+        label: locale === 'ar' ? c.name_ar : c.name_en
+      }))
+    } catch {
+      return []
     }
   }
 
@@ -306,5 +329,5 @@ export const useMaanContent = () => {
     }
   }
 
-  return { getPosts, getPostsPage, getPostBySlug, getPageSeo }
+  return { getPosts, getPostsPage, getPostBySlug, getCategoryOptions, getPageSeo }
 }

@@ -63,6 +63,13 @@ export default defineEventHandler(async (event): Promise<{ posts: PublicPostList
   const categories = flattenParam(query.category ?? query.categories).filter(s => validCategorySlugs.has(s))
   const placements = parseTaxonomyParam(query.placement ?? query.placements, isPostPlacement)
 
+  // Free-text search (S10): case-insensitive `contains` over title AND
+  // description. Goes through Prisma's parameterized `contains` (NEVER raw
+  // SQL interpolation) so the user-supplied string can't inject. Applied in
+  // the DB `where` — alongside category — so it composes with the in-memory
+  // locale filter + pagination and `total` reflects the fully-filtered set.
+  const q = (typeof query.q === 'string' ? query.q : '').trim()
+
   const rows = await prisma.post.findMany({
     where: {
       status: 'published',
@@ -71,7 +78,15 @@ export default defineEventHandler(async (event): Promise<{ posts: PublicPostList
       // matching migration. `hasSome` returns rows where any of the
       // supplied values appear in the row's array column.
       ...(categories.length ? { categories: { hasSome: categories } } : {}),
-      ...(placements.length ? { placements: { hasSome: placements } } : {})
+      ...(placements.length ? { placements: { hasSome: placements } } : {}),
+      ...(q
+        ? {
+            OR: [
+              { title: { contains: q, mode: 'insensitive' } },
+              { description: { contains: q, mode: 'insensitive' } }
+            ]
+          }
+        : {})
     },
     orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
     // Widened window (S2): we filter locale in-memory, so the cap must hold

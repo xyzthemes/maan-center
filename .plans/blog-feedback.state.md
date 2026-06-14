@@ -4,7 +4,7 @@
 Plan: `blog-feedback.md` · Briefs: `blog-feedback.sessions.md` ·
 Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 
-## Next up: C4 (Phase 4 — checkpoint review)
+## Next up: C5 (Phase 5 — checkpoint review)
 
 ## Session checklist
 
@@ -27,10 +27,10 @@ Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 
 ### Phase 4 — Live preview · branch `blog-feedback/p4-preview` (from p3 head)
 - [x] S9 — Draft live preview
-- [ ] **C4** checkpoint review
+- [x] **C4** checkpoint review — **APPROVE** (lint+build green; no deps/CI/schema changes). Security PASS: preview is auth-gated under dashboard middleware, fetches drafts via `/api/dashboard/posts`, no public/token leak; public published-post API unchanged. EN refactor (BlogArticleBody) no regression. AR-parity gap MINOR/acceptable (preview is a simplified render; body+RTL mirror published). Optional follow-up: pass AR locale to the date in `BlogArticleBody.vue`. Live smoke → Human-verification checklist.
 
 ### Phase 5 — Search & filter · branch `blog-feedback/p5-search` (from p4 head)
-- [ ] S10 — Search bar + category filter on blog index
+- [x] S10 — Search bar + category filter on blog index
 - [ ] **C5** checkpoint review
 
 ### Phase 6 — Performance · branch `blog-feedback/p6-perf` (from p5 head)
@@ -63,9 +63,38 @@ _Live UI smoke can't run in the agent environment (Fly Postgres unreachable with
 - [ ] Phase 1: `/blog` + `/ar/blog` show >6 posts with working "Load More" to the end; a post ranked >6th opens (no freeze); an Arabic post opens; `/blog/does-not-exist` → clean 404.
 - [ ] Phase 2: editor link add/edit/remove + font-size persist on the public article; PDF upload → inserted download link works; mp4/mp3 embed plays on the public article; oversized (>cap) + unknown-MIME upload rejected with clear message; auto-save fires ONE PATCH on pause (no storm while typing) + new post gains id & URL updates once.
 - [ ] Phase 4: as a logged-in editor, open a `draft` and an `in_review` post's preview (`/dashboard/posts/<id>/preview`) → renders in the real public article layout (hero + prose); AR post previews RTL; confirm `/blog/<slug>` still returns a clean 404 for that unpublished draft (no public leak); confirm the published `/blog/<slug>` page is visually unchanged after the shared-component refactor.
+- [ ] Phase 5: `/blog` + `/ar/blog` — type a title fragment → list narrows (debounced) + "Load More" still pages to the filtered end; pick a category → narrows + options match admin-managed categories; q+category combined → correct `total`/Load-More; a no-match query shows the empty state; AR inputs are RTL with Arabic labels; clearing filters restores the default 6 + Load More.
 - [ ] Phase 3: `prisma migrate deploy` applies `add_category` on a fresh/staging DB + 6 seed rows present; existing posts' slugs still resolve to labels; category CRUD reflects in editor select + list filter + public `?category=` filter; deleting an in-use category → post keeps slug + shows raw-slug fallback; creating a post with a DB-only category persists. (Run `pnpm db:seed:categories` locally if seeding a dev DB by hand.)
 
 ## Handoff log (newest first)
+
+### S10 — Search bar + category filter (2026-06-14, branch p5-search)
+- Server `public/posts.get.ts`: added `q` param — case-insensitive Prisma
+  `contains` (mode:'insensitive', PARAMETERIZED — no raw SQL) OR'd over title +
+  description, in the DB `where` alongside the existing S7 category filter. Order:
+  DB where (status+category+q) → take:500 → in-memory locale split → `total =
+  filtered.length` → slice. So `total` is the count AFTER q+category+locale and
+  "Load More" stops correctly under every filter combo.
+- Client `useMaanContent.ts`: `q?` added to `GetPostsOptions`; threaded through
+  `getPosts` + `getPostsPage` (only sent when set). Fallback array now suppressed
+  when `q` is active too (q-miss reads as empty, not seeded posts).
+- DB-backed public category options: dashboard categories route is auth-gated, so
+  added a NEW public read-only `server/api/public/categories.get.ts` (slug +
+  name_en/name_ar, no auth) + `getCategoryOptions(locale)` in `useMaanContent`
+  (degrades to [] on failure). Public filter now tracks admin-managed categories
+  without exposing the gated route or `useDashboardI18n`.
+- UI both `blog/index.vue` + `ar/blog/index.vue`: UInput search (350ms setTimeout
+  debounce, no VueUse dep — not installed) + USelectMenu category filter +
+  Clear button; `reload()` resets to page 1 on any filter change; graceful empty
+  state ("No articles match…" / "لا توجد مقالات…"). AR: `dir="rtl"` on inputs,
+  Arabic labels. Default no-filter view unchanged (6 + Load More).
+- Verify: `pnpm lint` clean, `pnpm build` green (`public/categories.get` chunk
+  emitted). No deps/CI/schema/migration changes.
+- Deferred to C5 (DB unreachable here): live smoke — search a title narrows +
+  composes with Load More; category filter narrows + matches admin categories;
+  q+category together page to the end with correct total; empty state on a no-match
+  query; EN + AR/RTL.
+- No deviations.
 
 ### S9 — Draft live preview (2026-06-14, branch p4-preview)
 - Factored the public article hero + prose body out of `blog/[slug].vue` into a

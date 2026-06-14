@@ -1,7 +1,7 @@
 // Phase 5: update a post via Prisma. Auth required.
 
 import { createError, getRouterParam, readBody } from 'h3'
-import { sanitizeCategories, sanitizePlacements } from '~/composables/useMaanTaxonomy'
+import { sanitizePlacements } from '~/composables/useMaanTaxonomy'
 
 type DashboardPostBody = {
   title?: string
@@ -37,6 +37,9 @@ export default defineEventHandler(async (event) => {
   const status = normalizeStatus(body.status)
   const description = body.description?.trim() || null
 
+  // DB-backed category validation (S7): drops slugs not in the Category table.
+  const categories = await sanitizeCategoriesDb(event, body.categories)
+
   try {
     const post = await prisma.post.update({
       where: { id },
@@ -47,7 +50,7 @@ export default defineEventHandler(async (event) => {
         content: body.content?.trim() || '<p></p>',
         status,
         publishedAt: normalizePublishedAt(status, body.published_at),
-        categories: sanitizeCategories(body.categories),
+        categories,
         placements: sanitizePlacements(body.placements),
         seo: {
           title: body.seo?.title?.trim() || title,

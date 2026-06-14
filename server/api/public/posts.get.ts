@@ -7,7 +7,7 @@
 // the posts they want to surface instead of "latest 3".
 
 import { getQuery } from 'h3'
-import { isPostCategory, isPostPlacement } from '~/composables/useMaanTaxonomy'
+import { isPostPlacement } from '~/composables/useMaanTaxonomy'
 
 export type PublicPostListItem = {
   id: string
@@ -33,14 +33,42 @@ const parseTaxonomyParam = (raw: unknown, isValid: (s: string) => boolean): stri
   return Array.from(new Set(collect(raw).filter(isValid)))
 }
 
-export default defineEventHandler(async (event): Promise<{ posts: PublicPostListItem[] }> => {
+/** Flatten repeated/CSV query params into a de-duplicated raw string list
+ *  (no taxonomy validation — that's done DB-side for categories). */
+const flattenParam = (raw: unknown): string[] => {
+  const collect = (v: unknown): string[] => {
+    if (Array.isArray(v)) return v.flatMap(collect)
+    if (typeof v === 'string') return v.split(',').map(s => s.trim()).filter(Boolean)
+    return []
+  }
+  return Array.from(new Set(collect(raw)))
+}
+
+export default defineEventHandler(async (event): Promise<{ posts: PublicPostListItem[], total: number }> => {
   const query = getQuery(event)
   const locale = String(query.locale || 'en')
   const limit = String(query.limit || '6')
   const take = Math.max(1, Math.min(50, Number(limit) || 6))
+  // 1-based page index for "Load More" pagination (S2). `page` is the
+  // primary param; `offset` is accepted as an escape hatch and wins when
+  // supplied. The locale split happens in-memory (no DB locale column —
+  // see locked decision), so we page over the already-filtered list.
+  const page = Math.max(1, Math.floor(Number(query.page) || 1))
+  const offset = query.offset != null ? Math.max(0, Math.floor(Number(query.offset) || 0)) : (page - 1) * take
 
-  const categories = parseTaxonomyParam(query.category ?? query.categories, isPostCategory)
+  // Categories are now validated against the dynamic Category table (S7)
+  // instead of the static taxonomy list. Unknown slugs are dropped so a
+  // deleted/renamed category can't be used to probe the post set.
+  const validCategorySlugs = await getValidCategorySlugs(event)
+  const categories = flattenParam(query.category ?? query.categories).filter(s => validCategorySlugs.has(s))
   const placements = parseTaxonomyParam(query.placement ?? query.placements, isPostPlacement)
+
+  // Free-text search (S10): case-insensitive `contains` over title AND
+  // description. Goes through Prisma's parameterized `contains` (NEVER raw
+  // SQL interpolation) so the user-supplied string can't inject. Applied in
+  // the DB `where` — alongside category — so it composes with the in-memory
+  // locale filter + pagination and `total` reflects the fully-filtered set.
+  const q = (typeof query.q === 'string' ? query.q : '').trim()
 
   const rows = await prisma.post.findMany({
     where: {
@@ -50,10 +78,21 @@ export default defineEventHandler(async (event): Promise<{ posts: PublicPostList
       // matching migration. `hasSome` returns rows where any of the
       // supplied values appear in the row's array column.
       ...(categories.length ? { categories: { hasSome: categories } } : {}),
-      ...(placements.length ? { placements: { hasSome: placements } } : {})
+      ...(placements.length ? { placements: { hasSome: placements } } : {}),
+      ...(q
+        ? {
+            OR: [
+              { title: { contains: q, mode: 'insensitive' } },
+              { description: { contains: q, mode: 'insensitive' } }
+            ]
+          }
+        : {})
     },
     orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
-    take: 200
+    // Widened window (S2): we filter locale in-memory, so the cap must hold
+    // a full locale's worth of posts. Acceptable until volume nears ~500
+    // per locale (open question Q1 tracks the real fix — a locale column).
+    take: 500
   })
 
   // Locale split happens here rather than in the DB because the EN/AR
@@ -63,7 +102,8 @@ export default defineEventHandler(async (event): Promise<{ posts: PublicPostList
   const filtered = rows.filter(p => (locale === 'ar' ? isAr(p.slug, p.title) : !isAr(p.slug, p.title)))
 
   return {
-    posts: filtered.slice(0, take).map(p => ({
+    total: filtered.length,
+    posts: filtered.slice(offset, offset + take).map(p => ({
       id: p.id,
       slug: p.slug,
       title: p.title,

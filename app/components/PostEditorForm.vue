@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import type { PostForm } from '~/composables/usePostForm'
+import type { PostForm, AutoSaveStatus } from '~/composables/usePostForm'
 
 const props = defineProps<{
   modelValue: PostForm
   isSaving: boolean
   saveError: string
   saveSuccess: string
+  // Optional: only the [id] editor page drives auto-save; defaults to 'idle'.
+  autoSaveStatus?: AutoSaveStatus
 }>()
 
 const emit = defineEmits<{
@@ -15,7 +17,12 @@ const emit = defineEmits<{
 }>()
 
 const { t, isArabic } = useDashboardI18n()
-const { categories: taxonomyCategories } = useMaanTaxonomy()
+// S8: category options now come from the DB (admin-managed Category table)
+// via useCategories instead of the static useMaanTaxonomy list. Degrades
+// gracefully — a fetch failure leaves the list empty and the editor still
+// renders; labels fall back to the raw slug for any orphaned category.
+const { categories: dbCategories, loadCategories } = useCategories()
+onMounted(loadCategories)
 
 const form = computed({
   get: () => props.modelValue,
@@ -27,16 +34,43 @@ const form = computed({
 // stored in the DB stays canonical.
 const lang = computed<'en' | 'ar'>(() => isArabic.value ? 'ar' : 'en')
 
-// Coerce option `value` back to plain `string` so USelectMenu's inferred
-// option type doesn't narrow to the literal union — keeps form.categories
-// typed as `string[]` (which matches the DB column shape) and avoids a
-// pile of `as PostCategoryId[]` casts at every binding site. Validation
-// of unknown ids still happens server-side via sanitizeCategories.
-const categoryOptions = computed<Array<{ value: string, label: string }>>(() =>
-  taxonomyCategories.map(c => ({ value: c.id, label: c.label[lang.value] }))
-)
+// Option `value` stays a plain `string` so USelectMenu's inferred option
+// type doesn't narrow — keeps form.categories typed as `string[]` (matches
+// the DB column shape). Validation of unknown slugs still happens
+// server-side (S7: DB-backed against the Category table on create/update).
+//
+// Orphan handling: any slug already stored on this post that no longer
+// exists in the DB list (category deleted/renamed) is appended as an option
+// labelled with its raw slug, so it stays visible + selectable instead of
+// silently dropping out of the multi-select.
+const categoryOptions = computed<Array<{ value: string, label: string }>>(() => {
+  const opts = categoryOptionsFor(dbCategories.value, lang.value)
+  const known = new Set(opts.map(o => o.value))
+  for (const slug of form.value.categories || []) {
+    if (!known.has(slug)) {
+      opts.push({ value: slug, label: slug })
+      known.add(slug)
+    }
+  }
+  return opts
+})
 // Placement options are no longer rendered as a flat select — the
 // visual picker (MaanPlacementPicker) reads the taxonomy directly.
+
+// Auto-save indicator. Maps the composable's status to a bilingual label +
+// icon/color; hidden while idle so it only appears once auto-save is active.
+const autoSaveIndicator = computed(() => {
+  switch (props.autoSaveStatus) {
+    case 'saving':
+      return { label: t.value.autoSaving, icon: 'i-lucide-loader-circle', class: 'text-muted', iconClass: 'size-4 animate-spin' }
+    case 'saved':
+      return { label: t.value.autoSaved, icon: 'i-lucide-check', class: 'text-success', iconClass: 'size-4' }
+    case 'error':
+      return { label: t.value.autoSaveError, icon: 'i-lucide-triangle-alert', class: 'text-error', iconClass: 'size-4' }
+    default:
+      return null
+  }
+})
 </script>
 
 <template>
@@ -192,7 +226,7 @@ const categoryOptions = computed<Array<{ value: string, label: string }>>(() =>
       :title="saveSuccess"
     />
 
-    <div class="flex flex-wrap gap-3">
+    <div class="flex flex-wrap items-center gap-3">
       <UButton
         type="submit"
         size="xl"
@@ -209,6 +243,19 @@ const categoryOptions = computed<Array<{ value: string, label: string }>>(() =>
       >
         {{ t.clear }}
       </UButton>
+      <span
+        v-if="autoSaveIndicator"
+        class="inline-flex items-center gap-1.5 text-sm"
+        :class="autoSaveIndicator.class"
+        role="status"
+        aria-live="polite"
+      >
+        <UIcon
+          :name="autoSaveIndicator.icon"
+          :class="autoSaveIndicator.iconClass"
+        />
+        {{ autoSaveIndicator.label }}
+      </span>
     </div>
   </form>
 </template>

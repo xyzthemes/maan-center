@@ -55,6 +55,12 @@ const allNavEntries = computed<NavEntry[]>(() => [
     scope: 'posts'
   },
   {
+    label: t.value.categoriesNav,
+    icon: 'i-lucide-tags',
+    to: isArabic.value ? '/ar/dashboard/categories' : '/dashboard/categories',
+    scope: 'posts'
+  },
+  {
     label: t.value.websitePages,
     icon: 'i-lucide-files',
     to: isArabic.value ? '/ar/dashboard/pages' : '/dashboard/pages',

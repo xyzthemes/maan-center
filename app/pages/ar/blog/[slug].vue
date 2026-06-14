@@ -12,9 +12,22 @@ if (!post.value) {
   })
 }
 
+// Related = up to 3 published AR posts that SHARE the current post's categories
+// (DB `hasSome` via the public `category` filter, comma-joined for multi-cat),
+// excluding the current post; falls back to the latest AR posts when the post
+// has no categories or no category-matches exist. AR locale kept on this page.
 const { data: related } = await useAsyncData<MaanPost[]>(`maan-blog-ar-${slug.value}-related`, async () => {
-  const all = await getPosts('ar')
-  return all.filter(p => p.slug !== slug.value).slice(0, 3)
+  const cats = post.value?.categories ?? []
+  const exclude = (list: MaanPost[]) => list.filter(p => p.slug !== slug.value)
+
+  if (cats.length) {
+    const byCategory = await getPosts('ar', { category: cats.join(','), limit: 4 })
+    const topical = exclude(byCategory).slice(0, 3)
+    if (topical.length) return topical
+  }
+
+  const latest = await getPosts('ar', { limit: 4 })
+  return exclude(latest).slice(0, 3)
 }, { default: () => [] })
 
 const resolvedSeo = useMaanSeo({
@@ -101,12 +114,15 @@ useSchemaOrg([
     <UContainer class="py-12 sm:py-16">
       <div class="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1fr_18rem]">
         <div class="maan-prose-card">
-          <img
+          <NuxtImg
             v-if="post.image"
             :src="post.image"
             :alt="post.title"
+            sizes="100vw md:768px lg:760px"
+            format="webp"
+            loading="lazy"
             class="mb-10 aspect-video w-full rounded-2xl object-cover"
-          >
+          />
           <!-- v-html: admin-authored rich text from dashboard editor; sanitize at source if XSS becomes a concern -->
           <!-- eslint-disable vue/no-v-html -->
           <div
@@ -119,9 +135,10 @@ useSchemaOrg([
             class="mt-10 border-t pt-6"
             style="border-color: var(--maan-line);"
           >
-            <MaanArticleShare
+            <BlogShareButtons
               :title="post.title"
               :url="`/ar/blog/${post.slug}`"
+              :image="post.image"
               locale="ar"
             />
           </div>

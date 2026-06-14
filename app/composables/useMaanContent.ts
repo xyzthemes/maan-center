@@ -9,6 +9,8 @@ export type MaanPost = {
   image?: string
   content: string
   seo?: MaanSeo
+  /** Category slugs the post is filed under (S13 related-posts selection). */
+  categories?: string[]
 }
 
 export type MaanSeo = {
@@ -59,6 +61,10 @@ export type GetPostsOptions = {
   placement?: string
   /** Filter to posts that include this category id (e.g. 'autism'). */
   category?: string
+  /** Free-text search over title + description (case-insensitive). */
+  q?: string
+  /** 1-based page index for "Load More" pagination. Defaults to 1. */
+  page?: number
 }
 
 const fallbackPostsEn: MaanPost[] = [
@@ -198,6 +204,7 @@ const toMaanPost = (p: ApiPost, locale: 'en' | 'ar'): MaanPost => {
     readTime: locale === 'ar' ? '٤ دقائق' : '4 min read',
     image: p.image ?? undefined,
     content: p.content || '<p>More details will be available soon.</p>',
+    categories: p.categories ?? [],
     seo: normalizeSeo(p.seo, {
       title: p.title,
       description,
@@ -221,32 +228,88 @@ export const useMaanContent = () => {
     locale: 'en' | 'ar' = 'en',
     opts: GetPostsOptions = {}
   ): Promise<MaanPost[]> => {
-    const { limit = 6, placement, category } = opts
+    const { limit = 6, placement, category, q, page = 1 } = opts
     try {
-      const res = await $fetch<{ posts: ApiPost[] }>('/api/public/posts', {
+      const res = await $fetch<{ posts: ApiPost[], total?: number }>('/api/public/posts', {
         query: {
           locale,
           limit,
+          page,
           ...(placement ? { placement } : {}),
-          ...(category ? { category } : {})
+          ...(category ? { category } : {}),
+          ...(q ? { q } : {})
         }
       })
       const mapped = res.posts.map(p => toMaanPost(p, locale))
       if (mapped.length) return mapped
-      // Only fall back to typed fallbacks when no taxonomy was requested —
-      // a placement query that hit zero rows means "this slot is empty",
-      // not "show me anything".
-      if (placement || category) return []
+      // Only fall back to typed fallbacks when no taxonomy/search was
+      // requested — a placement/category/search query that hit zero rows
+      // means "nothing matched", not "show me anything".
+      if (placement || category || q) return []
       return locale === 'ar' ? fallbackPostsAr : fallbackPostsEn
     } catch {
-      if (placement || category) return []
+      if (placement || category || q) return []
       return locale === 'ar' ? fallbackPostsAr : fallbackPostsEn
     }
   }
 
-  const getPostBySlug = async (slug: string, locale: 'en' | 'ar' = 'en') => {
-    const posts = await getPosts(locale)
-    return posts.find(post => post.slug === slug)
+  // Pagination-aware sibling of `getPosts` (S2). Returns the requested page
+  // of posts plus the locale's `total` so a "Load More" control can decide
+  // whether more remain. No fallback array here: a real, empty published
+  // list must read as `total: 0`, not as the seeded placeholder posts.
+  const getPostsPage = async (
+    locale: 'en' | 'ar' = 'en',
+    opts: GetPostsOptions = {}
+  ): Promise<{ posts: MaanPost[], total: number }> => {
+    const { limit = 6, placement, category, q, page = 1 } = opts
+    try {
+      const res = await $fetch<{ posts: ApiPost[], total: number }>('/api/public/posts', {
+        query: {
+          locale,
+          limit,
+          page,
+          ...(placement ? { placement } : {}),
+          ...(category ? { category } : {}),
+          ...(q ? { q } : {})
+        }
+      })
+      return { posts: res.posts.map(p => toMaanPost(p, locale)), total: res.total ?? 0 }
+    } catch {
+      return { posts: [], total: 0 }
+    }
+  }
+
+  // Fetches a single published post by slug from its dedicated endpoint
+  // (S1) rather than scanning the list result — the list's `limit`/locale
+  // defaults previously hid any post past the default window, which was
+  // the detail-page "freeze" cause. Returns `undefined` on a 404 so the
+  // pages' `if (!post.value)` guard still fires.
+  const getPostBySlug = async (slug: string, locale: 'en' | 'ar' = 'en'): Promise<MaanPost | undefined> => {
+    try {
+      const res = await $fetch<{ post: ApiPost }>(`/api/public/posts/${encodeURIComponent(slug)}`)
+      return toMaanPost(res.post, locale)
+    } catch {
+      return undefined
+    }
+  }
+
+  // S10: DB-backed category options for the public blog filter. Hits the
+  // public, read-only categories route (NOT the auth-gated dashboard one)
+  // so the public filter tracks admin-managed categories. Returns localized
+  // `{ value: slug, label }` options; degrades to [] on any failure so the
+  // filter just disappears rather than crashing the page.
+  const getCategoryOptions = async (
+    locale: 'en' | 'ar' = 'en'
+  ): Promise<Array<{ value: string, label: string }>> => {
+    try {
+      const res = await $fetch<{ categories: Array<{ slug: string, name_en: string, name_ar: string }> }>('/api/public/categories')
+      return res.categories.map(c => ({
+        value: c.slug,
+        label: locale === 'ar' ? c.name_ar : c.name_en
+      }))
+    } catch {
+      return []
+    }
   }
 
   const getPageSeo = async (permalink: string, fallback: Partial<MaanSeo> = {}): Promise<MaanSeo> => {
@@ -269,5 +332,5 @@ export const useMaanContent = () => {
     }
   }
 
-  return { getPosts, getPostBySlug, getPageSeo }
+  return { getPosts, getPostsPage, getPostBySlug, getCategoryOptions, getPageSeo }
 }

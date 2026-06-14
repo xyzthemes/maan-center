@@ -35,12 +35,28 @@ export const emptyPostForm = (): PostForm => ({
   }
 })
 
+export type AutoSaveStatus = 'idle' | 'saving' | 'saved' | 'error'
+
 export const usePostForm = (onSaved?: () => unknown | Promise<unknown>) => {
   const { t } = useDashboardI18n()
   const postForm = reactive<PostForm>(emptyPostForm())
   const saveError = ref('')
   const saveSuccess = ref('')
   const isSaving = ref(false)
+  const autoSaveStatus = ref<AutoSaveStatus>('idle')
+  // When true, watcher-fired form changes are programmatic (load/save-induced)
+  // and must NOT arm an auto-save — this is what stops a save storm on page open
+  // and the self-trigger loop after savePost mutates postForm.id.
+  let suspendAutoSave = false
+  // Suppress auto-save arming for the duration of a synchronous, programmatic
+  // form mutation (editPost/newPost), releasing once the watcher has flushed.
+  const withSuspendedAutoSave = (mutate: () => void) => {
+    suspendAutoSave = true
+    mutate()
+    nextTick(() => {
+      suspendAutoSave = false
+    })
+  }
 
   const statusOptions = computed(() => [
     { value: 'all' as const, label: t.value.filterAll },
@@ -62,30 +78,36 @@ export const usePostForm = (onSaved?: () => unknown | Promise<unknown>) => {
   }
 
   const editPost = (post: DashboardPost) => {
-    Object.assign(postForm, {
-      id: post.id,
-      title: post.title || '',
-      slug: post.slug || '',
-      description: post.description || '',
-      content: post.content || '<p></p>',
-      status: post.status || 'draft',
-      published_at: post.published_at || '',
-      categories: Array.isArray(post.categories) ? [...post.categories] : [],
-      placements: Array.isArray(post.placements) ? [...post.placements] : [],
-      seo: {
-        title: post.seo?.title || post.title || '',
-        meta_description: post.seo?.meta_description || post.description || '',
-        focus_keyphrase: post.seo?.focus_keyphrase || ''
-      }
+    withSuspendedAutoSave(() => {
+      Object.assign(postForm, {
+        id: post.id,
+        title: post.title || '',
+        slug: post.slug || '',
+        description: post.description || '',
+        content: post.content || '<p></p>',
+        status: post.status || 'draft',
+        published_at: post.published_at || '',
+        categories: Array.isArray(post.categories) ? [...post.categories] : [],
+        placements: Array.isArray(post.placements) ? [...post.placements] : [],
+        seo: {
+          title: post.seo?.title || post.title || '',
+          meta_description: post.seo?.meta_description || post.description || '',
+          focus_keyphrase: post.seo?.focus_keyphrase || ''
+        }
+      })
     })
     saveError.value = ''
     saveSuccess.value = ''
+    autoSaveStatus.value = 'idle'
   }
 
   const newPost = () => {
-    Object.assign(postForm, emptyPostForm())
+    withSuspendedAutoSave(() => {
+      Object.assign(postForm, emptyPostForm())
+    })
     saveError.value = ''
     saveSuccess.value = ''
+    autoSaveStatus.value = 'idle'
   }
 
   const savePost = async (): Promise<string | undefined> => {
@@ -127,15 +149,65 @@ export const usePostForm = (onSaved?: () => unknown | Promise<unknown>) => {
     }
   }
 
+  // --- Auto-save (opt-in; the [id] editor page enables it, the list page does
+  // not). Debounced ~2.5s after the form goes dirty. Guards against overlapping
+  // saves (skips while one is in flight) and against self-trigger loops (the
+  // save mutates postForm.id, which we suppress from re-arming the watcher). A
+  // brand-new post saves once to gain an id, then auto-saves thereafter — but
+  // only once it has the minimum content to be a real draft (a title).
+  const AUTO_SAVE_DELAY = 2500
+  let autoSaveTimer: ReturnType<typeof setTimeout> | null = null
+
+  const hasMinimumContent = () => postForm.title.trim().length > 0
+
+  const runAutoSave = async () => {
+    autoSaveTimer = null
+    // Skip if a manual/auto save is already running, or there's nothing worth
+    // persisting yet (no id AND no title → don't spam empty drafts).
+    if (isSaving.value) return
+    if (!postForm.id && !hasMinimumContent()) return
+
+    autoSaveStatus.value = 'saving'
+    suspendAutoSave = true
+    try {
+      const savedId = await savePost()
+      autoSaveStatus.value = savedId ? 'saved' : 'error'
+    } finally {
+      // Release on the next tick so the id/flag mutations from savePost have
+      // settled before the watcher is allowed to re-arm.
+      await nextTick()
+      suspendAutoSave = false
+    }
+  }
+
+  const enableAutoSave = () => {
+    watch(
+      () => JSON.stringify(postForm),
+      () => {
+        if (suspendAutoSave) return
+        if (autoSaveTimer) clearTimeout(autoSaveTimer)
+        autoSaveStatus.value = 'idle'
+        autoSaveTimer = setTimeout(runAutoSave, AUTO_SAVE_DELAY)
+      }
+    )
+
+    // Don't leave a pending save firing after the editor is torn down.
+    onScopeDispose(() => {
+      if (autoSaveTimer) clearTimeout(autoSaveTimer)
+    })
+  }
+
   return {
     postForm,
     saveError,
     saveSuccess,
     isSaving,
+    autoSaveStatus,
     statusOptions,
     statusLabel,
     editPost,
     newPost,
-    savePost
+    savePost,
+    enableAutoSave
   }
 }

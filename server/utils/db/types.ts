@@ -18,6 +18,7 @@ export type {
   Verification,
   Post,
   Page,
+  Category,
   ContentBlock,
   SiteSetting,
   Form,

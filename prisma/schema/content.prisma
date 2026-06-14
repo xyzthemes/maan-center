@@ -128,3 +128,24 @@ model SiteSetting {
   @@id([key, locale])
   @@index([key])
 }
+
+// Admin-managed Layer-1 category taxonomy.
+//
+// Posts still STORE categories as `Post.categories String[]` of slugs
+// (preserving the GIN index + `hasSome` query path); this table is the
+// dynamic source of truth for which slugs are VALID and their bilingual
+// labels. It replaces the static `POST_CATEGORIES` list in
+// `useMaanTaxonomy.ts` — server validation looks slugs up here instead.
+// Seeded from the original 6 taxonomy entries (slugs unchanged).
+model Category {
+  id   String @id @default(uuid(7))
+  slug String @unique // matches the strings stored in Post.categories
+
+  nameEn String
+  nameAr String
+
+  sort Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

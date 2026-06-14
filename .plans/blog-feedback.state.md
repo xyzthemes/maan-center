@@ -4,7 +4,7 @@
 Plan: `blog-feedback.md` · Briefs: `blog-feedback.sessions.md` ·
 Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 
-## Next up: C3-rereview
+## Next up: C4 (Phase 4 — checkpoint review)
 
 ## Session checklist
 
@@ -23,10 +23,10 @@ Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 - [x] S6 — Category model + migration + seed
 - [x] S7 — Category CRUD API + DB-backed validation
 - [x] S8 — Category management UI + wire selects
-- [ ] **C3** checkpoint review
+- [x] **C3** checkpoint review — REQUEST CHANGES → fixed (S8-fix `70ee108`) → **APPROVE on re-review**. Finding: `/dashboard/categories` was missing from `URL_TO_SCOPE` (page shell reachable by non-`posts` staff; server routes always gated → no data leak). Migration verified additive + schema-matched; validation/CRUD/auth/graceful-degradation clean; lint+build+frozen-install green.
 
 ### Phase 4 — Live preview · branch `blog-feedback/p4-preview` (from p3 head)
-- [ ] S9 — Draft live preview
+- [x] S9 — Draft live preview
 - [ ] **C4** checkpoint review
 
 ### Phase 5 — Search & filter · branch `blog-feedback/p5-search` (from p4 head)
@@ -62,8 +62,36 @@ Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 _Live UI smoke can't run in the agent environment (Fly Postgres unreachable without the tunnel). Run these before merging the final PR:_
 - [ ] Phase 1: `/blog` + `/ar/blog` show >6 posts with working "Load More" to the end; a post ranked >6th opens (no freeze); an Arabic post opens; `/blog/does-not-exist` → clean 404.
 - [ ] Phase 2: editor link add/edit/remove + font-size persist on the public article; PDF upload → inserted download link works; mp4/mp3 embed plays on the public article; oversized (>cap) + unknown-MIME upload rejected with clear message; auto-save fires ONE PATCH on pause (no storm while typing) + new post gains id & URL updates once.
+- [ ] Phase 4: as a logged-in editor, open a `draft` and an `in_review` post's preview (`/dashboard/posts/<id>/preview`) → renders in the real public article layout (hero + prose); AR post previews RTL; confirm `/blog/<slug>` still returns a clean 404 for that unpublished draft (no public leak); confirm the published `/blog/<slug>` page is visually unchanged after the shared-component refactor.
+- [ ] Phase 3: `prisma migrate deploy` applies `add_category` on a fresh/staging DB + 6 seed rows present; existing posts' slugs still resolve to labels; category CRUD reflects in editor select + list filter + public `?category=` filter; deleting an in-use category → post keeps slug + shows raw-slug fallback; creating a post with a DB-only category persists. (Run `pnpm db:seed:categories` locally if seeding a dev DB by hand.)
 
 ## Handoff log (newest first)
+
+### S9 — Draft live preview (2026-06-14, branch p4-preview)
+- Factored the public article hero + prose body out of `blog/[slug].vue` into a
+  shared `app/components/BlogArticleBody.vue` (props `post: MaanPost`; `#body-footer`
+  + `#aside` slots for page-specific share/author/CTA/related). Public page now
+  renders via the component with IDENTICAL markup/classes → preview == published,
+  no visual regression.
+- New preview page `app/pages/dashboard/posts/[id]/preview.vue` (alias
+  `/ar/dashboard/posts/:id/preview`, `dashboard` layout). Coexists with the
+  `[id].vue` editor file (Nuxt allows file + dir sibling). Renders unpublished
+  posts through `BlogArticleBody`.
+- Fetches via auth-gated `usePosts().loadPosts()` (`/api/dashboard/posts`, which
+  returns drafts) — NOT the public single-post route (published-only). Maps the
+  DashboardPost → MaanPost mirroring `toMaanPost`; locale via the same `ar-` slug /
+  Arabic-script heuristic used by the list + public API; `:dir` set rtl/ltr.
+- Auth-gated confirmed: `/dashboard/posts` → `posts` in `URL_TO_SCOPE`; longest-prefix
+  `scopeForUrl` covers `/dashboard/posts/:id/preview`. No public/token route exposes
+  drafts.
+- "Preview" button added to editor navbar (`dashboard/posts/[id].vue`, `#right`),
+  `target="_blank"`, shown only once the post has a real id (post-auto-save).
+  i18n: previewDraft/previewTitle/previewBadge added EN + AR.
+- Verify: `pnpm lint` clean, `pnpm build` green (`preview-*.mjs` chunk emitted).
+- Deferred to C4 (DB unreachable here): live smoke — preview a `draft` + `in_review`
+  as a logged-in editor renders in the real article layout; `/blog/<slug>` still
+  404s for that draft (no public leak); EN + AR/RTL render; published page unchanged.
+- No deviations.
 
 ### S8-fix — category page scope guard (newest first)
 - C3 corrective: `/dashboard/categories` had no `URL_TO_SCOPE` entry, so

@@ -41,6 +41,14 @@ const isNew = computed(() => id.value === 'new')
 const notFound = ref(false)
 const backHref = computed(() => isArabic.value ? '/ar/dashboard/posts' : '/dashboard/posts')
 
+// Live preview link (S9): renders the current saved post in the real public
+// article layout, including unpublished drafts. Only available once the post
+// has a real id (a brand-new unsaved /new post has nothing to preview yet);
+// auto-save gains an id quickly, after which the button appears.
+const previewHref = computed(() =>
+  isArabic.value ? `/ar/dashboard/posts/${id.value}/preview` : `/dashboard/posts/${id.value}/preview`
+)
+
 // A brand-new post auto-saves once to gain an id; reflect that in the URL so a
 // refresh lands on the real record instead of /new (replace = no history spam).
 watch(() => postForm.id, (newId) => {
@@ -112,6 +120,17 @@ watch(() => route.params.id, () => {
           />
         </template>
         <template #right>
+          <UButton
+            v-if="!isNew && postForm.id"
+            :to="previewHref"
+            target="_blank"
+            icon="i-lucide-eye"
+            color="neutral"
+            variant="subtle"
+            size="sm"
+          >
+            {{ t.previewDraft }}
+          </UButton>
           <UBadge
             color="secondary"
             variant="subtle"

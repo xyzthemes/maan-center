@@ -53,6 +53,7 @@
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.15.2",
+    "@nuxt/image": "^2.0.0",
     "@types/nodemailer": "^8.0.0",
     "@types/pg": "^8.20.0",
     "eslint": "^10.3.0",

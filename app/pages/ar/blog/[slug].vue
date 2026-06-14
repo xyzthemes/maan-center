@@ -101,12 +101,15 @@ useSchemaOrg([
     <UContainer class="py-12 sm:py-16">
       <div class="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1fr_18rem]">
         <div class="maan-prose-card">
-          <img
+          <NuxtImg
             v-if="post.image"
             :src="post.image"
             :alt="post.title"
+            sizes="100vw md:768px lg:760px"
+            format="webp"
+            loading="lazy"
             class="mb-10 aspect-video w-full rounded-2xl object-cover"
-          >
+          />
           <!-- v-html: admin-authored rich text from dashboard editor; sanitize at source if XSS becomes a concern -->
           <!-- eslint-disable vue/no-v-html -->
           <div

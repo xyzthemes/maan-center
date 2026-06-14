@@ -8,7 +8,7 @@ const indexable = process.env.NUXT_SITE_INDEXABLE
   : process.env.NODE_ENV === 'production' || process.env.NUXT_SITE_ENV === 'production'
 
 export default defineNuxtConfig({
-  modules: ['@nuxtjs/seo', '@nuxt/eslint', '@nuxt/ui', '@onmax/nuxt-better-auth'],
+  modules: ['@nuxtjs/seo', '@nuxt/eslint', '@nuxt/ui', '@nuxt/image', '@onmax/nuxt-better-auth'],
 
   devtools: {
     enabled: true
@@ -96,6 +96,22 @@ export default defineNuxtConfig({
         commaDangle: 'never',
         braceStyle: '1tbs'
       }
+    }
+  },
+
+  // @nuxt/image (S12): blog assets live on the public Tigris bucket
+  // (`<bucket>.fly.storage.tigris.dev`, see server/utils/storage/tigris.ts).
+  // Allow-list that host so `<NuxtImg>`/`<NuxtPicture>` will optimize/transform
+  // remote blog images. The default IPX provider serves resized/WebP variants.
+  image: {
+    domains: ['fly.storage.tigris.dev'],
+    // Shared responsive breakpoints for blog hero + card imagery.
+    screens: {
+      xs: 320,
+      sm: 640,
+      md: 768,
+      lg: 1024,
+      xl: 1280
     }
   },
 

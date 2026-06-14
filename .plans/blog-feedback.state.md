@@ -4,7 +4,7 @@
 Plan: `blog-feedback.md` · Briefs: `blog-feedback.sessions.md` ·
 Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 
-## Next up: S12 (Phase 6 — performance)
+## Next up: C6 (Phase 6 — checkpoint review)
 
 ## Session checklist
 
@@ -35,7 +35,7 @@ Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 
 ### Phase 6 — Performance · branch `blog-feedback/p6-perf` (from p5 head)
 - [x] S11 — Server-side WebP on upload (sharp)
-- [ ] S12 — @nuxt/image + responsive + mobile/RTL audit
+- [x] S12 — @nuxt/image + responsive + mobile/RTL audit
 - [ ] **C6** checkpoint review
 
 ### Phase 7 — Related + social · branch `blog-feedback/p7-related-social` (from p6 head)
@@ -67,6 +67,34 @@ _Live UI smoke can't run in the agent environment (Fly Postgres unreachable with
 - [ ] Phase 3: `prisma migrate deploy` applies `add_category` on a fresh/staging DB + 6 seed rows present; existing posts' slugs still resolve to labels; category CRUD reflects in editor select + list filter + public `?category=` filter; deleting an in-use category → post keeps slug + shows raw-slug fallback; creating a post with a DB-only category persists. (Run `pnpm db:seed:categories` locally if seeding a dev DB by hand.)
 
 ## Handoff log (newest first)
+
+### S12 — @nuxt/image + responsive + mobile/RTL audit (2026-06-14, branch p6-perf)
+- `pnpm add -D @nuxt/image` → 2.0.0; registered in `nuxt.config.ts` modules.
+  Added `image: { domains: ['fly.storage.tigris.dev'], screens: {...} }` so the
+  default IPX provider may transform remote Tigris blog images. SSR-safe.
+- Swapped `<img>` → `<NuxtImg>` (sizes="100vw md:768px lg:760px", format="webp",
+  loading="lazy") on the two blog HERO images: shared
+  `app/components/BlogArticleBody.vue` (EN public + dashboard preview) and the
+  AR detail page `app/pages/ar/blog/[slug].vue` (it has its own hero, not the
+  shared component). Inline `<img>` inside post body `v-html` left as-is.
+- FINDING: the blog INDEX pages (`blog/index.vue`, `ar/blog/index.vue`) have NO
+  card images — they're text-only cards (badge + title + excerpt). Nothing to
+  swap there despite the brief mention.
+- Mobile/RTL audit: RTL is handled GLOBALLY in `app/app.vue`
+  (`htmlAttrs.dir='rtl'` + `<UApp :dir>` for any `/ar` route) — AR detail page
+  inherits it correctly, no per-page `dir` needed. Hero/prose spacing
+  (`py-14 sm:py-20`, `text-4xl sm:text-5xl`) is consistent + reasonable on
+  mobile; no obvious defects → no speculative changes. Human checklist item:
+  eyeball long AR titles at 320px (text-4xl could be tight).
+- R1 follow-up note for C6: `pnpm build` prints "[@nuxt/image] sharp binaries
+  included for darwin-arm64 — deploy to same architecture." NOT a real risk:
+  the Docker runner re-runs `pnpm install --frozen-lockfile --prod` on linux so
+  the linux sharp binary is fetched fresh at build. VERIFY at C6 via Docker build.
+- Verify: `pnpm lint` clean (1 auto-fix: image key ordering), `pnpm build` green,
+  `pnpm install --frozen-lockfile` clean.
+- Deferred to C6: live smoke — responsive `srcset` + lazy attrs present on blog
+  hero; image served as WebP variant; phone viewport reads well LTR + RTL.
+- No deviations.
 
 ### S11 — Server-side WebP on upload (sharp) (2026-06-14, branch p6-perf)
 - `pnpm add sharp` → 0.35.1 as a REGULAR dependency (not dev). Lockfile updated;

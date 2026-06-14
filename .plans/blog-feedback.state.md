@@ -4,7 +4,7 @@
 Plan: `blog-feedback.md` · Briefs: `blog-feedback.sessions.md` ·
 Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 
-## Next up: S4 (Phase 2 — editor)
+## Next up: S5 (Phase 2 — editor)
 
 ## Session checklist
 
@@ -15,7 +15,7 @@ Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 
 ### Phase 2 — Editor · branch `blog-feedback/p2-editor` (from p1 head)
 - [x] S3 — Insert link + font sizing
-- [ ] S4 — Attachment (PDF) + media upload & insert
+- [x] S4 — Attachment (PDF) + media upload & insert
 - [ ] S5 — Auto-save drafts
 - [ ] **C2** checkpoint review
 
@@ -63,6 +63,28 @@ _Live UI smoke can't run in the agent environment (Fly Postgres unreachable with
 - [ ] Phase 1: `/blog` + `/ar/blog` show >6 posts with working "Load More" to the end; a post ranked >6th opens (no freeze); an Arabic post opens; `/blog/does-not-exist` → clean 404.
 
 ## Handoff log (newest first)
+
+### S4 — Attachment + media upload & insert (2026-06-14, branch p2-editor)
+- `upload.post.ts`: replaced flat ALLOWED_MIME/EXT map with one `FILE_SPEC`
+  table (MIME → {ext, maxBytes}); caps images 5 MB / docs 25 MB / A/V 50 MB.
+  Added pdf, doc/docx, xls/xlsx, ppt/pptx, txt, csv, video/{mp4,webm,ogg,mov},
+  audio/{mp3,ogg,wav,webm}. Auth guard (requireAnyPermission) + size checks
+  intact; unknown MIME still 400-rejected. Response now also returns
+  contentType (consumed by editor to branch insert).
+- `DashboardEditor.vue`: hidden file input now serves 3 kinds (image/file/media)
+  via `pendingKind` + dynamic `accept`; added `file` (paperclip) and `media`
+  (clapperboard) toolbar handlers reusing the upload flow. Inserts escaped
+  `<a download class="maan-attachment">` for docs, `<video>`/`<audio>` for media.
+- StarterKit has no media nodes, so inserted <video>/<audio> would be stripped on
+  parse → added minimal `Video`/`Audio` TipTap `Node.create` extensions (added
+  direct dep `@tiptap/core@3.22.4`) so embeds round-trip in saved HTML.
+- escapeHtml() applied to url/filename before raw insertContent (XSS guard).
+- Verify: `pnpm lint` clean, `pnpm build` green.
+- Deferred to C2: live smoke — upload PDF → click inserted download link; embed a
+  small mp4 + mp3 and confirm playback on the public article; oversized/unknown
+  type rejected with clear message. NOTE public render must allow the media tags
+  (article uses v-html of stored HTML — confirm at C2).
+- No deviations.
 
 ### S3 — Insert link + font sizing (2026-06-14, branch p2-editor)
 - R4 finding: `link` IS a built-in UEditor handler (default StarterKit) — added

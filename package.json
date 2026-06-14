@@ -38,6 +38,7 @@
     "@prisma/client": "^7.8.0",
     "@resvg/resvg-js": "^2.6.2",
     "@takumi-rs/core": "^1.1.2",
+    "@tiptap/core": "3.22.4",
     "@tiptap/extension-text-style": "3.22.4",
     "better-auth": "^1.6.11",
     "dotenv": "^17.4.2",

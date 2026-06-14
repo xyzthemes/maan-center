@@ -32,5 +32,9 @@ logs
 # Remember skill session state — local-only
 .remember/
 
+# Multi-session effort planning artifacts + code index — local-only working files
+.plans/
+.codegraph/
+
 # Prisma generated client — regenerate locally with `pnpm db:generate`
 prisma/generated/

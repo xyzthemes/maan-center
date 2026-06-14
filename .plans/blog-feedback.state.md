@@ -4,7 +4,7 @@
 Plan: `blog-feedback.md` · Briefs: `blog-feedback.sessions.md` ·
 Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 
-## Next up: C2 (Phase 2 — editor checkpoint review)
+## Next up: S7 (Phase 3 — Category CRUD API + DB-backed validation)
 
 ## Session checklist
 
@@ -17,10 +17,10 @@ Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 - [x] S3 — Insert link + font sizing
 - [x] S4 — Attachment (PDF) + media upload & insert
 - [x] S5 — Auto-save drafts
-- [ ] **C2** checkpoint review
+- [x] **C2** checkpoint review — **APPROVE** (lint+build+frozen-install green; public article renders media via raw `v-html`/no sanitizer; XSS-escaped inserts; auto-save guards sound; 2 new TipTap deps pinned + lockfile clean; no prod-safety/schema changes). Non-blocking follow-ups: (a) upload trusts client MIME, no magic-byte sniff — bounded to authed editors, future hardening; (b) auto-save fires success toast every cycle — cosmetic, suppress in follow-up. Live UI smoke → Human-verification checklist.
 
 ### Phase 3 — Dynamic categories · branch `blog-feedback/p3-categories` (from p2 head)
-- [ ] S6 — Category model + migration + seed
+- [x] S6 — Category model + migration + seed
 - [ ] S7 — Category CRUD API + DB-backed validation
 - [ ] S8 — Category management UI + wire selects
 - [ ] **C3** checkpoint review
@@ -61,8 +61,29 @@ Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 ## Human-verification checklist (live smoke; needs `fly proxy` DB tunnel + `pnpm dev`)
 _Live UI smoke can't run in the agent environment (Fly Postgres unreachable without the tunnel). Run these before merging the final PR:_
 - [ ] Phase 1: `/blog` + `/ar/blog` show >6 posts with working "Load More" to the end; a post ranked >6th opens (no freeze); an Arabic post opens; `/blog/does-not-exist` → clean 404.
+- [ ] Phase 2: editor link add/edit/remove + font-size persist on the public article; PDF upload → inserted download link works; mp4/mp3 embed plays on the public article; oversized (>cap) + unknown-MIME upload rejected with clear message; auto-save fires ONE PATCH on pause (no storm while typing) + new post gains id & URL updates once.
 
 ## Handoff log (newest first)
+
+### S6 — Category model + migration + seed (2026-06-14, branch p3-categories)
+- `content.prisma`: added `Category { id, slug @unique, nameEn, nameAr, sort?,
+  createdAt, updatedAt }`. `Post.categories String[]` + GIN index UNTOUCHED.
+- Migration `prisma/migrations/20260614174515_add_category/migration.sql`:
+  ADDITIVE only — `CREATE TABLE "Category"` + unique slug index + idempotent
+  seed `INSERT ... ON CONFLICT ("slug") DO NOTHING` for the 6 taxonomy slugs
+  (autism, down-syndrome, learning-difficulties, family-support, assessment,
+  therapy) with EN/AR names + sort 1-6, deterministic `cat_*` ids. Does NOT
+  alter `Post`. Safe to re-run under the Fly `release_command` migrate deploy.
+- NOT applied locally (dev DB unreachable — Fly Postgres needs `fly proxy`).
+  `pnpm db:generate` run → generated client now exports `prisma.category`.
+- Local/dev seed: new standalone `prisma/seed-categories.ts` +
+  `db:seed:categories` script (idempotent upsert by slug). Deviation: did NOT
+  extend `prisma/seed.ts` — it is HISTORICAL/Directus-coupled and documents
+  "do not extend"; a separate script is the correct equivalent.
+- Verify: `pnpm db:generate` OK, `pnpm lint` clean, `pnpm build` green
+  (Category present in generated client).
+- Deferred to C3 (DB unreachable here): confirm migration applies on a fresh
+  DB; 6 seed rows present after deploy; existing posts' slugs still resolve.
 
 ### S5 — Auto-save drafts (2026-06-14, branch p2-editor)
 - `usePostForm.ts`: added opt-in `enableAutoSave()` + reactive `autoSaveStatus`

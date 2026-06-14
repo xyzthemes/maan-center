@@ -1,10 +1,16 @@
 <script setup lang="ts">
+import { pickLocale } from '~/utils/i18n-text'
+
 definePageMeta({
   alias: ['/ar/dashboard/overview'],
   layout: 'dashboard'
 })
 
 const { t, isArabic, sitePath } = useDashboardI18n()
+// `form.title` is a bilingual envelope ({ en, ar }); resolve it per the
+// dashboard locale on render (same as the submissions page). Without this
+// the widget interpolates the raw object and shows JSON.
+const lang = computed<'en' | 'ar'>(() => isArabic.value ? 'ar' : 'en')
 const { userName } = useDashboardUser()
 const { posts, loadPosts } = usePosts()
 const { pages, loadPages } = usePagesAdmin()
@@ -415,7 +421,7 @@ useSeoMeta({ robots: 'noindex, nofollow' })
                   class="text-sm font-semibold truncate"
                   style="color: var(--maan-ink);"
                 >
-                  {{ sub.form?.title || 'Form submission' }}
+                  {{ pickLocale(sub.form?.title, lang) || sub.form?.slug || 'Form submission' }}
                 </p>
                 <p
                   class="mt-0.5 text-xs"

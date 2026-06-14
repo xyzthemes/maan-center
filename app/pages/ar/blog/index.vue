@@ -1,9 +1,29 @@
 <script setup lang="ts">
-const { getPageSeo, getPosts } = useMaanContent()
+const { getPageSeo, getPostsPage } = useMaanContent()
 
-const { data: posts } = await useAsyncData<MaanPost[]>('maan-blog-posts-ar', () => getPosts('ar'), {
-  default: () => []
+const PAGE_SIZE = 6
+const { data: firstPage } = await useAsyncData('maan-blog-posts-ar', () => getPostsPage('ar', { page: 1, limit: PAGE_SIZE }), {
+  default: () => ({ posts: [] as MaanPost[], total: 0 })
 })
+
+const posts = ref<MaanPost[]>(firstPage.value?.posts ?? [])
+const total = ref(firstPage.value?.total ?? 0)
+const page = ref(1)
+const loadingMore = ref(false)
+const hasMore = computed(() => posts.value.length < total.value)
+
+const loadMore = async () => {
+  if (loadingMore.value || !hasMore.value) return
+  loadingMore.value = true
+  try {
+    const next = await getPostsPage('ar', { page: page.value + 1, limit: PAGE_SIZE })
+    posts.value = [...posts.value, ...next.posts]
+    total.value = next.total
+    page.value += 1
+  } finally {
+    loadingMore.value = false
+  }
+}
 const { data: pageSeo } = await useAsyncData<MaanSeo>('maan-page-seo-blog-ar', () => getPageSeo('/ar/blog', {
   title: 'المرجع العلمي الشامل: دليل معاً للتمكين',
   description: 'مقالات وأدلة من مركز معاً للتربية الخاصة حول طيف التوحد ومتلازمة داون وصعوبات التعلم ودعم الأسرة.'
@@ -98,6 +118,21 @@ useSchemaOrg([
             />
           </div>
         </article>
+      </div>
+
+      <div
+        v-if="hasMore"
+        class="mt-10 flex justify-center"
+      >
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="lg"
+          :loading="loadingMore"
+          @click="loadMore"
+        >
+          تحميل المزيد من المقالات
+        </UButton>
       </div>
     </UContainer>
   </div>

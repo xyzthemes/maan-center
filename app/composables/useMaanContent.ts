@@ -59,6 +59,8 @@ export type GetPostsOptions = {
   placement?: string
   /** Filter to posts that include this category id (e.g. 'autism'). */
   category?: string
+  /** 1-based page index for "Load More" pagination. Defaults to 1. */
+  page?: number
 }
 
 const fallbackPostsEn: MaanPost[] = [
@@ -221,12 +223,13 @@ export const useMaanContent = () => {
     locale: 'en' | 'ar' = 'en',
     opts: GetPostsOptions = {}
   ): Promise<MaanPost[]> => {
-    const { limit = 6, placement, category } = opts
+    const { limit = 6, placement, category, page = 1 } = opts
     try {
-      const res = await $fetch<{ posts: ApiPost[] }>('/api/public/posts', {
+      const res = await $fetch<{ posts: ApiPost[], total?: number }>('/api/public/posts', {
         query: {
           locale,
           limit,
+          page,
           ...(placement ? { placement } : {}),
           ...(category ? { category } : {})
         }
@@ -241,6 +244,31 @@ export const useMaanContent = () => {
     } catch {
       if (placement || category) return []
       return locale === 'ar' ? fallbackPostsAr : fallbackPostsEn
+    }
+  }
+
+  // Pagination-aware sibling of `getPosts` (S2). Returns the requested page
+  // of posts plus the locale's `total` so a "Load More" control can decide
+  // whether more remain. No fallback array here: a real, empty published
+  // list must read as `total: 0`, not as the seeded placeholder posts.
+  const getPostsPage = async (
+    locale: 'en' | 'ar' = 'en',
+    opts: GetPostsOptions = {}
+  ): Promise<{ posts: MaanPost[], total: number }> => {
+    const { limit = 6, placement, category, page = 1 } = opts
+    try {
+      const res = await $fetch<{ posts: ApiPost[], total: number }>('/api/public/posts', {
+        query: {
+          locale,
+          limit,
+          page,
+          ...(placement ? { placement } : {}),
+          ...(category ? { category } : {})
+        }
+      })
+      return { posts: res.posts.map(p => toMaanPost(p, locale)), total: res.total ?? 0 }
+    } catch {
+      return { posts: [], total: 0 }
     }
   }
 
@@ -278,5 +306,5 @@ export const useMaanContent = () => {
     }
   }
 
-  return { getPosts, getPostBySlug, getPageSeo }
+  return { getPosts, getPostsPage, getPostBySlug, getPageSeo }
 }

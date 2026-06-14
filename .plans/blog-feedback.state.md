@@ -4,13 +4,13 @@
 Plan: `blog-feedback.md` · Briefs: `blog-feedback.sessions.md` ·
 Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 
-## Next up: S2
+## Next up: C1 (checkpoint review)
 
 ## Session checklist
 
 ### Phase 1 — Critical bugs · branch `blog-feedback/p1-bugs` (from `main`)
 - [x] S1 — Fix detail-page freeze + dedicated single-post API
-- [ ] S2 — Pagination / "Load More"
+- [x] S2 — Pagination / "Load More"
 - [ ] **C1** checkpoint review
 
 ### Phase 2 — Editor · branch `blog-feedback/p2-editor` (from p1 head)
@@ -55,6 +55,24 @@ Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
   objects at the final PR.
 
 ## Handoff log (newest first)
+
+### S2 — Pagination / "Load More" (2026-06-14, branch p1-bugs)
+- `public/posts.get.ts`: accepts `page` (1-based) + `offset` escape hatch; DB
+  `take` window 200 → 500; locale-filters in-memory, returns `{ posts, total }`
+  for the page slice. Category/placement filters intact; legacy `limit` is now
+  the per-page size. Default first view stays 6.
+- `useMaanContent.ts`: added `page?` to `GetPostsOptions`; `getPosts` threads
+  `page` (return shape unchanged — all legacy callers safe). New sibling
+  `getPostsPage(locale, opts) → { posts, total }` (no fallback array, so an
+  empty published list reads as total 0). Exported it.
+- `blog/index.vue` + `ar/blog/index.vue`: initial SSR page via `getPostsPage`
+  (PAGE_SIZE 6); reactive `posts`/`total`/`page`; "Load More" UButton appends the
+  next page, hidden when `posts.length >= total`. AR label localized + RTL-safe.
+- Confirmed legacy `getPosts` call sites unchanged: homepage featured/items,
+  programs related, blog [slug] related — no regression to placement queries.
+- Verify: `pnpm lint` clean, `pnpm build` green.
+- Deferred to C1: dev smoke — seed >6 posts/locale, page to the end in both locales.
+- No deviations.
 
 ### S1 — detail-page freeze + dedicated single-post API (2026-06-14, branch p1-bugs)
 - Added `server/api/public/posts/[slug].get.ts`: `findUnique` by slug, 400 if

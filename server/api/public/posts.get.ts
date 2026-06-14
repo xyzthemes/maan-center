@@ -33,11 +33,17 @@ const parseTaxonomyParam = (raw: unknown, isValid: (s: string) => boolean): stri
   return Array.from(new Set(collect(raw).filter(isValid)))
 }
 
-export default defineEventHandler(async (event): Promise<{ posts: PublicPostListItem[] }> => {
+export default defineEventHandler(async (event): Promise<{ posts: PublicPostListItem[], total: number }> => {
   const query = getQuery(event)
   const locale = String(query.locale || 'en')
   const limit = String(query.limit || '6')
   const take = Math.max(1, Math.min(50, Number(limit) || 6))
+  // 1-based page index for "Load More" pagination (S2). `page` is the
+  // primary param; `offset` is accepted as an escape hatch and wins when
+  // supplied. The locale split happens in-memory (no DB locale column —
+  // see locked decision), so we page over the already-filtered list.
+  const page = Math.max(1, Math.floor(Number(query.page) || 1))
+  const offset = query.offset != null ? Math.max(0, Math.floor(Number(query.offset) || 0)) : (page - 1) * take
 
   const categories = parseTaxonomyParam(query.category ?? query.categories, isPostCategory)
   const placements = parseTaxonomyParam(query.placement ?? query.placements, isPostPlacement)
@@ -53,7 +59,10 @@ export default defineEventHandler(async (event): Promise<{ posts: PublicPostList
       ...(placements.length ? { placements: { hasSome: placements } } : {})
     },
     orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
-    take: 200
+    // Widened window (S2): we filter locale in-memory, so the cap must hold
+    // a full locale's worth of posts. Acceptable until volume nears ~500
+    // per locale (open question Q1 tracks the real fix — a locale column).
+    take: 500
   })
 
   // Locale split happens here rather than in the DB because the EN/AR
@@ -63,7 +72,8 @@ export default defineEventHandler(async (event): Promise<{ posts: PublicPostList
   const filtered = rows.filter(p => (locale === 'ar' ? isAr(p.slug, p.title) : !isAr(p.slug, p.title)))
 
   return {
-    posts: filtered.slice(0, take).map(p => ({
+    total: filtered.length,
+    posts: filtered.slice(offset, offset + take).map(p => ({
       id: p.id,
       slug: p.slug,
       title: p.title,

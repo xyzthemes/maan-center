@@ -85,7 +85,10 @@ const content = computed({
 type UploadKind = 'image' | 'file' | 'media'
 
 const fileInput = ref<HTMLInputElement | null>(null)
-const pendingEditor = ref<EditorArg | null>(null)
+// shallowRef (not ref): the Editor type is a complex tiptap class. ref's deep
+// UnwrapRef strips its internal properties, breaking assignability back to
+// Editor; shallowRef stores the instance as-is and keeps the type intact.
+const pendingEditor = shallowRef<EditorArg | null>(null)
 const pendingKind = ref<UploadKind>('image')
 const isUploading = ref(false)
 const uploadError = ref<string | null>(null)

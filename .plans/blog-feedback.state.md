@@ -4,7 +4,7 @@
 Plan: `blog-feedback.md` · Briefs: `blog-feedback.sessions.md` ·
 Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 
-## Next up: S5 (Phase 2 — editor)
+## Next up: C2 (Phase 2 — editor checkpoint review)
 
 ## Session checklist
 
@@ -16,7 +16,7 @@ Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 ### Phase 2 — Editor · branch `blog-feedback/p2-editor` (from p1 head)
 - [x] S3 — Insert link + font sizing
 - [x] S4 — Attachment (PDF) + media upload & insert
-- [ ] S5 — Auto-save drafts
+- [x] S5 — Auto-save drafts
 - [ ] **C2** checkpoint review
 
 ### Phase 3 — Dynamic categories · branch `blog-feedback/p3-categories` (from p2 head)
@@ -63,6 +63,28 @@ _Live UI smoke can't run in the agent environment (Fly Postgres unreachable with
 - [ ] Phase 1: `/blog` + `/ar/blog` show >6 posts with working "Load More" to the end; a post ranked >6th opens (no freeze); an Arabic post opens; `/blog/does-not-exist` → clean 404.
 
 ## Handoff log (newest first)
+
+### S5 — Auto-save drafts (2026-06-14, branch p2-editor)
+- `usePostForm.ts`: added opt-in `enableAutoSave()` + reactive `autoSaveStatus`
+  ('idle'|'saving'|'saved'|'error'). Debounced 2.5s watcher on
+  `JSON.stringify(postForm)` → `runAutoSave` calls existing `savePost`.
+  Guards: skips while `isSaving` (no overlap); a `suspendAutoSave` flag (set via
+  `withSuspendedAutoSave`) wraps `editPost`/`newPost` and the save itself so
+  programmatic/load/id-mutation changes don't arm a save (no storm on open, no
+  self-trigger loop). New posts need a non-empty title before the first save,
+  then auto-save thereafter. `onScopeDispose` clears the pending timer.
+- `dashboard/posts/[id].vue`: `onMounted(enableAutoSave)` (client-only; list page
+  deliberately does NOT enable it); watch `postForm.id` → replace URL /new→/:id
+  after first auto-save; passes `:auto-save-status` to the form.
+- `PostEditorForm.vue`: new optional `autoSaveStatus` prop → bilingual indicator
+  (Saving…/Saved/Error, role=status aria-live) beside the Save/Clear buttons.
+- `useDashboardI18n.ts`: added autoSaving/autoSaved/autoSaveError (EN + AR).
+- Verify: `pnpm lint` clean, `pnpm build` green.
+- Deferred to C2: live smoke — edit existing post, pause → ONE PATCH + indicator
+  Saving→Saved, no storm while typing; new post gains id + URL updates once.
+  WATCH at C2: each auto-save also fires the existing saveSuccess toast (could be
+  noisy every cycle) — consider suppressing the toast for auto- vs manual save.
+- No deviations.
 
 ### S4 — Attachment + media upload & insert (2026-06-14, branch p2-editor)
 - `upload.post.ts`: replaced flat ALLOWED_MIME/EXT map with one `FILE_SPEC`

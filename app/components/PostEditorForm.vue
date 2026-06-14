@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import type { PostForm } from '~/composables/usePostForm'
+import type { PostForm, AutoSaveStatus } from '~/composables/usePostForm'
 
 const props = defineProps<{
   modelValue: PostForm
   isSaving: boolean
   saveError: string
   saveSuccess: string
+  // Optional: only the [id] editor page drives auto-save; defaults to 'idle'.
+  autoSaveStatus?: AutoSaveStatus
 }>()
 
 const emit = defineEmits<{
@@ -37,6 +39,21 @@ const categoryOptions = computed<Array<{ value: string, label: string }>>(() =>
 )
 // Placement options are no longer rendered as a flat select — the
 // visual picker (MaanPlacementPicker) reads the taxonomy directly.
+
+// Auto-save indicator. Maps the composable's status to a bilingual label +
+// icon/color; hidden while idle so it only appears once auto-save is active.
+const autoSaveIndicator = computed(() => {
+  switch (props.autoSaveStatus) {
+    case 'saving':
+      return { label: t.value.autoSaving, icon: 'i-lucide-loader-circle', class: 'text-muted', iconClass: 'size-4 animate-spin' }
+    case 'saved':
+      return { label: t.value.autoSaved, icon: 'i-lucide-check', class: 'text-success', iconClass: 'size-4' }
+    case 'error':
+      return { label: t.value.autoSaveError, icon: 'i-lucide-triangle-alert', class: 'text-error', iconClass: 'size-4' }
+    default:
+      return null
+  }
+})
 </script>
 
 <template>
@@ -192,7 +209,7 @@ const categoryOptions = computed<Array<{ value: string, label: string }>>(() =>
       :title="saveSuccess"
     />
 
-    <div class="flex flex-wrap gap-3">
+    <div class="flex flex-wrap items-center gap-3">
       <UButton
         type="submit"
         size="xl"
@@ -209,6 +226,19 @@ const categoryOptions = computed<Array<{ value: string, label: string }>>(() =>
       >
         {{ t.clear }}
       </UButton>
+      <span
+        v-if="autoSaveIndicator"
+        class="inline-flex items-center gap-1.5 text-sm"
+        :class="autoSaveIndicator.class"
+        role="status"
+        aria-live="polite"
+      >
+        <UIcon
+          :name="autoSaveIndicator.icon"
+          :class="autoSaveIndicator.iconClass"
+        />
+        {{ autoSaveIndicator.label }}
+      </span>
     </div>
   </form>
 </template>

@@ -12,12 +12,19 @@ const {
   saveError,
   saveSuccess,
   isSaving,
+  autoSaveStatus,
   statusLabel,
   editPost,
   newPost,
-  savePost
+  savePost,
+  enableAutoSave
 } = usePostForm(loadPosts)
 const dashToast = useDashboardToast()
+
+// Auto-save runs client-side only (it relies on debounce timers + the live
+// form). Enabling it here — and not in the list page — keeps the list's use of
+// usePostForm (statusOptions only) free of any save behavior.
+onMounted(enableAutoSave)
 
 // Fire a toast every time the save flow flips a flag. The inline
 // success/error panels in PostEditorForm remain — the toast is the
@@ -33,6 +40,14 @@ const id = computed(() => String(route.params.id))
 const isNew = computed(() => id.value === 'new')
 const notFound = ref(false)
 const backHref = computed(() => isArabic.value ? '/ar/dashboard/posts' : '/dashboard/posts')
+
+// A brand-new post auto-saves once to gain an id; reflect that in the URL so a
+// refresh lands on the real record instead of /new (replace = no history spam).
+watch(() => postForm.id, (newId) => {
+  if (isNew.value && newId) {
+    navigateTo(isArabic.value ? `/ar/dashboard/posts/${newId}` : `/dashboard/posts/${newId}`, { replace: true })
+  }
+})
 
 const primeForm = async () => {
   notFound.value = false
@@ -123,6 +138,7 @@ watch(() => route.params.id, () => {
         :is-saving="isSaving"
         :save-error="saveError"
         :save-success="saveSuccess"
+        :auto-save-status="autoSaveStatus"
         @save="onSave"
         @clear="primeForm"
       />

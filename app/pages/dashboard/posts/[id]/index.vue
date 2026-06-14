@@ -13,6 +13,9 @@ const {
   saveSuccess,
   isSaving,
   autoSaveStatus,
+  isDirty,
+  pauseAutoSave,
+  resumeAutoSave,
   statusLabel,
   editPost,
   newPost,
@@ -142,6 +145,14 @@ watch(() => route.params.id, () => {
     </template>
 
     <template #body>
+      <!-- Warn before leaving with unsaved edits (route changes + tab close). -->
+      <DashboardUnsavedGuard
+        :dirty="isDirty"
+        :save="savePost"
+        :pause="pauseAutoSave"
+        :resume="resumeAutoSave"
+      />
+
       <UAlert
         v-if="notFound"
         color="error"

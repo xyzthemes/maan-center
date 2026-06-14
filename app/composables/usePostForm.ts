@@ -44,6 +44,18 @@ export const usePostForm = (onSaved?: () => unknown | Promise<unknown>) => {
   const saveSuccess = ref('')
   const isSaving = ref(false)
   const autoSaveStatus = ref<AutoSaveStatus>('idle')
+
+  // Dirty tracking for the unsaved-changes guard. `lastSavedSnapshot` is the
+  // serialized form at the last successful save (manual or auto) or at load;
+  // `isDirty` is true whenever the live form has diverged from it. This is more
+  // precise than `autoSaveStatus` (whose 'idle' covers both "clean" and
+  // "edited, save pending"), so the guard only warns on genuinely unsaved work.
+  const snapshot = () => JSON.stringify(postForm)
+  const lastSavedSnapshot = ref(snapshot())
+  const markPristine = () => {
+    lastSavedSnapshot.value = snapshot()
+  }
+  const isDirty = computed(() => snapshot() !== lastSavedSnapshot.value)
   // When true, watcher-fired form changes are programmatic (load/save-induced)
   // and must NOT arm an auto-save — this is what stops a save storm on page open
   // and the self-trigger loop after savePost mutates postForm.id.
@@ -99,6 +111,7 @@ export const usePostForm = (onSaved?: () => unknown | Promise<unknown>) => {
     saveError.value = ''
     saveSuccess.value = ''
     autoSaveStatus.value = 'idle'
+    markPristine()
   }
 
   const newPost = () => {
@@ -108,6 +121,7 @@ export const usePostForm = (onSaved?: () => unknown | Promise<unknown>) => {
     saveError.value = ''
     saveSuccess.value = ''
     autoSaveStatus.value = 'idle'
+    markPristine()
   }
 
   const savePost = async (): Promise<string | undefined> => {
@@ -132,6 +146,9 @@ export const usePostForm = (onSaved?: () => unknown | Promise<unknown>) => {
       }
 
       saveSuccess.value = wasCreate ? t.value.postCreated : t.value.postUpdated
+      // Snapshot AFTER the id is assigned (line above) so the post-create id
+      // change doesn't read as a fresh unsaved edit.
+      markPristine()
 
       if (onSaved) {
         await onSaved()
@@ -157,13 +174,23 @@ export const usePostForm = (onSaved?: () => unknown | Promise<unknown>) => {
   // only once it has the minimum content to be a real draft (a title).
   const AUTO_SAVE_DELAY = 2500
   let autoSaveTimer: ReturnType<typeof setTimeout> | null = null
+  // Set by the unsaved-changes guard while its modal is open: a debounced save
+  // must NOT fire (and toast "saved") while the user is still deciding to keep,
+  // save, or discard — that would also defeat "Leave without saving".
+  const autoSavePaused = ref(false)
 
   const hasMinimumContent = () => postForm.title.trim().length > 0
 
+  const clearAutoSaveTimer = () => {
+    if (autoSaveTimer) clearTimeout(autoSaveTimer)
+    autoSaveTimer = null
+  }
+
   const runAutoSave = async () => {
     autoSaveTimer = null
-    // Skip if a manual/auto save is already running, or there's nothing worth
-    // persisting yet (no id AND no title → don't spam empty drafts).
+    // Skip if paused (guard modal open), if a manual/auto save is already
+    // running, or there's nothing worth persisting yet (no id AND no title).
+    if (autoSavePaused.value) return
     if (isSaving.value) return
     if (!postForm.id && !hasMinimumContent()) return
 
@@ -180,21 +207,35 @@ export const usePostForm = (onSaved?: () => unknown | Promise<unknown>) => {
     }
   }
 
+  const scheduleAutoSave = () => {
+    clearAutoSaveTimer()
+    autoSaveStatus.value = 'idle'
+    autoSaveTimer = setTimeout(runAutoSave, AUTO_SAVE_DELAY)
+  }
+
+  // Pause/resume let the unsaved-changes guard freeze auto-save while its modal
+  // is open. Resuming re-arms a save if the form is still dirty, so edits made
+  // before the prompt aren't left unsaved after "Keep editing".
+  const pauseAutoSave = () => {
+    autoSavePaused.value = true
+    clearAutoSaveTimer()
+  }
+  const resumeAutoSave = () => {
+    autoSavePaused.value = false
+    if (isDirty.value) scheduleAutoSave()
+  }
+
   const enableAutoSave = () => {
     watch(
       () => JSON.stringify(postForm),
       () => {
-        if (suspendAutoSave) return
-        if (autoSaveTimer) clearTimeout(autoSaveTimer)
-        autoSaveStatus.value = 'idle'
-        autoSaveTimer = setTimeout(runAutoSave, AUTO_SAVE_DELAY)
+        if (suspendAutoSave || autoSavePaused.value) return
+        scheduleAutoSave()
       }
     )
 
     // Don't leave a pending save firing after the editor is torn down.
-    onScopeDispose(() => {
-      if (autoSaveTimer) clearTimeout(autoSaveTimer)
-    })
+    onScopeDispose(clearAutoSaveTimer)
   }
 
   return {
@@ -203,6 +244,9 @@ export const usePostForm = (onSaved?: () => unknown | Promise<unknown>) => {
     saveSuccess,
     isSaving,
     autoSaveStatus,
+    isDirty,
+    pauseAutoSave,
+    resumeAutoSave,
     statusOptions,
     statusLabel,
     editPost,

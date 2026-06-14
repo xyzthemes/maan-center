@@ -172,7 +172,7 @@ useSchemaOrg([
         <article
           v-for="post in posts"
           :key="post.slug"
-          class="maan-garden-card group p-6 transition hover:-translate-y-1"
+          class="maan-garden-card group relative p-6 transition hover:-translate-y-1"
         >
           <div class="flex items-center gap-3 text-sm text-muted">
             <UBadge

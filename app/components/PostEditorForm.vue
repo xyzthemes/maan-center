@@ -33,7 +33,8 @@ const lang = computed<'en' | 'ar'>(() => isArabic.value ? 'ar' : 'en')
 // option type doesn't narrow to the literal union — keeps form.categories
 // typed as `string[]` (which matches the DB column shape) and avoids a
 // pile of `as PostCategoryId[]` casts at every binding site. Validation
-// of unknown ids still happens server-side via sanitizeCategories.
+// of unknown ids still happens server-side (S7: DB-backed against the
+// Category table in the post create/update routes).
 const categoryOptions = computed<Array<{ value: string, label: string }>>(() =>
   taxonomyCategories.map(c => ({ value: c.id, label: c.label[lang.value] }))
 )

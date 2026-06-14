@@ -4,7 +4,7 @@
 // Phase 7 cleanup can rename these to camelCase (post/page interfaces) and
 // drop this layer.
 
-import type { Page, Post, FormSubmission, FormSubmissionValue, Form, FormField, ContentBlock, User, Session } from './db/types'
+import type { Page, Post, Category, FormSubmission, FormSubmissionValue, Form, FormField, ContentBlock, User, Session } from './db/types'
 
 export type DashboardPostShape = {
   id: string
@@ -39,6 +39,28 @@ export const toDashboardPost = (post: Post): DashboardPostShape => ({
   seo: post.seo,
   categories: post.categories ?? [],
   placements: post.placements ?? []
+})
+
+// S7: dynamic category taxonomy. `slug` is the stable key stored in
+// `Post.categories String[]`; `name_en`/`name_ar` drive the bilingual UI.
+export type DashboardCategoryShape = {
+  id: string
+  slug: string
+  name_en: string
+  name_ar: string
+  sort: number | null
+  date_created: string
+  date_updated: string
+}
+
+export const toDashboardCategory = (category: Category): DashboardCategoryShape => ({
+  id: category.id,
+  slug: category.slug,
+  name_en: category.nameEn,
+  name_ar: category.nameAr,
+  sort: category.sort,
+  date_created: category.createdAt.toISOString(),
+  date_updated: category.updatedAt.toISOString()
 })
 
 export type DashboardPageShape = {

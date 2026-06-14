@@ -4,7 +4,7 @@
 Plan: `blog-feedback.md` · Briefs: `blog-feedback.sessions.md` ·
 Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 
-## Next up: S7 (Phase 3 — Category CRUD API + DB-backed validation)
+## Next up: S8 (Phase 3 — Category management UI + wire selects)
 
 ## Session checklist
 
@@ -21,7 +21,7 @@ Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 
 ### Phase 3 — Dynamic categories · branch `blog-feedback/p3-categories` (from p2 head)
 - [x] S6 — Category model + migration + seed
-- [ ] S7 — Category CRUD API + DB-backed validation
+- [x] S7 — Category CRUD API + DB-backed validation
 - [ ] S8 — Category management UI + wire selects
 - [ ] **C3** checkpoint review
 
@@ -64,6 +64,35 @@ _Live UI smoke can't run in the agent environment (Fly Postgres unreachable with
 - [ ] Phase 2: editor link add/edit/remove + font-size persist on the public article; PDF upload → inserted download link works; mp4/mp3 embed plays on the public article; oversized (>cap) + unknown-MIME upload rejected with clear message; auto-save fires ONE PATCH on pause (no storm while typing) + new post gains id & URL updates once.
 
 ## Handoff log (newest first)
+
+### S7 — Category CRUD API + DB-backed validation (2026-06-14, branch p3-categories)
+- Routes `server/api/dashboard/categories/`: `index.get` (list, sort/nameEn),
+  `index.post` (create; P2002→409), `[id].patch` (update; P2025→404/P2002→409),
+  `[id].delete` (non-cascading; P2025→404). All gated `requirePermission(event,
+  'posts')`. Envelopes mirror posts routes (`{ categories }` / `{ data }` /
+  `{ success }`). Added `Category` to `db/types.ts` + `toDashboardCategory`
+  (snake_case `name_en/name_ar`) in `dashboard-shapes.ts`.
+- New util `server/utils/category-validation.ts`: `getValidCategorySlugs(event)`
+  (per-request cache on `event.context`) + `sanitizeCategoriesDb(event, raw)` —
+  DB-backed, async, DROPS unknown slugs (same defensive contract as old static
+  `sanitizeCategories`).
+- Swapped call sites (grep `isPostCategory`+`sanitizeCategories`):
+  1. `server/api/public/posts.get.ts` — `category` filter param now validated
+     via `getValidCategorySlugs` (new `flattenParam` for raw parse). Dropped the
+     `isPostCategory` import. PLACEMENTS unchanged (`isPostPlacement` kept).
+  2. `server/api/dashboard/posts/index.post.ts` — `await sanitizeCategoriesDb`
+     hoisted before `prisma.post.create`. Dropped `sanitizeCategories` import.
+  3. `server/api/dashboard/posts/[id].patch.ts` — `await sanitizeCategoriesDb`
+     hoisted before `prisma.post.update`. Dropped `sanitizeCategories` import.
+  Untouched: `useMaanTaxonomy.ts` defs (still the label source for S8) +
+  `PostEditorForm.vue:36` (comment only — refreshed wording). `sanitizePlacements`
+  /`isPostPlacement` left static everywhere.
+- Verify: `pnpm lint` clean, `pnpm build` green (4 category route chunks emitted).
+- Deferred to C3 (DB unreachable here): live CRUD (create/rename/delete via curl
+  or UI); create a post with a DB-only category slug → persists; filter public
+  list by a DB category; delete a category in use → post keeps slug, next save
+  drops it; unknown slug in filter param → ignored.
+- No deviations.
 
 ### S6 — Category model + migration + seed (2026-06-14, branch p3-categories)
 - `content.prisma`: added `Category { id, slug @unique, nameEn, nameAr, sort?,

@@ -7,7 +7,7 @@
 // the posts they want to surface instead of "latest 3".
 
 import { getQuery } from 'h3'
-import { isPostCategory, isPostPlacement } from '~/composables/useMaanTaxonomy'
+import { isPostPlacement } from '~/composables/useMaanTaxonomy'
 
 export type PublicPostListItem = {
   id: string
@@ -33,6 +33,17 @@ const parseTaxonomyParam = (raw: unknown, isValid: (s: string) => boolean): stri
   return Array.from(new Set(collect(raw).filter(isValid)))
 }
 
+/** Flatten repeated/CSV query params into a de-duplicated raw string list
+ *  (no taxonomy validation — that's done DB-side for categories). */
+const flattenParam = (raw: unknown): string[] => {
+  const collect = (v: unknown): string[] => {
+    if (Array.isArray(v)) return v.flatMap(collect)
+    if (typeof v === 'string') return v.split(',').map(s => s.trim()).filter(Boolean)
+    return []
+  }
+  return Array.from(new Set(collect(raw)))
+}
+
 export default defineEventHandler(async (event): Promise<{ posts: PublicPostListItem[], total: number }> => {
   const query = getQuery(event)
   const locale = String(query.locale || 'en')
@@ -45,7 +56,11 @@ export default defineEventHandler(async (event): Promise<{ posts: PublicPostList
   const page = Math.max(1, Math.floor(Number(query.page) || 1))
   const offset = query.offset != null ? Math.max(0, Math.floor(Number(query.offset) || 0)) : (page - 1) * take
 
-  const categories = parseTaxonomyParam(query.category ?? query.categories, isPostCategory)
+  // Categories are now validated against the dynamic Category table (S7)
+  // instead of the static taxonomy list. Unknown slugs are dropped so a
+  // deleted/renamed category can't be used to probe the post set.
+  const validCategorySlugs = await getValidCategorySlugs(event)
+  const categories = flattenParam(query.category ?? query.categories).filter(s => validCategorySlugs.has(s))
   const placements = parseTaxonomyParam(query.placement ?? query.placements, isPostPlacement)
 
   const rows = await prisma.post.findMany({

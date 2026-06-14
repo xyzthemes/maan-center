@@ -2,7 +2,7 @@
 // Returns the response envelope `{ data: { ... } }` the dashboard composables expect.
 
 import { createError, readBody } from 'h3'
-import { sanitizeCategories, sanitizePlacements } from '~/composables/useMaanTaxonomy'
+import { sanitizePlacements } from '~/composables/useMaanTaxonomy'
 
 type DashboardPostBody = {
   title?: string
@@ -33,6 +33,11 @@ export default defineEventHandler(async (event) => {
   const slug = normalizeSlug(body.slug || title)
   const description = body.description?.trim() || null
 
+  // Drops any slug not present in the dynamic Category table (S7, async DB
+  // check). The admin UI uses a multi-select so it never sends unknown ids;
+  // defensive here so a deleted/renamed category can't leave bad data behind.
+  const categories = await sanitizeCategoriesDb(event, body.categories)
+
   const post = await prisma.post.create({
     data: {
       title,
@@ -41,11 +46,7 @@ export default defineEventHandler(async (event) => {
       content: body.content?.trim() || '<p></p>',
       status,
       publishedAt: normalizePublishedAt(status, body.published_at),
-      // sanitize* drops any slug not in the taxonomy — admin UI uses a
-      // multi-select so the dashboard never sends unknown ids; defensive
-      // here in case future taxonomy changes leave stale strings in old
-      // payloads.
-      categories: sanitizeCategories(body.categories),
+      categories,
       placements: sanitizePlacements(body.placements),
       seo: {
         title: body.seo?.title?.trim() || title,

@@ -244,9 +244,18 @@ export const useMaanContent = () => {
     }
   }
 
-  const getPostBySlug = async (slug: string, locale: 'en' | 'ar' = 'en') => {
-    const posts = await getPosts(locale)
-    return posts.find(post => post.slug === slug)
+  // Fetches a single published post by slug from its dedicated endpoint
+  // (S1) rather than scanning the list result — the list's `limit`/locale
+  // defaults previously hid any post past the default window, which was
+  // the detail-page "freeze" cause. Returns `undefined` on a 404 so the
+  // pages' `if (!post.value)` guard still fires.
+  const getPostBySlug = async (slug: string, locale: 'en' | 'ar' = 'en'): Promise<MaanPost | undefined> => {
+    try {
+      const res = await $fetch<{ post: ApiPost }>(`/api/public/posts/${encodeURIComponent(slug)}`)
+      return toMaanPost(res.post, locale)
+    } catch {
+      return undefined
+    }
   }
 
   const getPageSeo = async (permalink: string, fallback: Partial<MaanSeo> = {}): Promise<MaanSeo> => {

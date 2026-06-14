@@ -3,7 +3,7 @@ const route = useRoute('/blog/[slug]')
 const { getPostBySlug, getPosts } = useMaanContent()
 const slug = computed(() => String(route.params.slug || ''))
 
-const { data: post } = await useAsyncData<MaanPost | undefined>(`maan-blog-${slug.value}`, () => getPostBySlug(slug.value))
+const { data: post } = await useAsyncData<MaanPost | undefined>(`maan-blog-${slug.value}`, () => getPostBySlug(slug.value, 'en'))
 
 if (!post.value) {
   throw createError({

@@ -4,7 +4,7 @@
 Plan: `blog-feedback.md` · Briefs: `blog-feedback.sessions.md` ·
 Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 
-## Next up: C6 (Phase 6 — checkpoint review)
+## Next up: S14 (Phase 7 — related + social)
 
 ## Session checklist
 
@@ -36,10 +36,10 @@ Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 ### Phase 6 — Performance · branch `blog-feedback/p6-perf` (from p5 head)
 - [x] S11 — Server-side WebP on upload (sharp)
 - [x] S12 — @nuxt/image + responsive + mobile/RTL audit
-- [ ] **C6** checkpoint review
+- [x] **C6** checkpoint review — **APPROVE**. **R1 CLEARED via real `docker build` (linux/amd64): image builds, `sharp 0.35.1`/libvips ships as `@img/sharp-linux-x64` in the runner's fresh prod install.** Conversion gated to images only (alpha preserved, GIF passthrough), auth+size-cap before sharp; `@nuxt/image` config coherent (Tigris allow-listed); lint+build+frozen-install green; Dockerfile/CI/schema unchanged. LOW follow-up: wrap `sharp().toBuffer()` (upload.post.ts:102) in try/catch → corrupt image returns 4xx not 500. Live image smoke → Human-verification checklist.
 
 ### Phase 7 — Related + social · branch `blog-feedback/p7-related-social` (from p6 head)
-- [ ] S13 — Related posts by category
+- [x] S13 — Related posts by category
 - [ ] S14 — Social share buttons
 - [ ] **C7** final checkpoint + assemble PR
 
@@ -64,9 +64,27 @@ _Live UI smoke can't run in the agent environment (Fly Postgres unreachable with
 - [ ] Phase 2: editor link add/edit/remove + font-size persist on the public article; PDF upload → inserted download link works; mp4/mp3 embed plays on the public article; oversized (>cap) + unknown-MIME upload rejected with clear message; auto-save fires ONE PATCH on pause (no storm while typing) + new post gains id & URL updates once.
 - [ ] Phase 4: as a logged-in editor, open a `draft` and an `in_review` post's preview (`/dashboard/posts/<id>/preview`) → renders in the real public article layout (hero + prose); AR post previews RTL; confirm `/blog/<slug>` still returns a clean 404 for that unpublished draft (no public leak); confirm the published `/blog/<slug>` page is visually unchanged after the shared-component refactor.
 - [ ] Phase 5: `/blog` + `/ar/blog` — type a title fragment → list narrows (debounced) + "Load More" still pages to the filtered end; pick a category → narrows + options match admin-managed categories; q+category combined → correct `total`/Load-More; a no-match query shows the empty state; AR inputs are RTL with Arabic labels; clearing filters restores the default 6 + Load More.
+- [ ] Phase 6: upload a large JPEG/PNG → stored object is a smaller `.webp` + URL returned; PNG transparency round-trips; GIF stays animated GIF; blog hero images render via `<NuxtImg>` with responsive `srcset` + lazy in the DOM; blog detail reads well on a phone viewport in LTR + AR/RTL (eyeball long AR titles at 320px).
 - [ ] Phase 3: `prisma migrate deploy` applies `add_category` on a fresh/staging DB + 6 seed rows present; existing posts' slugs still resolve to labels; category CRUD reflects in editor select + list filter + public `?category=` filter; deleting an in-use category → post keeps slug + shows raw-slug fallback; creating a post with a DB-only category persists. (Run `pnpm db:seed:categories` locally if seeding a dev DB by hand.)
 
 ## Handoff log (newest first)
+
+### S13 — Related posts by category (2026-06-14, branch p7-related-social)
+- `MaanPost` now carries optional `categories?: string[]`; `toMaanPost` maps
+  `p.categories ?? []` (the API already returns it). Additive — no caller breaks.
+- Both detail pages (`blog/[slug].vue`, `ar/blog/[slug].vue`) replaced naive
+  "first 3" related with: if current post has categories → `getPosts(locale,
+  { category: cats.join(','), limit: 4 })` (CSV → API `flattenParam` → `hasSome`,
+  multi-category dedup is automatic server-side), exclude self, take 3; FALL BACK
+  to `getPosts(locale, { limit: 4 })` latest when no cats or zero matches. `limit:4`
+  so excluding self still yields 3. Each page uses its OWN locale (en/ar) — no
+  hardcoded-locale regression. SSR-safe via existing `useAsyncData`.
+- EN renders through `BlogArticleBody`'s `#aside` (unchanged markup); AR through its
+  inline aside (unchanged markup) — only SELECTION logic + data source changed.
+- Verify: `pnpm lint` clean, `pnpm build` green. No deps/CI/schema changes.
+- Deferred to C7 (DB unreachable here): live smoke — related are topical + right
+  locale, exclude self, fall back to latest when no category match.
+- No deviations.
 
 ### S12 — @nuxt/image + responsive + mobile/RTL audit (2026-06-14, branch p6-perf)
 - `pnpm add -D @nuxt/image` → 2.0.0; registered in `nuxt.config.ts` modules.

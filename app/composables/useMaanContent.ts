@@ -9,6 +9,8 @@ export type MaanPost = {
   image?: string
   content: string
   seo?: MaanSeo
+  /** Category slugs the post is filed under (S13 related-posts selection). */
+  categories?: string[]
 }
 
 export type MaanSeo = {
@@ -202,6 +204,7 @@ const toMaanPost = (p: ApiPost, locale: 'en' | 'ar'): MaanPost => {
     readTime: locale === 'ar' ? '٤ دقائق' : '4 min read',
     image: p.image ?? undefined,
     content: p.content || '<p>More details will be available soon.</p>',
+    categories: p.categories ?? [],
     seo: normalizeSeo(p.seo, {
       title: p.title,
       description,

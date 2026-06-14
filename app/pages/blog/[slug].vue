@@ -12,9 +12,22 @@ if (!post.value) {
   })
 }
 
+// Related = up to 3 published posts that SHARE the current post's categories
+// (DB `hasSome` via the public `category` filter, comma-joined for multi-cat),
+// excluding the current post; falls back to the latest posts when the current
+// post has no categories or no category-matches exist. Same locale as the page.
 const { data: related } = await useAsyncData<MaanPost[]>(`maan-blog-${slug.value}-related`, async () => {
-  const all = await getPosts('en')
-  return all.filter(p => p.slug !== slug.value).slice(0, 3)
+  const cats = post.value?.categories ?? []
+  const exclude = (list: MaanPost[]) => list.filter(p => p.slug !== slug.value)
+
+  if (cats.length) {
+    const byCategory = await getPosts('en', { category: cats.join(','), limit: 4 })
+    const topical = exclude(byCategory).slice(0, 3)
+    if (topical.length) return topical
+  }
+
+  const latest = await getPosts('en', { limit: 4 })
+  return exclude(latest).slice(0, 3)
 }, { default: () => [] })
 
 const resolvedSeo = useMaanSeo({

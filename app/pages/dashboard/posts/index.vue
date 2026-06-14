@@ -10,7 +10,11 @@ definePageMeta({
 const { t, isArabic } = useDashboardI18n()
 const { posts, postsError, isLoading, loadPosts } = usePosts()
 const { statusOptions, statusLabel } = usePostForm()
-const { categories: taxonomyCategories, placements: taxonomyPlacements } = useMaanTaxonomy()
+const { placements: taxonomyPlacements } = useMaanTaxonomy()
+// S8: category filter options now come from the DB-backed Category table
+// (via useCategories) rather than the static taxonomy list. Placements stay
+// static (still useMaanTaxonomy). Chip labels fall back to the raw slug.
+const { categories: dbCategories, loadCategories } = useCategories()
 
 const postsSearch = ref('')
 const postsStatusFilter = ref<'all' | 'draft' | 'in_review' | 'published'>('all')
@@ -31,7 +35,7 @@ const lang = computed<'en' | 'ar'>(() => isArabic.value ? 'ar' : 'en')
 
 const categoryFilterOptions = computed(() => [
   { value: 'all', label: t.value.filterCategory },
-  ...taxonomyCategories.map(c => ({ value: c.id, label: c.label[lang.value] }))
+  ...categoryOptionsFor(dbCategories.value, lang.value)
 ])
 const placementFilterOptions = computed(() => [
   { value: 'all', label: t.value.filterPlacement },
@@ -116,7 +120,10 @@ const hasActiveFilter = computed(() =>
   || postsSearch.value !== ''
 )
 
-onMounted(loadPosts)
+onMounted(() => {
+  loadPosts()
+  loadCategories()
+})
 </script>
 
 <template>

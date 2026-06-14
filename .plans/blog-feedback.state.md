@@ -4,7 +4,7 @@
 Plan: `blog-feedback.md` · Briefs: `blog-feedback.sessions.md` ·
 Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 
-## Next up: S8 (Phase 3 — Category management UI + wire selects)
+## Next up: C3 (Phase 3 checkpoint review)
 
 ## Session checklist
 
@@ -22,7 +22,7 @@ Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 ### Phase 3 — Dynamic categories · branch `blog-feedback/p3-categories` (from p2 head)
 - [x] S6 — Category model + migration + seed
 - [x] S7 — Category CRUD API + DB-backed validation
-- [ ] S8 — Category management UI + wire selects
+- [x] S8 — Category management UI + wire selects
 - [ ] **C3** checkpoint review
 
 ### Phase 4 — Live preview · branch `blog-feedback/p4-preview` (from p3 head)
@@ -64,6 +64,28 @@ _Live UI smoke can't run in the agent environment (Fly Postgres unreachable with
 - [ ] Phase 2: editor link add/edit/remove + font-size persist on the public article; PDF upload → inserted download link works; mp4/mp3 embed plays on the public article; oversized (>cap) + unknown-MIME upload rejected with clear message; auto-save fires ONE PATCH on pause (no storm while typing) + new post gains id & URL updates once.
 
 ## Handoff log (newest first)
+
+### S8 — Category management UI + wire selects (2026-06-14, branch p3-categories)
+- New page `app/pages/dashboard/categories/index.vue`: list + create/edit/delete
+  via S7 routes; inline UModal CRUD (matches staff/blocks house style), bilingual
+  EN/AR, RTL-safe (`dir` on slug/name inputs). Sidebar nav entry added in
+  `dashboard.vue` (`i-lucide-tags`, scope `posts`, EN+AR `to`).
+- New composable `app/composables/useCategories.ts`: cached `useState` list +
+  `loadCategories`/create/update/delete; degrade-gracefully (fetch failure → empty
+  list + error, never throws). Exports `categoryOptionsFor` + `labelForCategorySlug`
+  (slug fallback). Types reuse `DashboardCategoryShape` from dashboard-shapes.
+- Wired both selects off the DB list: `PostEditorForm.vue` `categoryOptions` (now
+  `useCategories` + orphan-slug appended so deleted-category selections stay
+  visible) and `posts/index.vue` `categoryFilterOptions` (`categoryOptionsFor`);
+  chip label already fell back to raw slug. PLACEMENTS untouched (still
+  `useMaanTaxonomy`). `useMaanTaxonomy.ts` itself unchanged.
+- i18n: ~24 new keys (category mgmt + generic edit/delete) in BOTH locale blocks.
+- Verify: `pnpm lint` clean (1 auto-fix), `pnpm build` green (categories route
+  chunk emitted).
+- Deferred to C3 (DB unreachable here): live CRUD create/rename/delete reflects in
+  editor select + list filter + public list; delete a category in use → post keeps
+  slug + shows raw-slug label (orphan path); new category appears immediately.
+- No deviations.
 
 ### S7 — Category CRUD API + DB-backed validation (2026-06-14, branch p3-categories)
 - Routes `server/api/dashboard/categories/`: `index.get` (list, sort/nameEn),

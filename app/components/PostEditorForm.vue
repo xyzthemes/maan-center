@@ -17,7 +17,12 @@ const emit = defineEmits<{
 }>()
 
 const { t, isArabic } = useDashboardI18n()
-const { categories: taxonomyCategories } = useMaanTaxonomy()
+// S8: category options now come from the DB (admin-managed Category table)
+// via useCategories instead of the static useMaanTaxonomy list. Degrades
+// gracefully — a fetch failure leaves the list empty and the editor still
+// renders; labels fall back to the raw slug for any orphaned category.
+const { categories: dbCategories, loadCategories } = useCategories()
+onMounted(loadCategories)
 
 const form = computed({
   get: () => props.modelValue,
@@ -29,15 +34,26 @@ const form = computed({
 // stored in the DB stays canonical.
 const lang = computed<'en' | 'ar'>(() => isArabic.value ? 'ar' : 'en')
 
-// Coerce option `value` back to plain `string` so USelectMenu's inferred
-// option type doesn't narrow to the literal union — keeps form.categories
-// typed as `string[]` (which matches the DB column shape) and avoids a
-// pile of `as PostCategoryId[]` casts at every binding site. Validation
-// of unknown ids still happens server-side (S7: DB-backed against the
-// Category table in the post create/update routes).
-const categoryOptions = computed<Array<{ value: string, label: string }>>(() =>
-  taxonomyCategories.map(c => ({ value: c.id, label: c.label[lang.value] }))
-)
+// Option `value` stays a plain `string` so USelectMenu's inferred option
+// type doesn't narrow — keeps form.categories typed as `string[]` (matches
+// the DB column shape). Validation of unknown slugs still happens
+// server-side (S7: DB-backed against the Category table on create/update).
+//
+// Orphan handling: any slug already stored on this post that no longer
+// exists in the DB list (category deleted/renamed) is appended as an option
+// labelled with its raw slug, so it stays visible + selectable instead of
+// silently dropping out of the multi-select.
+const categoryOptions = computed<Array<{ value: string, label: string }>>(() => {
+  const opts = categoryOptionsFor(dbCategories.value, lang.value)
+  const known = new Set(opts.map(o => o.value))
+  for (const slug of form.value.categories || []) {
+    if (!known.has(slug)) {
+      opts.push({ value: slug, label: slug })
+      known.add(slug)
+    }
+  }
+  return opts
+})
 // Placement options are no longer rendered as a flat select — the
 // visual picker (MaanPlacementPicker) reads the taxonomy directly.
 

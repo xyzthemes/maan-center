@@ -135,9 +135,10 @@ useSchemaOrg([
             class="mt-10 border-t pt-6"
             style="border-color: var(--maan-line);"
           >
-            <MaanArticleShare
+            <BlogShareButtons
               :title="post.title"
               :url="`/ar/blog/${post.slug}`"
+              :image="post.image"
               locale="ar"
             />
           </div>

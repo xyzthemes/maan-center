@@ -4,7 +4,7 @@
 Plan: `blog-feedback.md` · Briefs: `blog-feedback.sessions.md` ·
 Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 
-## Next up: S14 (Phase 7 — related + social)
+## Next up: C7 (Phase 7 — final checkpoint + assemble PR)
 
 ## Session checklist
 
@@ -40,7 +40,7 @@ Protocol: `~/.claude/skills/effort-run/PROTOCOL.md`.
 
 ### Phase 7 — Related + social · branch `blog-feedback/p7-related-social` (from p6 head)
 - [x] S13 — Related posts by category
-- [ ] S14 — Social share buttons
+- [x] S14 — Social share buttons
 - [ ] **C7** final checkpoint + assemble PR
 
 ## Open questions — RESOLVED to recommendations (autonomous run, 2026-06-14)
@@ -68,6 +68,31 @@ _Live UI smoke can't run in the agent environment (Fly Postgres unreachable with
 - [ ] Phase 3: `prisma migrate deploy` applies `add_category` on a fresh/staging DB + 6 seed rows present; existing posts' slugs still resolve to labels; category CRUD reflects in editor select + list filter + public `?category=` filter; deleting an in-use category → post keeps slug + shows raw-slug fallback; creating a post with a DB-only category persists. (Run `pnpm db:seed:categories` locally if seeding a dev DB by hand.)
 
 ## Handoff log (newest first)
+
+### S14 — Social share buttons (2026-06-14, branch p7-related-social)
+- New `app/components/BlogShareButtons.vue`: locked platforms via static
+  share-intent URLs — X (`twitter.com/intent/tweet`), LinkedIn
+  (`linkedin.com/sharing/share-offsite`), Telegram (`t.me/share/url`), Pinterest
+  (`pinterest.com/pin/create/button` + optional `media` from post image), all
+  `target="_blank" rel="noopener noreferrer"`, `encodeURIComponent` on url/title/
+  image, per-platform aria-labels, `i-simple-icons-*` icons (verified present in
+  the bundled @iconify-json/simple-icons). Instagram = NO web intent → gradient
+  "copy link" button: `navigator.clipboard` guarded `import.meta.client`, 2s
+  "Link copied!" confirmation. Bilingual EN/AR labels; flex-wrap row inherits the
+  global RTL dir from `app.vue` (no per-component dir needed).
+- Absolute URL SSR-safe via `useRequestURL().origin` (server reads request origin,
+  client reads window) → no hardcoded domain; relative `url` prop resolved against
+  it, absolute URLs passed through.
+- Wired on BOTH detail pages, REPLACING the old `MaanArticleShare` (WhatsApp/FB) at
+  the same spot: EN via `BlogArticleBody`'s `#body-footer` slot, AR via its inline
+  share block. Both pass `:image="post.image"` for Pinterest media. `MaanArticleShare`
+  left in the repo (no longer referenced by blog detail pages) — remove at C7 if desired.
+- Dashboard preview (`posts/[id]/preview.vue`) uses `BlogArticleBody` but supplies
+  its OWN slot content (no share row) → preview unaffected, no clipboard/SSR crash.
+- Verify: `pnpm lint` clean, `pnpm build` green. No deps/CI/schema changes.
+- Deferred to C7: live smoke — each intent opens with correct url+title; Instagram
+  copies link + toast; EN + AR/RTL.
+- No deviations.
 
 ### S13 — Related posts by category (2026-06-14, branch p7-related-social)
 - `MaanPost` now carries optional `categories?: string[]`; `toMaanPost` maps

@@ -44,6 +44,18 @@ export const usePostForm = (onSaved?: () => unknown | Promise<unknown>) => {
   const saveSuccess = ref('')
   const isSaving = ref(false)
   const autoSaveStatus = ref<AutoSaveStatus>('idle')
+
+  // Dirty tracking for the unsaved-changes guard. `lastSavedSnapshot` is the
+  // serialized form at the last successful save (manual or auto) or at load;
+  // `isDirty` is true whenever the live form has diverged from it. This is more
+  // precise than `autoSaveStatus` (whose 'idle' covers both "clean" and
+  // "edited, save pending"), so the guard only warns on genuinely unsaved work.
+  const snapshot = () => JSON.stringify(postForm)
+  const lastSavedSnapshot = ref(snapshot())
+  const markPristine = () => {
+    lastSavedSnapshot.value = snapshot()
+  }
+  const isDirty = computed(() => snapshot() !== lastSavedSnapshot.value)
   // When true, watcher-fired form changes are programmatic (load/save-induced)
   // and must NOT arm an auto-save — this is what stops a save storm on page open
   // and the self-trigger loop after savePost mutates postForm.id.
@@ -99,6 +111,7 @@ export const usePostForm = (onSaved?: () => unknown | Promise<unknown>) => {
     saveError.value = ''
     saveSuccess.value = ''
     autoSaveStatus.value = 'idle'
+    markPristine()
   }
 
   const newPost = () => {
@@ -108,6 +121,7 @@ export const usePostForm = (onSaved?: () => unknown | Promise<unknown>) => {
     saveError.value = ''
     saveSuccess.value = ''
     autoSaveStatus.value = 'idle'
+    markPristine()
   }
 
   const savePost = async (): Promise<string | undefined> => {
@@ -132,6 +146,9 @@ export const usePostForm = (onSaved?: () => unknown | Promise<unknown>) => {
       }
 
       saveSuccess.value = wasCreate ? t.value.postCreated : t.value.postUpdated
+      // Snapshot AFTER the id is assigned (line above) so the post-create id
+      // change doesn't read as a fresh unsaved edit.
+      markPristine()
 
       if (onSaved) {
         await onSaved()
@@ -203,6 +220,7 @@ export const usePostForm = (onSaved?: () => unknown | Promise<unknown>) => {
     saveSuccess,
     isSaving,
     autoSaveStatus,
+    isDirty,
     statusOptions,
     statusLabel,
     editPost,
